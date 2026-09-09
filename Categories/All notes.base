@@ -1,0 +1,22 @@
+{
+  "filters": {
+    "and": [
+      "file.ext == \"md\"",
+      "file.hasProperty(\"categories\")",
+      "type != \"template\""
+    ]
+  },
+  "views": [
+    {
+      "type": "table",
+      "name": "All notes",
+      "order": [
+        "file.name",
+        "categories",
+        "type",
+        "module",
+        "snapshot"
+      ]
+    }
+  ]
+}

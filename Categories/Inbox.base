@@ -1,0 +1,18 @@
+{
+  "filters": {
+    "and": [
+      "file.ext == \"md\"",
+      "!file.hasProperty(\"categories\")"
+    ]
+  },
+  "views": [
+    {
+      "type": "table",
+      "name": "Needs a category",
+      "order": [
+        "file.name",
+        "file.mtime"
+      ]
+    }
+  ]
+}

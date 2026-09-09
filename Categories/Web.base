@@ -1,0 +1,50 @@
+{
+  "filters": {
+    "and": [
+      "file.ext == \"md\"",
+      "list(categories).contains(\"Web\")",
+      "type != \"template\""
+    ]
+  },
+  "properties": {
+    "file.name": {
+      "displayName": "Note"
+    },
+    "module": {
+      "displayName": "Module"
+    },
+    "type": {
+      "displayName": "Kind"
+    },
+    "snapshot": {
+      "displayName": "Source snapshot"
+    }
+  },
+  "views": [
+    {
+      "type": "table",
+      "name": "Web",
+      "order": [
+        "file.name",
+        "type",
+        "module",
+        "snapshot"
+      ],
+      "sort": [
+        {
+          "property": "file.name",
+          "direction": "ASC"
+        }
+      ]
+    },
+    {
+      "type": "cards",
+      "name": "Browse",
+      "order": [
+        "file.name",
+        "module",
+        "type"
+      ]
+    }
+  ]
+}

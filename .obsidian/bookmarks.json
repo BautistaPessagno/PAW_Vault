@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "type": "file",
+      "ctime": 1788963832732,
+      "path": "Home.md",
+      "title": "Project codemap"
+    },
+    {
+      "type": "file",
+      "ctime": 1788963835237,
+      "path": "Categories/All notes.base",
+      "title": "All notes"
+    },
+    {
+      "type": "file",
+      "ctime": 1788963837828,
+      "path": "Categories/Inbox.base",
+      "title": "Uncategorized notes"
+    }
+  ]
+}

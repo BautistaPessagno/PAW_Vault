@@ -1,0 +1,12 @@
+{
+  "types": {
+    "categories": "multitext",
+    "type": "text",
+    "module": "text",
+    "project": "text",
+    "snapshot": "date",
+    "commit": "text",
+    "status": "text",
+    "sources": "multitext"
+  }
+}
