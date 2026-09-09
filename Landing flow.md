@@ -5,14 +5,17 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "flows"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java"]
 ---
 
 # Landing flow
 
-GET `/` displays publications, not every album in the catalog.
+GET / lists the eight newest Post IDs, not every catalog album. [[LandingController]] calls [[PostService]].getFeatured; [[PostServiceImpl]] supplies limit 8; [[PostJdbcDao]] performs a four-table INNER JOIN of posts, users, albums and artists ordered by p.id descending.
+
+The JSP uses [[PostSummary]] objects for editorial ui:vinyl-card tags and nested contact buttons. An empty posts list shows localized empty text. The page links to /publish and shows a contactSent flash if a contact submission redirected here.
 
 ```mermaid
 sequenceDiagram
@@ -20,32 +23,40 @@ sequenceDiagram
     participant C as LandingController
     participant S as PostServiceImpl
     participant D as PostJdbcDao
-    participant DB as PostgreSQL
-    participant V as landing/index.jsp
-    B->>C: GET /
     C->>S: getFeatured()
     S->>D: findFeatured(8)
-    D->>DB: Four-table JOIN, ORDER BY p.id DESC, LIMIT 8
-    DB-->>D: Aliased rows
-    D-->>S: List of PostSummary
-    S-->>C: posts
-    C->>V: ModelAndView with posts
-    V-->>B: HTML cards or localized empty state
+    D-->>C: Joined PostSummary list
+    C-->>B: Cards with cover URLs
+    B->>B: Load placeholder or GET /covers/id
 ```
 
-1. [[LandingController]] injects [[PostService]], calls getFeatured, and places the result under `posts`.
-2. [[PostServiceImpl]] supplies the fixed limit of eight and a read-only transaction.
-3. [[PostJdbcDao]] joins posts → users, posts → albums, albums → artists. The RowMapper constructs one [[PostSummary]] per joined row. No per-card database calls occur.
-4. [[Views and assets|The landing JSP]] checks `empty posts`; otherwise c:forEach passes each summary to ui:vinyl-card, with a nested ui:button linking to contact. The shared tags escape text/attributes and generate context-aware URLs. See [[UI components]].
-5. The contact link uses the Post ID. A flash `contactSent` value from [[Contact flow]] displays a one-time confirmation above the cards.
+PostSummary carries nullable coverImageId rather than a path or binary data. [[UI components]] selects the local placeholder for null; otherwise the browser requests /covers/{id}. The landing query does not issue one image query per card, although the browser makes separate image requests. See [[Cover image flow]].
 
-Newest means greatest generated post ID here. There is no creation timestamp. The catalog's separate [[AlbumJdbcDao]].findFeatured sorts year descending and title ascending, but this controller does not call it. An album without a Post is absent; a Post whose joined user/album/artist is missing is also absent.
+The ID order is not an explicit creation timestamp. Unpublished albums are absent, and orphan associations disappear from the INNER JOIN. The old AlbumDao.findFeatured and AlbumService.getFeatured paths have been removed.
 
-## Controller excerpt
+## Controller source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java, lines 19–25](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java, lines 1–26](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java>)
 
 ```java
+package ar.edu.itba.paw.webapp.controller;
+
+import ar.edu.itba.paw.services.PostService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+public class LandingController {
+
+    private final PostService postService;
+
+    @Autowired
+    public LandingController(final PostService postService) {
+        this.postService = postService;
+    }
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ModelAndView landing() {
@@ -53,10 +64,7 @@ Newest means greatest generated post ID here. There is no creation timestamp. Th
         mav.addObject("posts", postService.getFeatured());
         return mav;
     }
+}
 ```
 
-[[Architecture]] · [[PostSummary]] · [[Database schema]]
-
-## UI integration at the current commit
-
-The committed landing JSP uses an editorial ui:vinyl-card for each PostSummary and a ghost/sm contact button. Its cover alt text now uses vinylCard.cover.alt. The query and eight-post limit are unchanged. See [[Views and assets]] and [[Localization]].
+[[Views and assets]] · [[Database schema]] · [[Contact flow]]

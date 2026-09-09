@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "operations"]
 sources: ["tools/paw_checks.py", "tools/git-hooks/pre-commit", "tools/setup_local_postgres.sh"]
@@ -13,30 +13,64 @@ sources: ["tools/paw_checks.py", "tools/git-hooks/pre-commit", "tools/setup_loca
 
 # Development tools
 
-These scripts support development and do not execute as part of an ordinary HTTP request.
+The scripts support development and do not run during ordinary HTTP handling. Their text is reference material; no setup or deployment command was executed for this documentation refresh.
 
 ## Deterministic checks
 
-`python3 tools/paw_checks.py all` runs three checks. i18n compares property-key sets with the intentional Spanish fallback rule. flyway checks duplicate V-number filenames and warns when migrations have newer mtimes than the test schema. jsp compares opening/closing counts for selected JSTL/form tags after removing comments.
+`python3 tools/paw_checks.py all` now runs i18n and JSP checks only. The Flyway check and CLI option were removed alongside the old migration directory. i18n compares default, English/French and Spanish override keys. JSP checks selected opening/closing tag counts in views and tag files; it does not compile JSPs, verify binding, or prove browser behavior.
 
-The Flyway check name does not imply an installed migration runner. Its timestamp comparison does not prove schema equivalence. The JSP check does not compile JSPs, verify nesting or detect every escaping issue. The parser is a project heuristic, not a full properties/XML parser.
+The agent-local .claude/scripts/paw_checks.py remains a separate older implementation with a Flyway check. It must not be described as identical to tools/paw_checks.py. The distinction is relevant to agent hooks that still invoke the old copy.
 
-## Commit hooks
+## Hooks
 
-`tools/git-hooks/pre-commit` can be activated by the repository's core.hooksPath configuration. It finds the check script and runs `all` using Python 3 or Python. It blocks when that check fails, but it does not run Maven tests. If no script exists it exits successfully. The source AGENTS claim that the pre-commit forces both checks and Maven is therefore stronger than the hook implementation.
+The versioned tools/git-hooks/pre-commit runs the main script’s all command, not Maven tests. Presence of a hook file does not prove core.hooksPath is configured. The .claude/hooks/commit-gate.py agent hook invokes its own check copy and may fail open on its own errors/timeouts. No hook activation was changed in this vault task.
 
-`.claude/hooks/commit-gate.py` is a separate agent-tool hook that checks git commit commands and invokes `.claude/scripts/paw_checks.py`. Its own parse/runtime failures and timeout fail open. Presence on disk does not prove a hook is registered or active; local hook registration is ignored by Git.
+## Local database setup
 
-## Local database wizard
+The interactive tools/setup_local_postgres.sh targets Homebrew postgresql@18. It can start the service, create or alter local roles/database, load the manual SQL for a fresh database and seed the initial album. It now stops on the unsupported textual albums.artist schema instead of applying a migration. The seed omits cover_path and leaves cover_image_id null.
 
-`tools/setup_local_postgres.sh` is an interactive five-stage Bash helper targeting Homebrew postgresql@18. It checks commands, starts PostgreSQL if needed, previews and may create/reset the local role/database, loads schema or the artist migration, seeds the initial album when needed, then verifies selected tables.
+Existing-table checks accept artist_id and an artists table; this does not verify every newer image/Post column. The script does not start Jetty and was not executed. Its literal development configuration is not evidence of the user’s actual secrets or installed database state.
 
-It contains a hardcoded local-development password and outdated text saying WebConfig uses fixed credentials. Current WebConfig reads property files. The helper can change roles and database ownership. It was inspected as source and not executed for this map. Its existing-table branch does not migrate historical posts.publisher_email to current posts.user_id, and the last table-count check only covers users/artists/albums. It is not proof that a current Post schema is ready.
+## Check entry point excerpt
 
-## Source entry points
+[tools/paw_checks.py, lines 101–135](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/tools/paw_checks.py>)
 
-- [tools/paw_checks.py](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/tools/paw_checks.py>)
-- [tools/git-hooks/pre-commit](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/tools/git-hooks/pre-commit>)
-- [tools/setup_local_postgres.sh](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/tools/setup_local_postgres.sh>)
+```python
+            self_closing = sum(1 for t in all_open if t.rstrip().endswith("/>"))
+            opens = len(all_open) - self_closing
+            closes = len(re.findall(rf"</{re.escape(tag)}\s*>", text))
+            if opens != closes:
+                rel = f.relative_to(PROJECT_ROOT)
+                errors.append(f"jsp: {rel} — <{tag}> desbalanceado (aperturas={opens}, cierres={closes})")
+    return errors
+
+
+def main():
+    what = sys.argv[1] if len(sys.argv) > 1 else "all"
+    checks = {"i18n": check_i18n, "jsp": check_jsp}
+    if what == "all":
+        selected = list(checks.items())
+    elif what in checks:
+        selected = [(what, checks[what])]
+    else:
+        print(f"uso: paw_checks.py [{'|'.join(checks)}|all]")
+        return 2
+    errors = []
+    for name, fn in selected:
+        errs = fn()
+        errors.extend(errs)
+        if not errs:
+            print(f"{name}: OK")
+    if errors:
+        print("\nPROBLEMAS ENCONTRADOS:")
+        for e in errors:
+            print(f"  - {e}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
 
 [[Build and dependencies]] · [[Schema history and seeds]] · [[Repository tooling]]

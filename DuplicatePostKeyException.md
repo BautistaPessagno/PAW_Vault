@@ -5,7 +5,7 @@ type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "persistence"]
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/DuplicatePostKeyException.java"]
@@ -19,9 +19,7 @@ Unchecked persistence-contract exception raised by [[PostJdbcDao]] after Spring 
 
 Project types referenced: none.
 
-Referenced by: [[PostJdbcDao]], [[PostServiceImpl]].
-
-Tests: [[PostJdbcDaoTest]], [[PostServiceImplTest]]. See [[Testing and evidence]].
+Referenced by: [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
 
 ## Exact source
 

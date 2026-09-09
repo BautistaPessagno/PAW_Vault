@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "architecture"]
 sources: ["webapp/src/main/webapp/WEB-INF/web.xml"]
@@ -37,15 +37,17 @@ flowchart LR
 | ComponentScan | Discovers @Repository, @Service and @Controller classes in the three configured packages | Constructor injection resolves interfaces to discovered implementations |
 | dataSource | SimpleDriverDataSource using required db properties | All JDBC DAOs, schema initializer, transaction manager |
 | transactionManager | DataSourceTransactionManager | Service @Transactional proxies |
-| dataSourceInitializer | Executes classpath schema.sql | Startup table creation |
+| dataSourceInitializer | Executes classpath schema.sql | Table creation, username backfill and cover-column upgrade |
+| taskExecutor | ThreadPoolTaskExecutor: core 2, max 5, queue 50, CallerRunsPolicy | Both EmailService @Async methods |
+| multipartResolver | Lazy CommonsMultipartResolver, UTF-8, 6 MiB whole request | Publish form upload |
 | viewResolver | JstlView, `/WEB-INF/views/` prefix, `.jsp` suffix | Logical controller view names |
 | mailSender | JavaMailSenderImpl, SMTP auth/TLS/timeouts | [[EmailServiceImpl]] |
 | mailTemplateEngine | Classpath `mail/` + name + `.html`, UTF-8 HTML | Welcome/contact rendering |
 | messageSource | ReloadableResourceBundleMessageSource, `i18n/messages`, UTF-8 | JSP, validation, mail subjects and templates |
 | validator/getValidator | LocalValidatorFactoryBean using that message source | @Valid form arguments |
-| addResourceHandlers | `/css/**`, `/js/**`, `/images/**` to matching web directories | Styles and cover image |
+| addResourceHandlers | `/css/**`, `/js/**`, `/images/**` to matching web directories | Styles and placeholder image |
 
-@EnableTransactionManagement and @EnableAsync add proxy behavior. Direct `new` in tests does not activate them. No custom async executor, connection pool or scheduler is defined in WebConfig. Configuration uses required classpath @PropertySource declarations; read [[Configuration and running]] for why environment-only deployment is not established by the README claim.
+@EnableTransactionManagement and @EnableAsync add proxy behavior. Direct `new` in tests does not activate them. WebConfig now declares a bounded async executor. CallerRunsPolicy can execute mail in the request thread under saturation. No connection pool or scheduler is defined. Configuration uses required classpath @PropertySource declarations; read [[Configuration and running]] for why environment-only deployment is not established by the README claim.
 
 A logical `landing/index` view becomes `/WEB-INF/views/landing/index.jsp`. A `redirect:/` result initiates another HTTP request rather than resolving a JSP. See [[Views and assets]].
 
@@ -98,3 +100,5 @@ A logical `landing/index` view becomes `/WEB-INF/views/landing/index.jsp`. A `re
 ```
 
 [[WebConfig]] · [[Architecture]]
+
+[[ImageController]] separately maps /covers/{id} to stored bytes; it does not use the static /images handler. [[Cover image flow]] distinguishes upload and retrieval.

@@ -5,7 +5,7 @@ type: "test"
 module: "persistence"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "testing"]
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java"]
@@ -13,11 +13,9 @@ sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest
 
 # PostJdbcDaoTest
 
-Runs the real JDBC DAO through a Spring HSQLDB context with transaction rollback. Fixture rows come from test populator.sql. Assertions inspect mapped objects and persisted row counts. This checks the test schema and DAO behavior, not production startup, PostgreSQL concurrency, JSPs or HTTP status. The second-publisher insertion uses user ID 2 although the fixture has only user ID 1. With no foreign key the insert passes; a joined summary for that orphan would be absent.
+Six HSQLDB tests cover featured and single-summary mapping with coverImageId, missing ID, pair existence, duplicate insert and a second publisher. The second-publisher fixture uses user ID 2 without a users row, demonstrating that the test schema does not enforce foreign keys.
 
-Production connections: [[DuplicatePostKeyException]], [[Post]], [[PostDao]], [[PostSummary]].
-
-## Test cases
+## Test methods
 
 - `testFindFeaturedWhenPostsExistReturnsMappedPostSummary`
 - `testFindByIdWhenPostExistsReturnsMappedPostSummary`
@@ -26,7 +24,15 @@ Production connections: [[DuplicatePostKeyException]], [[Post]], [[PostDao]], [[
 - `testCreateWhenPublisherAlreadyPostedSameAlbumReturnsDuplicatePostKeyExceptionWithoutChanges`
 - `testCreateWhenAnotherPublisherPostsSameAlbumReturnsIndependentPost`
 
-## Exact test source
+These are source assertions, not a fresh passing test run.
+
+## Connections
+
+Project types referenced: [[DuplicatePostKeyException]], [[Post]], [[PostDao]], [[PostSummary]], [[TestConfiguration]].
+
+Referenced by: no direct project type reference; implementations may be injected through interfaces.
+
+## Exact source
 
 [persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java, lines 1–153](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java>)
 
@@ -69,7 +75,7 @@ public class PostJdbcDaoTest {
     private static final String ALBUM_TITLE = "versus";
     private static final String ARTIST_NAME = "illya kuryaki and the valderramas";
     private static final int RELEASE_YEAR = 1997;
-    private static final String COVER_PATH = "/images/covers/versus.png";
+    private static final long COVER_IMAGE_ID = 1;
 
     @Autowired
     private PostDao postDao;
@@ -102,7 +108,7 @@ public class PostJdbcDaoTest {
         Assertions.assertEquals(ALBUM_TITLE, post.getTitle());
         Assertions.assertEquals(ARTIST_NAME, post.getArtistName());
         Assertions.assertEquals(RELEASE_YEAR, post.getReleaseYear());
-        Assertions.assertEquals(COVER_PATH, post.getCoverPath());
+        Assertions.assertEquals(COVER_IMAGE_ID, post.getCoverImageId());
     }
 
     @Test
@@ -122,7 +128,7 @@ public class PostJdbcDaoTest {
         Assertions.assertEquals(ALBUM_TITLE, post.getTitle());
         Assertions.assertEquals(ARTIST_NAME, post.getArtistName());
         Assertions.assertEquals(RELEASE_YEAR, post.getReleaseYear());
-        Assertions.assertEquals(COVER_PATH, post.getCoverPath());
+        Assertions.assertEquals(COVER_IMAGE_ID, post.getCoverImageId());
     }
 
     @Test
@@ -186,4 +192,6 @@ public class PostJdbcDaoTest {
 }
 ```
 
-[[Testing and evidence]] · [[Source inventory]]
+## Context
+
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -5,7 +5,7 @@ type: "code"
 module: "services"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "services"]
 sources: ["services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java"]
@@ -19,9 +19,7 @@ sources: ["services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.jav
 
 Project types referenced: [[Artist]], [[ArtistDao]], [[ArtistService]].
 
-Referenced by: no other production Java type directly references this name; Spring discovers implementations through scanning.
-
-Tests: [[ArtistServiceImplTest]]. See [[Testing and evidence]].
+Referenced by: [[ArtistServiceImplTest]].
 
 ## Exact source
 

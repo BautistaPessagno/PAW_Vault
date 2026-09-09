@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "web"]
 sources: ["webapp/src/main/resources/i18n/messages.properties", "webapp/src/main/resources/i18n/messages_en.properties", "webapp/src/main/resources/i18n/messages_es.properties", "webapp/src/main/resources/i18n/messages_fr.properties"]
@@ -22,13 +22,13 @@ sources: ["webapp/src/main/resources/i18n/messages.properties", "webapp/src/main
 | messages_en.properties | English translations |
 | messages_fr.properties | French translations |
 
-The project check requires every default key in English and French and rejects keys defined only in a locale override. It permits an empty Spanish override. Passing key parity does not prove translation quality or that every literal UI string is localized. Legacy user JSPs contain literal English.
+The project check requires every default key in English and French and rejects keys defined only in a locale override. It permits an empty Spanish override. Passing key parity does not prove translation quality or that every literal UI string is localized. The legacy user JSPs are removed.
 
-Publishing and contact field annotations use `{message.key}` syntax. The year conversion error uses `typeMismatch.publishForm.releaseYear`. Welcome subject/body use caller Locale; contact mail fixes Spanish independently of browser language.
+Publishing and contact field annotations use `{message.key}` syntax. The year conversion error uses `typeMismatch.publishForm.releaseYear`. Both welcome and contact subject/body use caller Locale, passed explicitly before asynchronous dispatch.
 
 ## Exact default message catalog
 
-[webapp/src/main/resources/i18n/messages.properties, lines 1–54](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/i18n/messages.properties>)
+[webapp/src/main/resources/i18n/messages.properties, lines 1–59](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/i18n/messages.properties>)
 
 ```properties
 # Default bundle — español. messages_es hereda de este (ver CLAUDE.md).
@@ -59,6 +59,10 @@ publish.artistName.required=El artista es obligatorio.
 publish.artistName.size=El artista no puede superar los 255 caracteres.
 publish.releaseYear.required=El año es obligatorio.
 publish.releaseYear.range=El año debe estar entre 1000 y 9999.
+publish.cover.label=Portada (opcional)
+publish.cover.hint=PNG, JPEG o WebP de hasta 5 MB.
+publish.cover.invalid=La portada tiene que ser una imagen PNG, JPEG o WebP de hasta 5 MB.
+publish.cover.tooLarge=El archivo supera el tamaño máximo. Elegí una portada de hasta 5 MB.
 typeMismatch.publishForm.releaseYear=El año debe ser un número entero.
 
 landing.contact.sent=Listo: le avisamos al publicante que te interesa su álbum.
@@ -69,7 +73,6 @@ post.contact.name.label=Tu nombre
 post.contact.email.label=Tu email
 post.contact.submit=Enviar consulta
 post.contact.back=Volver al catálogo
-post.contact.deliveryFailed=No pudimos enviar tu consulta en este momento. Probá de nuevo en unos minutos.
 post.contact.name.required=El nombre es obligatorio.
 post.contact.name.size=El nombre no puede superar los 100 caracteres.
 post.contact.email.required=El email es obligatorio.
@@ -78,11 +81,13 @@ post.contact.email.size=El email no puede superar los 100 caracteres.
 
 email.welcome.subject=Bienvenido a quieroVinilos
 email.welcome.body=Hola {0}, gracias por registrarte.
+email.welcome.cta=Ver quieroVinilos
 email.postInterest.subject=Alguien está interesado en {0}
 email.postInterest.heading=Hay interés en tu publicación
 email.postInterest.intro={0} está interesado en tu publicación.
 email.postInterest.contact=Contacto:
 email.postInterest.album=Álbum:
+email.postInterest.cta=Ver quieroVinilos
 
 vinylCard.year=Año
 ```
@@ -98,3 +103,7 @@ vinylCard.year=Año
 ## Committed UI messages
 
 The UI merge renames landing.cover.alt to vinylCard.cover.alt and adds vinylCard.year in default, English and French. publish.back is present in all four bundles. [[UI components]] uses the cover and year keys; [[Publish flow]] uses the return label. wishlist.add from the earlier working-tree snapshot is absent. The Spanish override is not empty; it defines publishing, contact and email text, inheriting missing keys such as vinylCard.cover.alt and vinylCard.year from the default bundle.
+
+## Changes through ff96f27
+
+The default, English and French bundles add publish.cover.label/hint/invalid/tooLarge; Spanish inherits those cover keys. All four include email.welcome.cta and email.postInterest.cta. post.contact.deliveryFailed is removed with the synchronous retry UI. French MessageFormat subject and intro escape the apostrophe as two single quotes to preserve parameter interpolation. The default message catalog above is refreshed to this commit.

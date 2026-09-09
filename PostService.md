@@ -5,7 +5,7 @@ type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "services"]
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostService.java"]
@@ -13,15 +13,13 @@ sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostService
 
 # PostService
 
-The controller-facing publication API. `getFeatured()` supplies the landing, `findById` supplies the contact form, `publish` returns the created [[Post]], and `notifyInterest` sends a contact notification without returning a persisted object. Its implementation [[PostServiceImpl]] owns business orchestration; controllers handle binding, views and HTTP outcomes.
+Business contract for eight-featured-post policy through the implementation, Optional summary lookup, publishing and contact notification. publish accepts cover MIME type and bytes along with the five textual/numeric values and Locale. notifyInterest also receives Locale. See [[Publish flow]] and [[Contact flow]].
 
 ## Connections
 
 Project types referenced: [[Post]], [[PostSummary]].
 
 Referenced by: [[LandingController]], [[PostContactController]], [[PostServiceImpl]], [[PublishController]].
-
-Tests: no direct test source reference. See [[Testing and evidence]].
 
 ## Exact source
 
@@ -43,12 +41,12 @@ public interface PostService {
     Optional<PostSummary> findById(long postId);
 
     Post publish(String username, String publisherEmail, String title, String artistName,
-                 int releaseYear, Locale locale);
+                 int releaseYear, String coverContentType, byte[] coverData, Locale locale);
 
-    void notifyInterest(long postId, String contactName, String contactEmail);
+    void notifyInterest(long postId, String contactName, String contactEmail, Locale locale);
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

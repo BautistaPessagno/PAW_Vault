@@ -5,46 +5,44 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "web"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ContactForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java"]
 ---
 
 # Validation and errors
 
-Validation has two phases. Spring first converts submitted strings into form property types, then Bean Validation checks @Valid. BindingResult immediately follows the form argument, letting controllers inspect both conversion and constraint errors. Services receive already validated web input, but their public methods do not repeat all these constraints for other callers.
+Spring converts ordinary fields before Bean Validation runs. BindingResult follows the @Valid form parameter so the controller can redisplay conversion and constraint failures. Publish’s optional MultipartFile is validated separately by the transport resolver and image service.
 
-| Form | Field | Rules |
-|---|---|---|
-| [[PublishForm]] | username | NotBlank, max 100 |
-| PublishForm | publisherEmail | NotBlank, Email, max 100 |
-| PublishForm | title / artistName | NotBlank, max 255 each |
-| PublishForm | releaseYear | Integer conversion, NotNull, 1000–9999 |
-| [[ContactForm]] | contactName | Trim first, NotBlank, max 100 |
-| ContactForm | contactEmail | Trim first, NotBlank, Email, max 100 |
-| [[UserForm]] | username | Size 8–100 and ASCII regex, but null allowed by these annotations |
-| UserForm | email | NotBlank, Email, no max length |
+| Form/field | Rules |
+|---|---|
+| Publish username | NotBlank, maximum 100 |
+| Publish publisherEmail | NotBlank, Email, maximum 100 |
+| Publish title/artistName | NotBlank, maximum 255 each |
+| Publish releaseYear | Integer conversion, NotNull, 1000–9999 |
+| Contact name/email | Trim first; NotBlank; maximum 100; Email for email field |
+| Cover transport | Whole multipart request maximum 6 MiB |
+| New-album cover bytes | Allowed MIME label, nonempty, maximum 5 MiB |
 
-Only the contact controller registers StringTrimmerEditor. Publishing's length validation counts the submitted outer spaces before service normalization. Empty contact strings become null before validation. Missing or nonnumeric publish years produce errors instead of unboxing null because the controller exits early on BindingResult errors.
+Only [[PostContactController]] registers StringTrimmerEditor. Publishing’s annotations count outer spaces before service normalization. Empty or absent upload is allowed. ImageService checks are bypassed when AlbumService reuses an existing album; the uploaded cover is then ignored.
 
-## Error translation map
+## Error translation
 
-| Origin | Signal | Boundary/result |
-|---|---|---|
-| Form validation | BindingResult errors | Same JSP and existing form values; usually ordinary 200 render |
-| Post pre-check | [[DuplicatePostException]] | Publish publisherEmail field error |
-| JDBC duplicate insert | [[DuplicatePostKeyException]] | Service translates to DuplicatePostException |
-| Other publish integrity error | [[ConcurrentPublishException]] | Publish publisherEmail retry message |
-| Missing contact Post | [[PostNotFoundException]] | Local handler sets 404 |
-| Contact render/SMTP failure | [[EmailDeliveryException]] | Controller sets 503 and deliveryFailed |
-| Welcome render/SMTP failure | Caught and logged | No exception propagated from welcome body |
-| Missing legacy profile User | [[UserNotFoundException]] | No explicit 404 handler |
-| Duplicate legacy create email | Database exception | No local form-error translation |
+| Origin | Result |
+|---|---|
+| Field binding/validation | Same form and text values, field errors |
+| InvalidImageException | Publish cover error publish.cover.invalid |
+| MaxUploadSizeExceededException | New empty PublishForm with coverTooLarge; no explicit non-200 response status |
+| DuplicatePostException | Publish publisherEmail error publish.duplicate |
+| ConcurrentPublishException | Publish publisherEmail error publish.concurrent |
+| PostNotFoundException | Contact HTTP 404 |
+| ImageNotFoundException | Cover HTTP 404 |
+| Mail rendering/sending failure in worker | Logged/swallowed; no 503 feedback path |
+| IOException reading MultipartFile | Propagates; no dedicated local mapping |
 
-Validation errors resolve through [[WebConfig]]'s message source. The default bundle includes typeMismatch.publishForm.releaseYear for integer-conversion failure. There is no application-wide ControllerAdvice or custom error JSP in the supplied source.
+[[UI components|ui:text-input]] resolves relative paths inside form:form and renders every field message in an alert container, with aria-invalid/aria-describedby. The file input uses form:errors directly. A browser upload selection is not restored on redisplay.
 
-The current startup database enforces NOT NULL and uniqueness but not the form's year range or email syntax. [[Database schema]] describes that boundary. [[Testing and evidence]] records the missing controller tests.
+Image validation checks declared MIME and length only, not decodable content or signatures. Startup SQL enforces uniqueness/NOT NULL but no image-size/MIME or year constraints. The removed [[UserForm]] rules are historical. No global ControllerAdvice or custom error JSP exists in this snapshot.
 
-## UI integration at the current commit
-
-Publish and contact retain Spring form:form around [[UI components|ui:text-input]]. spring:bind resolves each relative path within its modelAttribute. The tag loops over status.errorMessages, retaining input and exposing an alert container through aria-describedby. It emits maxlength and numeric bounds when supplied, but no HTML required attribute. This is static source evidence, not an executed invalid-form test.
+[[Publish flow]] · [[Contact flow]] · [[Cover image flow]] · [[Testing and evidence]]

@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "operations"]
 sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/logback-test.xml"]
@@ -13,28 +13,39 @@ sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/lo
 
 # Logging
 
-The application uses SLF4J and Logback. Production logback.xml defines an application rolling file and a separate root-warning rolling file, both retaining seven daily archives. LOG_DIR defaults to logs.
+SLF4J/Logback writes application records under `${catalina.base:-.}/logs`. The current application pattern is paw-2026b-14-webapp.%d{yyyy-MM-dd}.log; warnings use paw-2026b-14-webapp-warnings.%d{yyyy-MM-dd}.log. Both retain seven daily periods.
 
-The ar.edu.itba logger has INFO level and additivity=false, sending its records to APP_FILE. Root WARN records go to WARNINGS_FILE. Because the application logger is non-additive, its ERROR mail records are not automatically duplicated into the root warnings file.
+The rolling appenders omit an explicit file element, so the active file uses the dated pattern as well. The source comments tie this naming to the course server log path; no remote log or deployment was checked.
 
-The application code's concrete business logging is in [[EmailServiceImpl]]: welcome logs userId, contact logs postId, failures add the exception class name. It does not log mail bodies, names or recipient addresses in these calls. There are no publish-success log statements in PostServiceImpl.
+ar.edu.itba logs INFO to APP_FILE with additivity=false. Root WARN goes to WARNINGS_FILE, so application ERROR records are not automatically copied into that root appender. [[EmailServiceImpl]] logs userId/postId and passes the full exception on failure. [[ImageServiceImpl]] logs rejected type/size and stored image ID, type and byte count. The source does not establish what external mail exception text may contain.
 
-logback-test.xml writes to console with application DEBUG and root WARN. It is located in webapp main resources despite its name; the WAR packaging configuration excludes it. Its presence on other development classpaths can affect configuration selection, so do not infer deployed logging from a local console alone.
+logback-test.xml remains in webapp main resources and is excluded from the packaged WAR. It configures application DEBUG and root WARN to console; other development classpaths may select it.
 
-## logback.xml
+## Production configuration
 
-[webapp/src/main/resources/logback.xml, lines 1–35](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/logback.xml>)
+[webapp/src/main/resources/logback.xml, lines 1–45](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/logback.xml>)
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <property name="LOG_DIR" value="${LOG_DIR:-logs}"/>
+  <!--
+    La catedra publica los logs en
+    http://pawserver.it.itba.edu.ar/logs/paw-2026b-14-webapp.<FECHA>.log
+    asi que el nombre del archivo tiene que ser exactamente ese.
+
+    Los appenders no declaran <file>: con TimeBasedRollingPolicy, omitirlo hace que
+    el archivo activo se llame igual que el patron, o sea que el log del dia en curso
+    ya lleva la fecha en el nombre. Si se declarara <file>, el log de hoy quedaria sin
+    fecha y no se podria abrir desde la URL de la catedra hasta que rotara.
+
+    catalina.base lo define Tomcat; el default es solo para correr fuera del contenedor.
+  -->
+  <property name="LOG_DIR" value="${catalina.base:-.}/logs"/>
   <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
 
   <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${LOG_DIR}/paw-2026b-14.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${LOG_DIR}/paw-2026b-14.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>${LOG_DIR}/paw-2026b-14-webapp.%d{yyyy-MM-dd}.log</fileNamePattern>
       <maxHistory>7</maxHistory>
     </rollingPolicy>
     <encoder>
@@ -43,9 +54,8 @@ logback-test.xml writes to console with application DEBUG and root WARN. It is l
   </appender>
 
   <appender name="WARNINGS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${LOG_DIR}/paw-2026b-14-warnings.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${LOG_DIR}/paw-2026b-14-warnings.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>${LOG_DIR}/paw-2026b-14-webapp-warnings.%d{yyyy-MM-dd}.log</fileNamePattern>
       <maxHistory>7</maxHistory>
     </rollingPolicy>
     <encoder>
@@ -63,7 +73,7 @@ logback-test.xml writes to console with application DEBUG and root WARN. It is l
 </configuration>
 ```
 
-## logback-test.xml
+## Test configuration
 
 [webapp/src/main/resources/logback-test.xml, lines 1–16](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/logback-test.xml>)
 
@@ -85,6 +95,5 @@ logback-test.xml writes to console with application DEBUG and root WARN. It is l
   </root>
 </configuration>
 ```
-
 
 [[Mail delivery]] · [[Configuration and running]]

@@ -5,7 +5,7 @@ type: "code"
 module: "services"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "services"]
 sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java"]
@@ -13,19 +13,17 @@ sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java"
 
 # PostServiceImpl
 
-`getFeatured` reads the eight newest post IDs, and `findById` returns a read-only transactional Optional. `publish` resolves User → Artist → Album, rejects an existing user/album pair, and creates the Post inside one transaction. A [[DuplicatePostKeyException]] becomes [[DuplicatePostException]]. Any Spring DataIntegrityViolationException caught by publish becomes [[ConcurrentPublishException]], so the label is broader than proven concurrency. `notifyInterest` deliberately has no transaction: it reads one summary, throws [[PostNotFoundException]] if absent, trims the contact name, normalizes the contact email, constructs [[PostInterestNotification]], then sends synchronous mail. See [[Publish flow]] and [[Contact flow]].
+getFeatured reads eight newest post IDs; findById is read-only transactional. publish resolves User, Artist and Album with optional cover data, rejects an existing user/album pair, and creates a Post in one transaction. DuplicatePostKeyException becomes DuplicatePostException; any caught DataIntegrityViolationException becomes ConcurrentPublishException. notifyInterest has no service transaction: it reloads the summary, trims contact name/email, lowercases email and passes [[PostInterestNotification]] plus Locale to asynchronous [[EmailService]].
 
 ## Connections
 
 Project types referenced: [[Album]], [[AlbumService]], [[Artist]], [[ArtistService]], [[ConcurrentPublishException]], [[DuplicatePostException]], [[DuplicatePostKeyException]], [[EmailService]], [[Post]], [[PostDao]], [[PostInterestNotification]], [[PostNotFoundException]], [[PostService]], [[PostSummary]], [[User]], [[UserService]].
 
-Referenced by: no other production Java type directly references this name; Spring discovers implementations through scanning.
-
-Tests: [[PostServiceImplTest]]. See [[Testing and evidence]].
+Referenced by: [[PostServiceImplTest]].
 
 ## Exact source
 
-[services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, lines 1–87](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>)
+[services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, lines 1–90](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -83,11 +81,13 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public Post publish(final String username, final String publisherEmail, final String title,
-                        final String artistName, final int releaseYear, final Locale locale) {
+                        final String artistName, final int releaseYear, final String coverContentType,
+                        final byte[] coverData, final Locale locale) {
         try {
             final User publisher = userService.findOrCreate(username, publisherEmail, locale);
             final Artist artist = artistService.findOrCreate(artistName);
-            final Album album = albumService.findOrCreate(title, artist.getId(), releaseYear);
+            final Album album = albumService.findOrCreate(title, artist.getId(), releaseYear,
+                    coverContentType, coverData);
             if (postDao.existsByUserIdAndAlbumId(publisher.getId(), album.getId())) {
                 throw new DuplicatePostException();
             }
@@ -102,21 +102,22 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    // Sin @Transactional a proposito: la entrega SMTP puede tardar hasta 15 segundos entre timeouts
-    // de conexion y de lectura, y no hay razon para retener una conexion a la base mientras tanto.
+    // Sin @Transactional a proposito: solo lee el post y delega el envio, que ademas es @Async.
+    // No hay razon para abrir una transaccion para una sola lectura.
     @Override
-    public void notifyInterest(final long postId, final String contactName, final String contactEmail) {
+    public void notifyInterest(final long postId, final String contactName, final String contactEmail,
+                               final Locale locale) {
         final PostSummary post = postDao.findById(postId).orElseThrow(PostNotFoundException::new);
         final PostInterestNotification notification = new PostInterestNotification(
                 post.getId(), post.getPublisherEmail(), contactName.trim(),
                 contactEmail.trim().toLowerCase(Locale.ROOT), post.getTitle(), post.getArtistName(),
                 post.getReleaseYear());
 
-        emailService.sendPostInterestEmail(notification);
+        emailService.sendPostInterestEmail(notification, locale);
     }
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

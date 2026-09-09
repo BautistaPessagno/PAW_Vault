@@ -5,7 +5,7 @@ type: "code"
 module: "models"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "domain"]
 sources: ["models/src/main/java/ar/edu/itba/paw/models/PostSummary.java"]
@@ -13,30 +13,13 @@ sources: ["models/src/main/java/ar/edu/itba/paw/models/PostSummary.java"]
 
 # PostSummary
 
-A read projection for a publication joined with its user, album and artist. Its `id` is the Post ID, not the album ID. [[LandingController]] places a list of these in `posts`; [[PostContactController]] places one in `post`. `publisherEmail` is carried server-side for [[PostServiceImpl]] to address mail, but the current JSPs do not render it. One four-table query supplies every field.
+Joined read projection for a Post, publisher and album/artist. Contains id, userId, publisherEmail, albumId, title, artistName, releaseYear and nullable Long coverImageId. [[PostJdbcDao]] reads only the image ID, not its bytes. [[UI components]] chooses the placeholder or /covers/{id}; publisherEmail stays server-side for [[Contact flow]].
 
 ## Connections
 
 Project types referenced: none.
 
-Referenced by: [[PostContactController]], [[PostDao]], [[PostJdbcDao]], [[PostService]], [[PostServiceImpl]].
-
-Tests: [[PostJdbcDaoTest]], [[PostServiceImplTest]]. See [[Testing and evidence]].
-
-## Stored values
-
-| Field | Java type |
-|---|---|
-| `id` | `long` |
-| `userId` | `long` |
-| `publisherEmail` | `String` |
-| `albumId` | `long` |
-| `title` | `String` |
-| `artistName` | `String` |
-| `releaseYear` | `int` |
-| `coverPath` | `String` |
-
-Constructors assign these values directly. Getters return them. There are no setters, persistence annotations, custom equality methods or constructor-level validation.
+Referenced by: [[PostContactController]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]].
 
 ## Exact source
 
@@ -53,11 +36,11 @@ public class PostSummary {
     private final String title;
     private final String artistName;
     private final int releaseYear;
-    private final String coverPath;
+    private final Long coverImageId;
 
     public PostSummary(final long id, final long userId, final String publisherEmail, final long albumId,
                        final String title, final String artistName, final int releaseYear,
-                       final String coverPath) {
+                       final Long coverImageId) {
         this.id = id;
         this.userId = userId;
         this.publisherEmail = publisherEmail;
@@ -65,7 +48,7 @@ public class PostSummary {
         this.title = title;
         this.artistName = artistName;
         this.releaseYear = releaseYear;
-        this.coverPath = coverPath;
+        this.coverImageId = coverImageId;
     }
 
     public long getId() {
@@ -96,12 +79,12 @@ public class PostSummary {
         return releaseYear;
     }
 
-    public String getCoverPath() {
-        return coverPath;
+    public Long getCoverImageId() {
+        return coverImageId;
     }
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

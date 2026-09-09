@@ -5,56 +5,118 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "flows"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java"]
 ---
 
 # Contact flow
 
-The visitor opens a contact form from a publication card. The server resolves the publisher address from the Post; it never accepts the destination address from the visitor.
+A visitor opens /post/{id}/contact from a publication card. [[PostContactController]] loads [[PostSummary]], renders a compact card and validates the visitor’s name/email. The destination address comes from the Post’s publisher, never from visitor input.
 
 ```mermaid
 sequenceDiagram
     participant B as Browser
     participant C as PostContactController
     participant S as PostServiceImpl
-    participant D as PostJdbcDao
-    participant E as EmailServiceImpl
-    participant SMTP as SMTP server
-    B->>C: GET /post/id/contact
-    C->>S: findById(id)
-    S->>D: findById(id)
-    C-->>B: Form with album context
-    B->>C: POST contactName and contactEmail
-    C->>C: Trim then validate
-    C->>S: notifyInterest(id,name,email)
-    S->>D: findById(id)
-    S->>E: sendPostInterestEmail(notification)
-    E->>SMTP: Send Spanish HTML mail synchronously
-    alt Send returned normally
-        C-->>B: Redirect / with contactSent flash
-    else Delivery exception
-        C-->>B: 503, same form, deliveryFailed
-    end
+    participant E as EmailService async proxy
+    participant W as Mail worker
+    B->>C: POST name and email
+    C->>C: Trim and validate; resolve Locale
+    C->>S: notifyInterest(id, name, email, locale)
+    S->>S: Reload Post and normalize contact email
+    S->>E: sendPostInterestEmail(notification, locale)
+    E-->>S: Task submitted
+    C-->>B: Redirect / with contactSent
+    E->>W: Render localized email and send
+    W->>W: Log success or catch/log failure
 ```
 
-[[PostContactController]].initBinder trims before validation and converts blank strings to null. [[ContactForm]] requires name and email, limits each to 100 characters and checks email format. Invalid input returns the contact view after reloading the Post.
+Invalid fields redisplay the form with retained text; the Post is reloaded. A missing Post maps to 404. The service has no encompassing transaction; it reads the summary and builds [[PostInterestNotification]]. It trims the contact name and trims/lowercases contact email, then passes the request Locale to [[EmailService]].
 
-[[PostServiceImpl]].notifyInterest performs a fresh summary lookup to resolve recipient and album details. A missing result raises [[PostNotFoundException]] and the controller's handler returns 404. It trims the contact name and lowercases the trimmed contact email, then constructs [[PostInterestNotification]]. The method has no transaction spanning SMTP.
+The contact mail is now @Async, uses the caller’s Locale and includes a home link from app.base-url. Rendering or SMTP failures inside the mail method are logged and swallowed. The previous [[EmailDeliveryException]], deliveryFailed flag, 503 retry branch and view message were removed.
 
-[[EmailServiceImpl]] sends to the publisher, from the configured application sender, with the contact email in Reply-To. The Spanish template includes contact name/email and album title/artist/year. It sends no copy to the visitor and stores no interest or conversation record.
+contactSent means the normal notification call returned, not that mail reached the publisher. The visible success copy still says the publisher was notified. There is no durable queue, contact record, automatic retry or delivery status. Under executor saturation, CallerRunsPolicy can run the mail work on the request thread, delaying the redirect. The diagram shows the normal available-capacity path.
 
-## Success and failure semantics
+## Controller source
 
-Success means the mail sender call returned without an exception, not proof that the recipient read the email or that a downstream server delivered it. The controller adds only `contactSent=true` to flash storage and redirects; no personal details enter the redirect URL.
+[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java, lines 1–73](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java>)
 
-A rendering, message construction or SMTP failure wrapped as [[EmailDeliveryException]] produces status 503 and `deliveryFailed=true`. The existing form retains valid values for a manual retry. There is no queue, automatic retry, deduplication token or durable delivery history; retry after an ambiguous SMTP outcome can send another message.
+```java
+package ar.edu.itba.paw.webapp.controller;
 
-Numeric route matching accepts digits only. A nonexistent numeric ID reaches the service and returns 404; malformed IDs do not take the normal contact handler path. No separate public Post-detail route exists.
+import ar.edu.itba.paw.models.PostSummary;
+import ar.edu.itba.paw.services.PostNotFoundException;
+import ar.edu.itba.paw.services.PostService;
+import ar.edu.itba.paw.webapp.form.ContactForm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.validation.Valid;
+import java.util.Locale;
+
+@Controller
+public class PostContactController {
+
+    private final PostService postService;
+
+    @Autowired
+    public PostContactController(final PostService postService) {
+        this.postService = postService;
+    }
+
+    // Recorta antes de validar, para que @Size mida el valor real y no los espacios de mas.
+    @InitBinder
+    public void initBinder(final WebDataBinder binder) {
+        binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
+    }
+
+    @RequestMapping(value = "/post/{postId:[0-9]+}/contact", method = RequestMethod.GET)
+    public ModelAndView contactForm(@PathVariable final long postId,
+                                    @ModelAttribute("contactForm") final ContactForm form) {
+        final PostSummary post = postService.findById(postId).orElseThrow(PostNotFoundException::new);
+        final ModelAndView modelAndView = new ModelAndView("post/contact");
+        modelAndView.addObject("post", post);
+        return modelAndView;
+    }
+
+    @RequestMapping(value = "/post/{postId:[0-9]+}/contact", method = RequestMethod.POST)
+    public ModelAndView contact(@PathVariable final long postId,
+                                @Valid @ModelAttribute("contactForm") final ContactForm form,
+                                final BindingResult bindingResult,
+                                final RedirectAttributes redirectAttributes,
+                                final Locale locale) {
+        if (bindingResult.hasErrors()) {
+            return contactForm(postId, form);
+        }
+
+        // El locale se resuelve aca, en el hilo del request, porque el envio es @Async
+        // y del otro lado ya no hay request del que sacarlo.
+        postService.notifyInterest(postId, form.getContactName(), form.getContactEmail(), locale);
+
+        redirectAttributes.addFlashAttribute("contactSent", true);
+        return new ModelAndView("redirect:/");
+    }
+
+    @ExceptionHandler(PostNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public void postNotFound() {
+    }
+}
+```
 
 [[Mail delivery]] · [[Validation and errors]] · [[EmailServiceImplTest]]
-
-## UI integration at the current commit
-
-The JSP shows a compact ui:vinyl-card and retains form:form with modelAttribute=contactForm. Relative contactName/contactEmail paths feed ui:text-input; all field errors are rendered. Submit and back buttons share the form action row. The 503 delivery failure branch remains unchanged. See [[Views and assets]] and [[UI components]].

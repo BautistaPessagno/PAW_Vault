@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "history"]
 sources: ["docs/adr/0001-establish-quiero-vinilos-domain.md", "docs/adr/0002-own-the-album-catalog-locally.md", "docs/issues/01-mostrar-primer-album-en-landing.md", "docs/issues/02-completar-catalogo-inicial.md", "docs/issues/03-terminar-landing-editorial-responsive.md", "docs/issues/publicacion-albumes/01-convertir-artist-en-entidad.md", "docs/issues/publicacion-albumes/02-publicar-album-nuevo.md", "docs/issues/publicacion-albumes/03-reutilizar-catalogo-en-publicaciones.md", "docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md", "docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md", "docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md", "docs/setup.md", "docs/specs/feature_contacto-post_20260904.md", "docs/specs/feature_publicacion-albumes_20260904.md", "docs/specs/landing-quiero-vinilos.md", "TODO.md"]
@@ -32,13 +32,17 @@ The two ADRs establish the quieroVinilos domain and its locally owned catalog/as
 | [docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md>) | 04: Rechazar Posts duplicados dentro del formulario. **Status:** done |
 | [docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md>) | 01: Contactar al publicante desde un Post. **Status:** done |
 | [docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md>) | 02: Recuperarse de un fallo de entrega de contacto. **Status:** ready-for-agent |
-| [docs/setup.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/setup.md>) | Setup reference containing stale claims about Flyway, admin bootstrap and dependency centralization. Seven custom tags are now committed in the UI merge; see [[UI components]]. |
+| [docs/setup.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/setup.md>) | Setup now describes the canonical startup schema and rejection of legacy textual artists; Flyway/admin-bootstrap sections were removed. Dependency-centralization claims still differ from the POMs. |
 | [docs/specs/feature_contacto-post_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_contacto-post_20260904.md>) | Historical requested behavior. Feature Specification: Contacto con publicante por Post. Compare with current flow notes and document-drift register. |
-| [docs/specs/feature_publicacion-albumes_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_publicacion-albumes_20260904.md>) | Historical requested behavior. Feature Specification: Publicación de álbumes. Compare with current flow notes and document-drift register. |
-| [docs/specs/landing-quiero-vinilos.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/landing-quiero-vinilos.md>) | Historical requested behavior. Landing de quieroVinilos. Compare with current flow notes and document-drift register. |
+| [docs/specs/feature_publicacion-albumes_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_publicacion-albumes_20260904.md>) | Updated to User-linked Posts, multipart publishing, optional Image storage and PostSummary. Some old no-Post-list and constraint assumptions remain; see [[Known gaps and document drift]]. |
+| [docs/specs/landing-quiero-vinilos.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/landing-quiero-vinilos.md>) | Now acknowledges PostDao and deleted scaffold routes; old no-action/gallery criteria remain in the body. |
 
-## Interpreting the open work
+## Changes through ff96f27
 
-TODO.md records deployment, access levels, images and richer queries as remaining work. The editorial landing issue and eight-album issue retain assumptions from a different landing design. Contact recovery already has a synchronous 503 branch in code, while its remaining checkbox asks for a web-layer test. The source AGENTS file discourages webapp tests, so those two documents conflict and a future code task must resolve that scope deliberately.
+The merge includes optional cover storage and retrieval, WAR/log naming changes, asynchronous localized interest mail with home CTA, and cleanup of the scaffold and unused album listing. [[AlbumSummary]], [[HelloWorldController]], [[UserForm]], [[UserNotFoundException]] and [[EmailDeliveryException]] remain as historical notes with pinned pre-removal excerpts.
 
-No open issue or spec has been executed as an instruction while creating this vault. [[Known gaps and document drift]] lists the concrete mismatches. [[Project snapshot]] defines this map's source boundary.
+TODO.md now marks image handling covered and says database access/upload procedure are known, while the first course deployment remains pending validation. Its admin-bootstrap discussion is future design guidance, not an implemented listener, role or authenticated session.
+
+The contact specification and recovery issue still require synchronous Spanish delivery, HTTP 503 and retained form input. Those requirements conflict with the new async source and deleted recovery path. Their done/ready labels and test-coverage claims are historical document assertions, not current runtime evidence.
+
+No document instructions were executed. [[Known gaps and document drift]] records the remaining contradictions; [[Verification record]] records only checks performed for this vault refresh.

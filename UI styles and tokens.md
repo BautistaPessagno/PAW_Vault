@@ -5,14 +5,14 @@ type: "guide"
 module: "webapp"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 sources: ["webapp/src/main/webapp/css/tokens.css", "webapp/src/main/webapp/css/components.css", "webapp/src/main/webapp/css/style.css"]
 ---
 
 # UI styles and tokens
 
-The committed product JSPs load tokens.css, then components.css, then style.css. All three files were rechecked against the current UI merge.
+The committed product JSPs load tokens.css, then components.css, then style.css. All three files were rechecked at ff96f27. style.css now adds a muted .hint class for the optional cover guidance.
 
 ## Responsibility and cascade
 
@@ -26,7 +26,7 @@ Tokens map --room-* colors to semantic --color-* variables. Dark mode changes th
 
 The post grid uses four columns, three at <=1024px and two at <=600px. Compact vinyl cards become one-column on small screens. Buttons/cards have hover motion; prefers-reduced-motion removes their transitions. Input transitions remain enabled. There is no JavaScript theme switcher.
 
-The legacy create JSP still loads only style.css, which now depends on tokens.css variables. It does not receive the product pages' full CSS imports. Record that as a consequence of the committed UI refactor, not a verified rendered regression.
+The legacy create JSP is removed. All remaining product views import the three shared style files.
 
 ## tokens.css
 
@@ -381,7 +381,7 @@ The legacy create JSP still loads only style.css, which now depends on tokens.cs
 
 ## style.css
 
-[webapp/src/main/webapp/css/style.css, lines 1–113](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/style.css>)
+[webapp/src/main/webapp/css/style.css, lines 1–119](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/style.css>)
 
 ```css
 html {
@@ -443,6 +443,12 @@ body {
 
 .page-shell > .vinyl-card--compact {
     max-width: 40rem;
+}
+
+.hint {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    margin: 0;
 }
 
 .form-stack {

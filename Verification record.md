@@ -5,11 +5,42 @@ type: guide
 module: vault
 project: quieroVinilos
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: verified-static
 ---
 
 # Verification record
+
+## Refresh through ff96f27, 2026-09-09
+
+Target and local source HEAD are `ff96f275ae009bad4534751b7a4857cf45aea7ac`. The source working tree is clean. The comparison with 041ce34 contains 71 changed/added/deleted paths across image upload, async mail, schema, tests, packaging/logging and scaffold cleanup. The initial read used a temporary Git archive while the checkout still pointed to 041ce34; the final checks use the user's updated checkout at ff96f27.
+
+| Check | Result |
+|---|---|
+| Canonical root Markdown | 92 notes; eleven new notes for image code/tests and the cover flow |
+| Current source coverage | All 196 tracked paths mapped; all 54 current Java files have a dedicated note |
+| Current exact excerpts | 86 match source-line ranges in the target checkout |
+| Historical exact excerpts | Five removed Java excerpts match pinned Git objects at 041ce34 |
+| Source metadata/links | Referenced current sources exist; all 310 local source-link targets exist |
+| Java checkout identity | All 54 current Java files byte-match their target Git objects |
+| Categories | Every note has a valid category list in Obsidian metadata |
+| Bases | All 12 query successfully through Obsidian CLI using vault=PAW_Vault |
+| All notes / Inbox | 91 non-template categorized notes / zero uncategorized notes |
+| Internal links | No unresolved links reported by Obsidian |
+| Reading view | Cover image flow renders in preview mode with current metadata, storage decisions, limits and retrieval text |
+| Repository checker | python3 tools/paw_checks.py all returns i18n OK and jsp OK; main checker no longer has Flyway |
+| Agent entry point | CLAUDE.md remains a relative symlink to AGENTS.md |
+| Source application preservation | No source edits by this task; source git status is clean |
+
+Code references and reverse references were rechecked against current Java sources. Removed code and routes are categorized as History; their older excerpts do not claim to be current implementation. Documentation conflicts are recorded in [[Known gaps and document drift]], including old SMTP recovery requirements and README startup/configuration claims.
+
+No Maven tests/build, JSP compilation, application server, PostgreSQL mutation or actual SMTP delivery was run. The checks above verify documentation and static source consistency. They do not establish deployed behavior, async saturation, image decoding or schema-upgrade safety.
+
+[[Home]] · [[Source inventory]] · [[Testing and evidence]] · [[Cover image flow]]
+
+## Earlier verification records
+
+The sections below are historical records. Their earlier counts, source states and checker names do not describe this refresh.
 
 ## Current refresh, 2026-09-09
 

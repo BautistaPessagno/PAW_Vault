@@ -5,36 +5,35 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "services"]
+sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # Transactions and concurrency
 
-[[WebConfig]] enables Spring transaction interception and provides DataSourceTransactionManager. A transaction belongs to the database connection used by cooperating JdbcTemplate calls. A RuntimeException escaping a transactional service causes rollback under the default Spring rules.
+[[WebConfig]] enables transaction proxies and a DataSourceTransactionManager. Cooperating JdbcTemplate calls use the same transaction connection. Runtime exceptions leaving transactional services trigger rollback under the declared defaults.
 
-| Method | Declared transaction | Consequence |
+| Method | Declared transaction | Effect |
 |---|---|---|
-| [[PostServiceImpl]].publish | Read/write | User, Artist, Album and Post changes share one transaction |
-| PostServiceImpl.getFeatured/findById | Read-only | Bounded read operation |
-| PostServiceImpl.notifyInterest | None | Lookup completes without a service transaction held during SMTP |
-| [[UserServiceImpl]].create/findOrCreate | Read/write | Joins outer publish transaction or starts its own |
-| UserServiceImpl.findById | Read-only | User lookup boundary |
-| [[ArtistServiceImpl]].findOrCreate | Read/write | Joins publish when invoked there |
-| [[AlbumServiceImpl]].findOrCreate | Read/write | Joins publish when invoked there |
-| AlbumServiceImpl.getFeatured | None | Actual code differs from the general read-only guidance |
+| [[PostServiceImpl]].publish | Read/write | User, Artist, optional Image, Album and Post share one transaction |
+| PostServiceImpl.getFeatured/findById | Read-only | Summary reads |
+| PostServiceImpl.notifyInterest | None | Reads one summary and delegates asynchronous email |
+| [[UserServiceImpl]].findOrCreate | Read/write | Private create helper participates in this transaction |
+| UserServiceImpl.findById | Read-only | Publisher lookup |
+| [[ArtistServiceImpl]].findOrCreate | Read/write | Joins outer publish transaction |
+| [[AlbumServiceImpl]].findOrCreate | Read/write | Existing album skips cover creation; new album can store cover |
+| [[ImageServiceImpl]].create/findById | Read/write / read-only | Image bytes inserted/read through ImageDao |
 
-UserServiceImpl's call from findOrCreate to its own create does not cross a Spring proxy. It remains transactional because findOrCreate already has a transaction. Mockito tests construct services directly, so annotations are inactive in those tests.
+AlbumService.getFeatured and public UserService.create have been removed. Same-instance calls to the private create helper do not cross a proxy; the outer findOrCreate transaction already exists. Mockito service construction activates neither transactions nor async dispatch.
 
-## Why the database constraint is necessary
+## Concurrent identities
 
-Two requests can both read “missing” before either writes. A preliminary existence query therefore cannot prevent duplicates. The unique indexes on normalized identities and the Post pair determine which insert succeeds. [[PostJdbcDao]] translates duplicate-key insert errors, and [[PostServiceImpl]] translates them again into controller-facing exceptions.
+SELECT then INSERT is not atomic. Unique constraints arbitrate User email, Artist name, Album artist/title/year and Post user/album. PostJdbcDao translates duplicate inserts and PostServiceImpl translates that marker to a field-level business error. Other DataIntegrityViolationException values receive the broad ConcurrentPublishException message, without inspecting the violated constraint or retrying.
 
-The other integrity-error catch in publish is intentionally broad. It reports a concurrent-publish message even if some different integrity problem occurred. The code does not retry internally, inspect the violated constraint or re-query after an aborted PostgreSQL transaction. A manual retry may succeed after a racing request commits, but the name alone is not proof of that situation.
+A newly stored image rolls back if album/post creation later fails through the proxied publish transaction. Looking up an album before image creation avoids storing an unused image on the ordinary reuse path. This is source-derived transaction behavior; no concurrent PostgreSQL experiment was run.
 
-## Mail and commit are separate
+## Mail is outside the commit guarantee
 
-A new User triggers [[EmailServiceImpl]].sendWelcomeEmail through an async proxy before the outer transaction commits. Database rollback cannot undo that mail. There is no after-commit event, outbox table or transactional message broker. A welcome may therefore describe a user whose publication later failed. Contact sending avoids a long database transaction but still occupies the request while waiting for SMTP.
-
-No live concurrency test or transaction rollback experiment was run for this documentation. [[Testing and evidence]] distinguishes mock assertions from database guarantees.
+New-user welcome dispatch occurs before publish commit. A later database rollback cannot undo that email. There is no after-commit event or outbox. Contact mail also uses @Async and has no request-scoped delivery result. The bounded executor falls back to CallerRunsPolicy when saturated, so mail may still occupy the caller in that condition. [[Mail delivery]] describes the pool and failure handling.

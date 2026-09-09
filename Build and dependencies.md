@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "operations"]
 sources: ["pom.xml", "models/pom.xml", "persistence/pom.xml", "persistence-contracts/pom.xml", "services/pom.xml", "services-contracts/pom.xml", "webapp/pom.xml", "models/.mvn/jvm.config", "models/.mvn/maven.config", "persistence-contracts/.mvn/jvm.config", "persistence-contracts/.mvn/maven.config", "persistence/.mvn/jvm.config", "persistence/.mvn/maven.config", "services-contracts/.mvn/jvm.config", "services-contracts/.mvn/maven.config", "services/.mvn/jvm.config", "services/.mvn/maven.config", "webapp/.mvn/jvm.config", "webapp/.mvn/maven.config"]
@@ -15,7 +15,7 @@ sources: ["pom.xml", "models/pom.xml", "persistence/pom.xml", "persistence-contr
 
 The root POM aggregates six modules under ar.edu.itba.paw:paw2026b:1.0-SNAPSHOT. Its dependencyManagement fixes external library versions. Child POMs still explicitly declare sibling versions and runtime scopes; the stronger centralization claim in docs/setup.md is not what these files implement.
 
-`models`, both contracts modules, persistence and services are JARs. webapp is a WAR with finalName webapp. The compiler source/target is 21. The servlet API is provided by the container. Hibernate Validator implements Bean Validation here; its presence does not imply Hibernate ORM or JPA.
+`models`, both contracts modules, persistence and services are JARs. webapp is a WAR with finalName app. The compiler source/target is 21. The servlet API is provided by the container. Hibernate Validator implements Bean Validation here; its presence does not imply Hibernate ORM or JPA.
 
 ## Pinned versions in this snapshot
 
@@ -37,6 +37,7 @@ The root POM aggregates six modules under ar.edu.itba.paw:paw2026b:1.0-SNAPSHOT.
 | `logback.version` | `1.2.13` |
 | `javax.mail.version` | `1.6.2` |
 | `thymeleaf.version` | `3.0.15.RELEASE` |
+| `commons-fileupload.version` | `1.5` |
 
 ## Direct dependencies by module
 
@@ -117,13 +118,16 @@ Compile is the default when no scope is declared. For external dependencies with
 | `spring-context-support` | default / inherited |
 | `javax.mail` | default / inherited |
 | `thymeleaf-spring5` | default / inherited |
+| `commons-fileupload` | default / inherited |
 
 [Exact POM](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/pom.xml>)
 
 ## Build lifecycle
 
-Run Maven from the source repository root. `mvn clean install` builds the reactor, runs tests and installs sibling SNAPSHOTs. This matters before `mvn -pl webapp jetty:run`, which runs only webapp and resolves siblings from installed artifacts. `mvn clean package` produces `webapp/target/webapp.war` without installing it.
+Run Maven from the source repository root. `mvn clean install` builds the reactor, runs tests and installs sibling SNAPSHOTs. This matters before `mvn -pl webapp jetty:run`, which runs only webapp and resolves siblings from installed artifacts. `mvn clean package` produces `webapp/target/app.war` without installing it.
 
 The inherited Jetty plugin is 9.4.58.v20250814 with scanIntervalSeconds=10, port=8080 and useTestScope=true in its configuration. Child pluginManagement pins compiler 3.13.0 and Surefire 3.3.0, among others. WAR plugin 3.4.0 excludes logback-test.xml from the packaged WAR. The `.mvn/jvm.config` and `.mvn/maven.config` files in each module are empty in this snapshot.
 
 No Maven wrapper, Flyway dependency, Spring Boot starter, Spring Security dependency, JPA persistence unit or frontend package manager is defined. [[Configuration and running]] describes runtime configuration; [[Testing and evidence]] records what was actually checked.
+
+Commons FileUpload 1.5 is managed by the parent and consumed by webapp for the CommonsMultipartResolver. The declared Servlet API 2.5 lacks the native multipart API used by later servlet versions. The WAR name now matches app.war; this change does not establish successful deployment.

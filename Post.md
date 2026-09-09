@@ -5,7 +5,7 @@ type: "code"
 module: "models"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "domain"]
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Post.java"]
@@ -19,9 +19,7 @@ A publication is the pair of a user and an album, plus its own generated ID. `us
 
 Project types referenced: none.
 
-Referenced by: [[EmailServiceImpl]], [[PostDao]], [[PostJdbcDao]], [[PostService]], [[PostServiceImpl]].
-
-Tests: [[PostJdbcDaoTest]], [[PostServiceImplTest]]. See [[Testing and evidence]].
+Referenced by: [[EmailServiceImpl]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]].
 
 ## Stored values
 

@@ -5,77 +5,123 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "flows"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java"]
 ---
 
 # Publish flow
 
-Publishing begins at GET `/publish` and writes through one service transaction on POST `/publish`.
+GET /publish displays five ordinary fields and an optional cover. POST /publish uses multipart/form-data. [[PublishForm]] holds MultipartFile; [[PublishController]] converts it to content type and byte[] before crossing the service boundary.
 
 ```mermaid
 sequenceDiagram
     participant C as PublishController
     participant P as PostServiceImpl
     participant U as UserServiceImpl
-    participant A as ArtistServiceImpl
-    participant AL as AlbumServiceImpl
+    participant A as AlbumServiceImpl
+    participant I as ImageServiceImpl
     participant D as PostJdbcDao
-    C->>C: Bind publishForm and validate
-    C->>P: publish(username,email,title,artist,year,locale)
+    C->>C: Validate fields, read optional cover bytes
+    C->>P: publish(fields, MIME, bytes, locale)
     P->>U: findOrCreate publisher
-    Note over U: New user launches async welcome mail
-    P->>A: findOrCreate normalized artist
-    P->>AL: findOrCreate normalized album
-    P->>D: existsByUserIdAndAlbumId
-    P->>D: create(userId,albumId)
-    D-->>P: Post
-    P-->>C: Commit and return
-    C-->>C: Redirect to /
+    P->>P: Resolve normalized artist
+    P->>A: findOrCreate album and optional cover
+    alt Album is new and bytes are nonempty
+        A->>I: Validate and store image
+        A->>A: Insert album with image ID
+    else Album exists
+        A->>A: Return stored album, ignore uploaded cover
+    end
+    P->>D: Check pair and create Post
+    P-->>C: Commit, then redirect to /
 ```
 
-## Data and ownership at each step
+User, Artist, Image, Album and Post writes participate in one transaction. A new user requests welcome mail before that transaction commits. Database rollback cannot undo an already sent email.
 
-| Step | Input | Output or side effect |
-|---|---|---|
-| [[PublishForm]] binding | Five submitted fields | Validated username, email, title, artist name, Integer year |
-| [[PublishController]] | Valid form + request Locale | Calls [[PostService]] or redisplays field errors |
-| [[UserServiceImpl]] | Username + normalized email | Existing User, or inserted User and asynchronous welcome invocation |
-| [[ArtistServiceImpl]] | Trimmed lowercase name | Existing or inserted Artist |
-| [[AlbumServiceImpl]] | Artist ID, trimmed lowercase title, year | Existing or inserted Album with default cover for new rows |
-| [[PostJdbcDao]] | User ID, Album ID | Duplicate detection and generated Post ID |
-| Controller result | Returned Post | Redirect to landing; returned ID is not used to navigate to detail |
-
-The JDBC implementations do SELECT then INSERT rather than an atomic upsert. All participating service writes join publish's transaction under default REQUIRED propagation. A runtime exception leaving the proxied publish call causes database rollback. Welcome email is a separate asynchronous effect and is not coordinated with commit.
-
-## Branches
-
-| Condition | Observable result |
+| Condition | Result |
 |---|---|
-| Invalid form or year conversion | Same form view with field errors; publish is not called |
-| Existing email | Reuse User; ignore submitted replacement username; no new welcome mail |
-| Existing artist/album | Reuse IDs and preserve the stored album cover |
-| Pair already exists | DuplicatePostException → publisherEmail field error `publish.duplicate` |
-| Post insert loses uniqueness race | DuplicatePostKeyException → same duplicate business error |
-| Other DataIntegrityViolationException inside publish | ConcurrentPublishException → `publish.concurrent`; user can resubmit |
-| Success | Commit database changes and redirect to `/` |
+| Field validation or year conversion fails | Same form with field errors; service is not called |
+| Missing/empty cover | New album uses null coverImageId and placeholder |
+| Existing album | Stored album and cover reused; incoming cover discarded without ImageService validation |
+| Unsupported MIME or nonempty image over 5 MiB for a new album | InvalidImageException, rollback, localized cover error |
+| Whole multipart request exceeds 6 MiB | MaxUploadSizeExceededException handler returns a new empty form and coverTooLarge flag |
+| Duplicate publisher/album | DuplicatePostException mapped to publisherEmail |
+| Other publish data-integrity failure | ConcurrentPublishException mapped to publisherEmail |
+| Success | Commit then redirect to /; no publish success flash |
 
-There is no success flash for publishing. The welcome mail does not contain a post confirmation. No price, uploaded image, inventory record or authenticated owner is involved.
+The resolver is lazy so the selected controller can handle upload-size exceptions. A file greater than 5 MiB may pass the 6 MiB transport limit and receive a field error from ImageService. That field validation is skipped for existing albums. IOException while reading bytes has no dedicated handler here. Browser file controls must be selected again when retrying; a redisplayed form does not restore the upload selection.
+
+A ghost button labeled publish.back returns to / without submitting. See [[Views and assets]] for the exact JSP and [[Cover image flow]] for image retrieval.
 
 ## Business operation
 
-[services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, lines 53–73](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>)
+[services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, lines 1–90](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>)
 
 ```java
+package ar.edu.itba.paw.services;
+
+import ar.edu.itba.paw.models.Album;
+import ar.edu.itba.paw.models.Artist;
+import ar.edu.itba.paw.models.Post;
+import ar.edu.itba.paw.models.PostSummary;
+import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.persistence.DuplicatePostKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
+import ar.edu.itba.paw.persistence.PostDao;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+@Service
+public class PostServiceImpl implements PostService {
+
+    private static final int FEATURED_LIMIT = 8;
+
+    private final PostDao postDao;
+    private final UserService userService;
+    private final ArtistService artistService;
+    private final AlbumService albumService;
+    private final EmailService emailService;
+
+    @Autowired
+    public PostServiceImpl(final PostDao postDao, final UserService userService,
+                           final ArtistService artistService, final AlbumService albumService,
+                           final EmailService emailService) {
+        this.postDao = postDao;
+        this.userService = userService;
+        this.artistService = artistService;
+        this.albumService = albumService;
+        this.emailService = emailService;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostSummary> getFeatured() {
+        return postDao.findFeatured(FEATURED_LIMIT);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<PostSummary> findById(final long postId) {
+        return postDao.findById(postId);
+    }
+
     @Override
     @Transactional
     public Post publish(final String username, final String publisherEmail, final String title,
-                        final String artistName, final int releaseYear, final Locale locale) {
+                        final String artistName, final int releaseYear, final String coverContentType,
+                        final byte[] coverData, final Locale locale) {
         try {
             final User publisher = userService.findOrCreate(username, publisherEmail, locale);
             final Artist artist = artistService.findOrCreate(artistName);
-            final Album album = albumService.findOrCreate(title, artist.getId(), releaseYear);
+            final Album album = albumService.findOrCreate(title, artist.getId(), releaseYear,
+                    coverContentType, coverData);
             if (postDao.existsByUserIdAndAlbumId(publisher.getId(), album.getId())) {
                 throw new DuplicatePostException();
             }
@@ -89,10 +135,21 @@ There is no success flash for publishing. The welcome mail does not contain a po
             throw new ConcurrentPublishException();
         }
     }
+
+    // Sin @Transactional a proposito: solo lee el post y delega el envio, que ademas es @Async.
+    // No hay razon para abrir una transaccion para una sola lectura.
+    @Override
+    public void notifyInterest(final long postId, final String contactName, final String contactEmail,
+                               final Locale locale) {
+        final PostSummary post = postDao.findById(postId).orElseThrow(PostNotFoundException::new);
+        final PostInterestNotification notification = new PostInterestNotification(
+                post.getId(), post.getPublisherEmail(), contactName.trim(),
+                contactEmail.trim().toLowerCase(Locale.ROOT), post.getTitle(), post.getArtistName(),
+                post.getReleaseYear());
+
+        emailService.sendPostInterestEmail(notification, locale);
+    }
+}
 ```
 
-[[Transactions and concurrency]] · [[Validation and errors]] · [[UserServiceImplTest]] · [[PostServiceImplTest]]
-
-## UI integration at the current commit
-
-The JSP retains form:form with modelAttribute=publishForm. ui:text-input receives relative paths for its five fields and renders all binding errors. A ghost button labeled by publish.back returns to / without submitting. The controller, service transaction and redirect behavior are unchanged. Exact JSP and tag excerpts are in [[Views and assets]] and [[UI components]].
+[[Transactions and concurrency]] · [[Validation and errors]]

@@ -5,7 +5,7 @@ type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "services"]
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java"]
@@ -13,19 +13,17 @@ sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/UserService
 
 # UserService
 
-Exposes lookup by ID, explicit user creation, and publisher reuse-or-creation. Creation methods take a Locale because a new user triggers [[EmailService]] welcome mail. [[HelloWorldController]] uses create and findById; [[PostServiceImpl]] uses findOrCreate. No authentication is part of this contract.
+Publisher lookup and findOrCreate contract. The public create method was removed with the inherited UI. [[UserServiceImpl]] creates a user privately when a normalized email is new. User rows remain part of publishing; there is still no authentication.
 
 ## Connections
 
 Project types referenced: [[User]].
 
-Referenced by: [[HelloWorldController]], [[PostServiceImpl]], [[UserServiceImpl]].
-
-Tests: [[PostServiceImplTest]]. See [[Testing and evidence]].
+Referenced by: [[PostServiceImpl]], [[PostServiceImplTest]], [[UserServiceImpl]].
 
 ## Exact source
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java, lines 1–14](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java>)
+[services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java, lines 1–12](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -38,12 +36,10 @@ import java.util.Optional;
 public interface UserService {
     Optional<User> findById(long id);
 
-    User create(String username, String email, Locale locale);
-
     User findOrCreate(String username, String email, Locale locale);
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

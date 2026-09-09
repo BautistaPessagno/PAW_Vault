@@ -5,7 +5,7 @@ type: "test"
 module: "services"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "testing"]
 sources: ["services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java"]
@@ -13,26 +13,33 @@ sources: ["services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.
 
 # EmailServiceImplTest
 
-Constructs a real EmailServiceImpl and Thymeleaf engine with a StaticMessageSource and a capturing fake JavaMailSender. It checks recipient, Reply-To, subject, HTML content, propagated contact failure and swallowed welcome failure. Direct construction bypasses Spring async proxies, so these tests do not prove background scheduling.
+Six tests use real Thymeleaf templates, StaticMessageSource and a capturing fake sender. They assert interest addresses/body, English copy, the absolute home CTA URL, interest failure swallowing, welcome content and welcome failure swallowing. The service is constructed directly, so these do not test @Async dispatch, pool saturation or actual SMTP.
 
-Production connections: [[EmailDeliveryException]], [[EmailServiceImpl]], [[PostInterestNotification]], [[User]].
-
-## Test cases
+## Test methods
 
 - `testSendPostInterestEmailWhenDeliverySucceedsBuildsExpectedMessage`
-- `testSendPostInterestEmailWhenDeliveryFailsThrowsEmailDeliveryException`
+- `testSendPostInterestEmailWhenLocaleIsEnglishUsesEnglishCopy`
+- `testSendPostInterestEmailWhenDeliverySucceedsIncludesCallToActionUrl`
+- `testSendPostInterestEmailWhenDeliveryFailsDoesNotPropagateFailure`
 - `testSendWelcomeEmailWhenDeliverySucceedsBuildsExpectedMessage`
 - `testSendWelcomeEmailWhenDeliveryFailsDoesNotPropagateFailure`
 
-## Exact test source
+These are source assertions, not a fresh passing test run.
 
-[services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java, lines 1–164](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>)
+## Connections
+
+Project types referenced: [[Album]], [[EmailServiceImpl]], [[PostInterestNotification]], [[User]].
+
+Referenced by: no direct project type reference; implementations may be injected through interfaces.
+
+## Exact source
+
+[services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java, lines 1–203](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>)
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.User;
-import ar.edu.itba.paw.services.exceptions.EmailDeliveryException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +65,9 @@ public class EmailServiceImplTest {
     private static final String FROM_EMAIL = "app@example.com";
     private static final String PUBLISHER_EMAIL = "publisher@example.com";
     private static final String CONTACT_EMAIL = "buyer@example.com";
+    private static final String BASE_URL = "http://pawserver.it.itba.edu.ar/paw-2026b-14";
     private static final Locale SPANISH = Locale.forLanguageTag("es");
+    private static final Locale ENGLISH = Locale.forLanguageTag("en");
 
     private CapturingMailSender mailSender;
     private EmailServiceImpl emailService;
@@ -66,7 +75,7 @@ public class EmailServiceImplTest {
     @BeforeEach
     public void setUp() {
         mailSender = new CapturingMailSender();
-        emailService = new EmailServiceImpl(mailSender, templateEngine(), messageSource(), FROM_EMAIL);
+        emailService = new EmailServiceImpl(mailSender, templateEngine(), messageSource(), FROM_EMAIL, BASE_URL);
     }
 
     @Test
@@ -77,7 +86,7 @@ public class EmailServiceImplTest {
                 42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
 
         // 2. Exercise
-        emailService.sendPostInterestEmail(notification);
+        emailService.sendPostInterestEmail(notification, SPANISH);
 
         // 3. Assert
         final MimeMessage message = mailSender.getLastMessage();
@@ -95,19 +104,48 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendPostInterestEmailWhenDeliveryFailsThrowsEmailDeliveryException() {
+    public void testSendPostInterestEmailWhenLocaleIsEnglishUsesEnglishCopy()
+            throws MessagingException, IOException {
+        // 1. Arrange
+        final PostInterestNotification notification = new PostInterestNotification(
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
+
+        // 2. Exercise
+        emailService.sendPostInterestEmail(notification, ENGLISH);
+
+        // 3. Assert
+        final MimeMessage message = mailSender.getLastMessage();
+        Assertions.assertEquals("Someone is interested in Artaud", message.getSubject());
+        Assertions.assertTrue(message.getContent().toString().contains("Go to quieroVinilos"));
+    }
+
+    @Test
+    public void testSendPostInterestEmailWhenDeliverySucceedsIncludesCallToActionUrl()
+            throws MessagingException, IOException {
+        // 1. Arrange
+        final PostInterestNotification notification = new PostInterestNotification(
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
+
+        // 2. Exercise
+        emailService.sendPostInterestEmail(notification, SPANISH);
+
+        // 3. Assert
+        final String body = mailSender.getLastMessage().getContent().toString();
+        Assertions.assertTrue(body.contains("href=\"" + BASE_URL + "/\""));
+    }
+
+    @Test
+    public void testSendPostInterestEmailWhenDeliveryFailsDoesNotPropagateFailure() {
         // 1. Arrange
         mailSender.failNextDelivery();
         final PostInterestNotification notification = new PostInterestNotification(
                 42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
 
         // 2. Exercise
-        final EmailDeliveryException exception = Assertions.assertThrows(
-                EmailDeliveryException.class, () -> emailService.sendPostInterestEmail(notification));
+        Assertions.assertDoesNotThrow(() -> emailService.sendPostInterestEmail(notification, SPANISH));
 
         // 3. Assert
-        Assertions.assertInstanceOf(MailSendException.class, exception.getCause());
-        Assertions.assertTrue(exception.getMessage().contains("postId=42"));
+        Assertions.assertNull(mailSender.getLastMessage());
     }
 
     @Test
@@ -157,11 +195,20 @@ public class EmailServiceImplTest {
         final StaticMessageSource source = new StaticMessageSource();
         source.addMessage("email.welcome.subject", SPANISH, "Bienvenido a quieroVinilos");
         source.addMessage("email.welcome.body", SPANISH, "Hola {0}, gracias por registrarte.");
+        source.addMessage("email.welcome.cta", SPANISH, "Ver quieroVinilos");
         source.addMessage("email.postInterest.subject", SPANISH, "Alguien está interesado en {0}");
         source.addMessage("email.postInterest.heading", SPANISH, "Hay interés en tu publicación");
         source.addMessage("email.postInterest.intro", SPANISH, "{0} está interesado en tu publicación.");
         source.addMessage("email.postInterest.contact", SPANISH, "Contacto:");
         source.addMessage("email.postInterest.album", SPANISH, "Álbum:");
+        source.addMessage("email.postInterest.cta", SPANISH, "Ver quieroVinilos");
+
+        source.addMessage("email.postInterest.subject", ENGLISH, "Someone is interested in {0}");
+        source.addMessage("email.postInterest.heading", ENGLISH, "Someone is interested in your post");
+        source.addMessage("email.postInterest.intro", ENGLISH, "{0} is interested in your post.");
+        source.addMessage("email.postInterest.contact", ENGLISH, "Contact:");
+        source.addMessage("email.postInterest.album", ENGLISH, "Album:");
+        source.addMessage("email.postInterest.cta", ENGLISH, "Go to quieroVinilos");
         return source;
     }
 
@@ -195,4 +242,6 @@ public class EmailServiceImplTest {
 }
 ```
 
-[[Testing and evidence]] · [[Source inventory]]
+## Context
+
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

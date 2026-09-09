@@ -5,38 +5,39 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "services"]
-sources: ["services/src/main/resources/mail/welcome.html", "services/src/main/resources/mail/post-interest.html"]
+sources: ["services/src/main/resources/mail/welcome.html", "services/src/main/resources/mail/post-interest.html", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # Mail delivery
 
-The application has two delivery policies implemented in [[EmailServiceImpl]]. Both use JavaMailSender, MimeMessageHelper and a Thymeleaf HTML template loaded by [[WebConfig]].
+Both mail operations in [[EmailServiceImpl]] use @Async, JavaMailSender, MimeMessageHelper and Thymeleaf HTML. Both receive the request Locale explicitly and log/catch rendering or sending failures.
 
 | Property | Welcome | Post interest |
 |---|---|---|
-| Trigger | A new User is created | A visitor submits a valid contact form |
-| Execution | @Async through Spring proxy | Synchronous request call |
-| Locale | Request Locale passed by caller | Always Spanish |
-| To | User email | Publisher email from PostSummary |
+| Trigger | New publisher user | Valid contact submission |
+| To | User email | Publisher address resolved from PostSummary |
 | From | app.mail.from | app.mail.from |
 | Reply-To | Not explicitly set | Contact email |
-| Failure | Log and swallow in method body | Log and throw EmailDeliveryException |
-| UI effect | No delivery status | 503 retry form or success redirect |
+| Locale | Caller Locale | Caller Locale |
+| Link | app.base-url + / | app.base-url + / |
+| Failure | Log and swallow | Log and swallow |
 
-`createMessage` uses UTF-8 and `setText(body, true)` to mark HTML. Thymeleaf th:text escapes inserted text. The contact template contains a mailto link and the buyer's contact details. No attachments, arbitrary visitor-written message, CC, BCC or copy to the interested visitor is implemented.
+## Execution and feedback
 
-The mail sender config maps connection-timeout-ms to JavaMail connectiontimeout, read-timeout-ms to timeout, and write-timeout-ms to writetimeout. Examples use 5000/10000/10000 milliseconds. These are separate operation timeouts, not a proven fixed upper bound for the whole request.
+[[WebConfig]] provides taskExecutor with core pool 2, maximum 5, queue capacity 50 and mail- thread prefix. CallerRunsPolicy runs rejected work in the caller under saturation rather than discarding it in that condition. Normal delivery runs in a worker, but the request can still wait for mail when this fallback applies.
 
-No durable queue, outbox, mail audit table or deduplication exists. SMTP acceptance is not final delivery confirmation. Welcome dispatch is not tied to transaction commit. The @Async body catches failures during rendering/sending; this does not prove that every possible failure to submit an async task is swallowed.
+The contact controller immediately redirects after a normal service return with contactSent=true. This is not SMTP delivery confirmation. The old 503 retry view and EmailDeliveryException have been removed. Failures inside the async method do not propagate back to that form. Failures before entering the method are not proven covered by its catch.
 
-## Templates
+app.base-url is a required configuration value for absolute home links outside request context. The constructor removes one trailing slash. UTF-8 HTML messages and th:text escape supplied text; interest email includes a mailto link, name, email and album details. No attachment, visitor-written body, CC, BCC or copy to the visitor is implemented.
 
-### welcome.html
+The SMTP example specifies 5000 ms connection and 10000 ms read/write timeouts. These are individual operation limits rather than a proven end-to-end duration. There is no durable queue, retry history or outbox, and welcome dispatch can precede a later database rollback.
 
-[services/src/main/resources/mail/welcome.html, lines 1–18](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/welcome.html>)
+## Welcome template
+
+[services/src/main/resources/mail/welcome.html, lines 1–21](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/welcome.html>)
 
 ```html
 <!DOCTYPE html>
@@ -50,8 +51,11 @@ No durable queue, outbox, mail audit table or deduplication exists. SMTP accepta
     <tr>
         <td style="padding: 32px;">
             <h1 style="margin: 0 0 16px; font-size: 20px;" th:text="#{email.welcome.subject}">Bienvenido a quieroVinilos</h1>
-            <p style="margin: 0; font-size: 15px; line-height: 1.5;"
+            <p style="margin: 0 0 28px; font-size: 15px; line-height: 1.5;"
                th:text="#{email.welcome.body(${username})}">Gracias por registrarte.</p>
+            <a th:href="${homeUrl}" href="#"
+               style="display: inline-block; padding: 12px 24px; background-color: #1f2933; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px;"
+               th:text="#{email.welcome.cta}">Ver quieroVinilos</a>
         </td>
     </tr>
 </table>
@@ -59,13 +63,13 @@ No durable queue, outbox, mail audit table or deduplication exists. SMTP accepta
 </html>
 ```
 
-### post-interest.html
+## Interest template
 
-[services/src/main/resources/mail/post-interest.html, lines 1–29](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/post-interest.html>)
+[services/src/main/resources/mail/post-interest.html, lines 1–32](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/post-interest.html>)
 
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="es">
 <head>
     <meta charset="UTF-8"/>
     <title th:text="#{email.postInterest.heading}">Interés en tu publicación</title>
@@ -82,12 +86,15 @@ No durable queue, outbox, mail audit table or deduplication exists. SMTP accepta
                 <span th:text="${contactName}">Nombre</span>
                 &lt;<a th:href="|mailto:${contactEmail}|" th:text="${contactEmail}">contacto@example.com</a>&gt;
             </p>
-            <p style="margin: 0; font-size: 15px;">
+            <p style="margin: 0 0 28px; font-size: 15px;">
                 <strong th:text="#{email.postInterest.album}">Álbum:</strong>
                 <span th:text="${albumTitle}">Álbum</span> —
                 <span th:text="${artistName}">Artista</span>
                 (<span th:text="${releaseYear}">2026</span>)
             </p>
+            <a th:href="${homeUrl}" href="#"
+               style="display: inline-block; padding: 12px 24px; background-color: #1f2933; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px;"
+               th:text="#{email.postInterest.cta}">Ver quieroVinilos</a>
         </td>
     </tr>
 </table>
@@ -95,5 +102,4 @@ No durable queue, outbox, mail audit table or deduplication exists. SMTP accepta
 </html>
 ```
 
-
-[[Contact flow]] · [[Transactions and concurrency]] · [[EmailServiceImplTest]]
+[[Contact flow]] · [[EmailServiceImplTest]] · [[Configuration and running]]

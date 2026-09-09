@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "architecture"]
 ---
@@ -41,12 +41,12 @@ Solid arrows are project compile dependencies; dashed arrows are runtime depende
 ## What crosses each boundary
 
 1. HTTP request fields become mutable form objects through Spring binding.
-2. Controllers pass primitive/string form values to service interfaces. They do not pass HttpServletRequest or BindingResult into business logic.
+2. Controllers pass primitive/string form values plus optional cover byte[] and content type to service interfaces. They do not pass HttpServletRequest or BindingResult into business logic.
 3. Services resolve identities and call DAO interfaces with normalized values.
 4. DAOs bind SQL parameters and turn aliased columns into models using RowMapper.
 5. Services return models or raise business exceptions.
 6. Controllers add models to ModelAndView or translate errors; JSPs read JavaBean getters through expression language.
 
-[[PostSummary]] avoids loading user, album and artist separately for each landing card. [[AlbumSummary]] remains available for catalog reads, although the landing now reads posts.
+[[PostSummary]] avoids loading user, album and artist separately for each landing card. The former [[AlbumSummary]] catalog projection and album-listing APIs are removed. [[Image]] carries image bytes across the DAO/service boundary and [[ImageController]] returns them directly as an HTTP response.
 
-Start the concrete traces at [[Landing flow]], then [[Publish flow]] and [[Contact flow]]. The inherited user route is separate in [[Legacy user flow]].
+Start the concrete traces at [[Landing flow]], then [[Publish flow]] and [[Contact flow]]. [[Cover image flow]] traces upload and image responses. [[Legacy user flow]] describes routes removed from the current implementation.

@@ -5,39 +5,34 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "testing"]
+sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java", "services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/ImageServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java"]
 ---
 
 # Testing and evidence
 
-Tests live in persistence and services. There are four DAO suites, five service suites and a shared persistence TestConfiguration. Each suite has its own linked note with exact source and test method names.
+The source contains five persistence DAO suites, six service suites and one shared TestConfiguration. Each has a linked source note. This refresh inspects their assertions; it does not report a new Maven run.
 
-## Persistence suites
+| Area | Source evidence |
+|---|---|
+| [[ImageJdbcDaoTest]] | Binary read, missing ID and insert |
+| [[AlbumJdbcDaoTest]] | Identity lookup, uniqueness, different year and nullable image reference |
+| [[PostJdbcDaoTest]] | Summary image-ID mapping, lookup, duplicate pair and second publisher |
+| [[ArtistJdbcDaoTest]], [[UserJdbcDaoTest]] | Existing identity and insertion/lookup paths |
+| [[ImageServiceImplTest]] | Wrong MIME, empty/oversize bytes and valid labeled bytes |
+| [[AlbumServiceImplTest]] | Existing cover retained; new album with provided/null/empty cover |
+| [[PostServiceImplTest]] | Duplicate branches, catalog reuse and contact lookup paths with Locale |
+| [[EmailServiceImplTest]] | Addresses/body, English copy, absolute CTA, and swallowed welcome/contact failures |
+| [[UserServiceImplTest]], [[ArtistServiceImplTest]] | Identity normalization and reuse |
 
-- [[ArtistJdbcDaoTest]] checks reuse and insertion.
-- [[AlbumJdbcDaoTest]] checks projection mapping, unchanged cover on reuse and distinct release year.
-- [[PostJdbcDaoTest]] checks summary mapping, missing lookup, existence, duplicate protection and a second publisher insert.
-- [[UserJdbcDaoTest]] checks ID lookup, missing lookup and normalized email reuse/insertion.
-- [[TestConfiguration]] wires HSQLDB and the fixture scripts.
+Persistence tests use fresh HSQLDB schemas, Spring injection and rollback. They do not execute PostgreSQL’s production ALTER/UPDATE statements. Service tests use direct objects with mocks or a capturing sender, so transaction and @Async proxies are inactive. Email tests render real templates but use a StaticMessageSource and fake SMTP sender.
 
-## Service suites
+## What remains unverified
 
-- [[ArtistServiceImplTest]] checks normalized artist resolution.
-- [[AlbumServiceImplTest]] checks normalized title and default-cover input while preserving returned stored cover.
-- [[UserServiceImplTest]] checks normalized creation and existing/new user paths.
-- [[PostServiceImplTest]] checks duplicate branches, reuse, missing contact and delivery exception propagation.
-- [[EmailServiceImplTest]] uses actual templates and a capturing mail sender to inspect messages and failure policy.
+There are no webapp tests for multipart binding, oversized requests, file-input retry behavior, cover Content-Type/cache/404, JSP compilation, contact redirects or locale propagation through a real async proxy. There is no pool-saturation, durable delivery or actual PostgreSQL concurrency test. No test demonstrates a real upload can be decoded; ImageService checks MIME labels and byte size only.
 
-Persistence tests run HSQLDB with PostgreSQL syntax compatibility, Spring injection and rollback. They use a different schema resource from production. Service tests use direct instances with Mockito or a fake sender, so @Transactional and @Async are not active.
+The normal contact service test asserts no exception rather than the normalized notification payload. No ConcurrentPublishException test exists. The second-publisher DAO test inserts user ID 2 without a corresponding users row, matching the lack of foreign-key enforcement in that test schema.
 
-## What is not established
-
-No webapp test suite exists. There is no automated controller check for 503 status and retained form values, 404 routing, JSP compilation, binding errors or redirect flash behavior. The real PostgreSQL publish transaction, identity races and startup on legacy schemas are not covered by mock-based service tests. The second-publisher DAO test uses an absent user ID, illustrating the missing foreign-key enforcement. The successful interest test asserts no exception, not the actual normalized payload. No ConcurrentPublishException test is present.
-
-## Verification for this documentation
-
-The codemap was checked against source and static reference inventories. Repository deterministic checks and vault validation results are recorded in [[Verification record]]. No Maven build, live database mutation, server launch or real SMTP delivery was required or performed for this documentation-only change. Test source presence and prior issue claims are not presented as a fresh passing test run.
-
-To run project tests separately, the source repository documents `mvn test`. Module-specific runs need sibling dependencies available; the full reactor avoids stale installed sibling artifacts. [[Development tools]] describes the deterministic checks and their limits.
+[[Verification record]] records vault/source checks and the actual static checker results. No server, database mutation, SMTP call, Maven build or test run was performed in this refresh.

@@ -5,7 +5,7 @@ type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "persistence"]
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/UserDao.java"]
@@ -19,9 +19,7 @@ The users persistence contract. `findById` and `findByEmail` return Optional; `c
 
 Project types referenced: [[User]].
 
-Referenced by: [[UserJdbcDao]], [[UserServiceImpl]].
-
-Tests: [[UserJdbcDaoTest]], [[UserServiceImplTest]]. See [[Testing and evidence]].
+Referenced by: [[UserJdbcDao]], [[UserJdbcDaoTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
 
 ## Exact source
 

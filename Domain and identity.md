@@ -5,57 +5,48 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "domain"]
-sources: ["CONTEXT.md"]
+sources: ["CONTEXT.md", "models/src/main/java/ar/edu/itba/paw/models/Album.java", "models/src/main/java/ar/edu/itba/paw/models/Image.java", "models/src/main/java/ar/edu/itba/paw/models/PostSummary.java"]
 ---
 
 # Domain and identity
 
-The business separates the catalog from publications. [[Artist]] identifies a performer, [[Album]] identifies a catalog work, and [[Post]] records that a publisher offers that album. Two publishers can create two Posts for one Album. A different release year makes a different Album even when title and artist match.
+The catalog and publications have separate identities. [[Artist]] names a performer, [[Album]] identifies a work by artist/title/year, [[Image]] stores optional cover bytes, and [[Post]] connects a publisher [[User]] to an album. Two publishers can offer the same album without duplicating it.
 
 ```mermaid
 erDiagram
     USERS ||--o{ POSTS : publishes
     ARTISTS ||--o{ ALBUMS : performs
     ALBUMS ||--o{ POSTS : appears_in
-    USERS {
-        int id PK
-        string username
-        string email UK
-    }
-    ARTISTS {
-        int id PK
-        string name UK
-    }
+    IMAGES o|--o{ ALBUMS : covers
     ALBUMS {
         int id PK
         string title
         int artist_id
         int release_year
-        string cover_path
+        int cover_image_id "nullable"
     }
-    POSTS {
+    IMAGES {
         int id PK
-        int user_id
-        int album_id
+        string content_type
+        bytes data
     }
 ```
 
-These are logical relationships. The current startup schema does not declare FOREIGN KEY constraints. Read [[Database schema]] before interpreting the diagram as physical enforcement.
+These are logical links. The startup schema has no foreign keys; the manual bootstrap has stronger constraints. See [[Database schema]].
 
-| Concept | Current identity rule | Where enforced |
-|---|---|---|
-| User/publisher | Normalized email | [[UserServiceImpl]], [[UserJdbcDao]], unique users.email |
-| Artist | Normalized name | [[ArtistServiceImpl]], unique artists.name |
-| Album | Artist ID + normalized title + release year | [[AlbumServiceImpl]], composite unique constraint |
-| Post | User ID + Album ID | [[PostServiceImpl]], composite unique constraint |
+| Identity | Resolution |
+|---|---|
+| User | Email trimmed and lowercased with Locale.ROOT; existing username retained |
+| Artist | Name trimmed and lowercased |
+| Album | Artist ID + normalized title + release year |
+| Post | Unique user ID + album ID pair |
+| Image | Generated ID; no content deduplication |
 
-Normalization is outer trim and Locale.ROOT lowercase. It does not collapse internal spaces or remove accents. Username is not normalized and is not unique. Existing email reuse retains the original username. Cover path never changes an album's identity.
+Normalization preserves internal spaces and accents. Username is neither normalized nor unique. Cover image ID is nullable and never part of album identity. The first creator fixes the cover; an existing album is returned unchanged even if another publisher submits a cover. An album created without a cover cannot gain one through findOrCreate.
 
-For example, `  VERSUS  ` and `versus` with the same resolved artist and 1997 reuse an album. With 1998 they do not. Different normalized publisher emails can each create a Post for the 1997 album. The same publisher cannot create a second Post for it.
+The six current model types are [[User]], [[Artist]], [[Album]], [[Image]], [[Post]] and [[PostSummary]]. PostSummary is a query projection rather than a table. Image has final fields but exposes a mutable byte array. [[PostInterestNotification]] remains a service-contract payload rather than persisted contact history. [[AlbumSummary]] is historical.
 
-All six model classes have final fields and getters. [[AlbumSummary]] and [[PostSummary]] are query projections, not additional database tables. [[PostInterestNotification]] lives in services-contracts because it is a mail-operation payload, not a stored entity.
-
-The older CONTEXT glossary says a publicante need not be an account; the current implementation nevertheless stores publishers as [[User]] rows. That does not imply authentication. [[History and specifications]] records this evolution.
+CONTEXT.md identifies publishers by email without requiring an account. Current publishing nevertheless stores a User row; that does not imply authentication. The glossary does not yet define Image as a separate stored type. [[Known gaps and document drift]] records the distinction.

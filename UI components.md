@@ -5,14 +5,14 @@ type: "guide"
 module: "webapp"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 sources: ["webapp/src/main/webapp/WEB-INF/tags/button.tag", "webapp/src/main/webapp/WEB-INF/tags/h1.tag", "webapp/src/main/webapp/WEB-INF/tags/h3.tag", "webapp/src/main/webapp/WEB-INF/tags/p.tag", "webapp/src/main/webapp/WEB-INF/tags/span.tag", "webapp/src/main/webapp/WEB-INF/tags/text-input.tag", "webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag"]
 ---
 
 # UI components
 
-Seven JSP tags are committed in the UI merge at `041ce34404963b689d05443ca00abb7e75aa7f15`. Pages declare `<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>`. [[Views and assets]] shows their callers and [[UI styles and tokens]] explains their CSS. Controller routes and backend behavior did not change.
+Seven JSP tags are committed in the UI merge at `ff96f275ae009bad4534751b7a4857cf45aea7ac`. Pages declare `<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>`. [[Views and assets]] shows their callers and [[UI styles and tokens]] explains their CSS. The seven-tag set remains; vinyl-card now renders database-cover URLs or the placeholder.
 
 Publish and contact retain Spring form:form with modelAttribute. ui:text-input wraps spring:bind inside that form context, preserving values and displaying all field errors.
 
@@ -154,9 +154,9 @@ Required path and localized label; optional type, maxLength, min and max. Used i
 
 ## vinyl-card
 
-Required item is typed as [[PostSummary]]; variant defaults to editorial and is inserted into the CSS class suffix. Current callers use editorial on landing and compact on contact. c:url resolves the cover path; vinylCard.cover.alt localizes alt text and vinylCard.year labels the year. c:out escapes image attributes. h3, p and span render title, artist and year. jsp:doBody renders the page-supplied contact button. The card does not display publisher email.
+Required item is typed as [[PostSummary]]; variant defaults to editorial and is inserted into the CSS class suffix. Current callers use editorial on landing and compact on contact. c:url resolves /images/covers/placeholder.svg when coverImageId is null, otherwise /covers/{id}; vinylCard.cover.alt localizes alt text and vinylCard.year labels the year. c:out escapes image attributes. h3, p and span render title, artist and year. jsp:doBody renders the page-supplied contact button. The card does not display publisher email.
 
-[webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag, lines 1–35](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>)
+[webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag, lines 1–42](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>)
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -166,7 +166,14 @@ Required item is typed as [[PostSummary]]; variant defaults to editorial and is 
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 
-<c:url value="${item.coverPath}" var="coverUrl" />
+<c:choose>
+    <c:when test="${empty item.coverImageId}">
+        <c:url value="/images/covers/placeholder.svg" var="coverUrl" />
+    </c:when>
+    <c:otherwise>
+        <c:url value="/covers/${item.coverImageId}" var="coverUrl" />
+    </c:otherwise>
+</c:choose>
 <spring:message code="vinylCard.cover.alt" var="coverAlt">
     <spring:argument value="${item.title}" />
 </spring:message>
@@ -199,3 +206,5 @@ Required item is typed as [[PostSummary]]; variant defaults to editorial and is 
 The earlier working-tree snapshot contained h2, h4, heading and wishlist-button. These files are absent from the committed version. See [[Known gaps and document drift]].
 
 [[Landing flow]] · [[Publish flow]] · [[Contact flow]]
+
+The optional file input is composed directly in the publish JSP with form:label/form:errors. ui:text-input is still for text/numeric values. [[Cover image flow]] explains image validation and storage.

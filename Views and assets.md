@@ -5,75 +5,26 @@ type: "guide"
 module: "webapp"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
-sources: ["webapp/src/main/webapp/WEB-INF/views/helloworld/create.jsp", "webapp/src/main/webapp/WEB-INF/views/helloworld/index.jsp", "webapp/src/main/webapp/WEB-INF/views/landing/index.jsp", "webapp/src/main/webapp/WEB-INF/views/post/contact.jsp", "webapp/src/main/webapp/WEB-INF/views/publish/index.jsp", "webapp/src/main/webapp/images/covers/versus.png"]
+sources: ["webapp/src/main/webapp/WEB-INF/views/landing/index.jsp", "webapp/src/main/webapp/WEB-INF/views/post/contact.jsp", "webapp/src/main/webapp/WEB-INF/views/publish/index.jsp", "webapp/src/main/webapp/images/covers/placeholder.svg"]
 ---
 
 # Views and assets
 
-This note reflects the committed UI merge at `041ce34404963b689d05443ca00abb7e75aa7f15`. Controllers, services and DAO behavior remain as documented; the view layer now composes reusable JSP tags.
+Only three JSP views remain. The helloworld create/profile views were removed. Product pages load tokens.css, components.css and style.css, declare /WEB-INF/tags and include viewport metadata. There is no JavaScript source asset or frontend build manifest.
 
-The view resolver prefixes logical names with /WEB-INF/views/ and appends .jsp. Product views load tokens.css, components.css and style.css, declare the ui tag directory, and include a viewport meta tag. No JavaScript source asset or frontend package manifest is present.
-
-| View | Model | Current rendering |
+| View | Model | Rendering |
 |---|---|---|
-| landing/index | posts and optional contactSent | Page header, publish button, empty state or editorial vinyl cards; each body contains a contact button |
-| publish/index | publishForm and BindingResult | Spring form:form with relative ui:text-input paths, submit and back-to-catalogue buttons |
-| post/contact | post, contactForm, optional deliveryFailed | Compact vinyl card, retained input/error components, submit and back buttons |
-| helloworld/create | form | Legacy Spring form tags with literal English labels |
-| helloworld/index | user | Escaped username in a literal English greeting |
+| landing/index | posts, optional contactSent | Editorial cards, publish/contact buttons, localized empty/success text |
+| publish/index | publishForm, BindingResult, optional coverTooLarge | Multipart Spring form, five text/numeric fields and optional file input |
+| post/contact | post, contactForm, BindingResult | Compact card and Spring contact form; no deliveryFailed banner |
 
-[[UI components]] explains the complete tag contracts and exact markup. ui:vinyl-card requires [[PostSummary]], renders no publisher email, and uses jsp:doBody for page-supplied actions. ui:text-input uses spring:bind to retrieve field values and validation errors from the existing model. Page labels are resolved through spring:message before passing them into tags. c:out handles text and attribute escaping inside components. Publish and contact use form:form modelAttribute to establish the binding context; text-input renders all field error messages.
+ui:text-input inherits relative binding paths from form:form and renders all field errors. The cover input uses form:label and form:errors directly, accepts PNG/JPEG/WebP and displays a 5 MB hint. A whole-request overflow displays the coverTooLarge message with a fresh form.
 
-c:url in pages/tags handles deployment context paths. Shared buttons receive /publish or /post/{id}/contact and turn them into appropriate links. Publish and contact both pass / to their back buttons. No wishlist tag, CSS, route or storage is present in the committed implementation.
+ui:vinyl-card chooses /images/covers/placeholder.svg for a missing coverImageId or /covers/{id} otherwise. It never displays publisherEmail. c:url handles deployment contexts; c:out escapes tag text and URL attributes. Submit and back-to-catalogue buttons remain shared components.
 
-## helloworld/create.jsp
-
-[webapp/src/main/webapp/WEB-INF/views/helloworld/create.jsp, lines 1–27](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/helloworld/create.jsp>)
-
-```jsp
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
-<c:url value="/create" var="createUrl" />
-<html>
-<head>
-    <link rel="stylesheet" href="<c:url value='/css/style.css'/>"/>
-</head>
-<body>
-<form:form action="${createUrl}" method="post" modelAttribute="form">
-    <div>
-        <form:label path="username">Username:</form:label>
-        <form:input type="text" path="username"/>
-        <form:errors path="username" cssClass="error" element="p"/>
-    </div>
-
-    <div>
-        <form:label path="email">Email:</form:label>
-        <form:input type="text" path="email"/>
-        <form:errors path="email" cssClass="error" element="p"/>
-    </div>
-
-    <div>
-        <input type="submit" value="Register!"/>
-    </div>
-</form:form>
-</body>
-</html>
-```
-
-## helloworld/index.jsp
-
-[webapp/src/main/webapp/WEB-INF/views/helloworld/index.jsp, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/helloworld/index.jsp>)
-
-```jsp
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<html>
-<body>
-<h2>Hello <c:out value="${user.username}"/>!</h2>
-</body>
-</html>
-```
+The previous versus.png file is deleted. The placeholder is a local SVG; stored covers are database bytes returned by [[ImageController]]. [[Cover image flow]] explains ownership and caching.
 
 ## landing/index.jsp
 
@@ -132,7 +83,7 @@ c:url in pages/tags handles deployment context paths. Shared buttons receive /pu
 
 ## post/contact.jsp
 
-[webapp/src/main/webapp/WEB-INF/views/post/contact.jsp, lines 1–44](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/contact.jsp>)
+[webapp/src/main/webapp/WEB-INF/views/post/contact.jsp, lines 1–41](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/contact.jsp>)
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -165,9 +116,6 @@ c:url in pages/tags handles deployment context paths. Shared buttons receive /pu
         <ui:h1 text="${heading}"/>
     </header>
     <ui:vinyl-card item="${post}" variant="compact"/>
-    <c:if test="${deliveryFailed}">
-        <p class="error"><spring:message code="post.contact.deliveryFailed"/></p>
-    </c:if>
     <form:form cssClass="surface form-stack" action="${contactUrl}" method="post" modelAttribute="contactForm">
         <ui:text-input path="contactName" label="${nameLabel}" maxLength="100"/>
         <ui:text-input path="contactEmail" label="${emailLabel}" type="email" maxLength="100"/>
@@ -183,7 +131,7 @@ c:url in pages/tags handles deployment context paths. Shared buttons receive /pu
 
 ## publish/index.jsp
 
-[webapp/src/main/webapp/WEB-INF/views/publish/index.jsp, lines 1–46](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/publish/index.jsp>)
+[webapp/src/main/webapp/WEB-INF/views/publish/index.jsp, lines 1–55](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/publish/index.jsp>)
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -218,12 +166,21 @@ c:url in pages/tags handles deployment context paths. Shared buttons receive /pu
     <header class="page-header">
         <ui:h1 text="${heading}"/>
     </header>
-    <form:form cssClass="surface form-stack" action="${publishUrl}" method="post" modelAttribute="publishForm">
+    <c:if test="${coverTooLarge}">
+        <p class="error"><spring:message code="publish.cover.tooLarge"/></p>
+    </c:if>
+    <form:form cssClass="surface form-stack" action="${publishUrl}" method="post" modelAttribute="publishForm" enctype="multipart/form-data">
         <ui:text-input path="username" label="${usernameLabel}" maxLength="100"/>
         <ui:text-input path="publisherEmail" label="${publisherEmailLabel}" type="email" maxLength="100"/>
         <ui:text-input path="title" label="${titleLabel}" maxLength="255"/>
         <ui:text-input path="artistName" label="${artistNameLabel}" maxLength="255"/>
         <ui:text-input path="releaseYear" label="${releaseYearLabel}" type="number" min="1000" max="9999"/>
+        <div class="input-field">
+            <form:label path="cover" cssClass="input-field__label"><spring:message code="publish.cover.label"/></form:label>
+            <input id="cover" name="cover" type="file" class="input-field__control" accept="image/png,image/jpeg,image/webp"/>
+            <p class="hint"><spring:message code="publish.cover.hint"/></p>
+            <form:errors path="cover" cssClass="input-field__error" element="p"/>
+        </div>
         <div class="form-stack__actions">
             <ui:button label="${submitLabel}" type="submit"/>
             <ui:button label="${backLabel}" variant="ghost" href="/"/>
@@ -234,8 +191,21 @@ c:url in pages/tags handles deployment context paths. Shared buttons receive /pu
 </html>
 ```
 
-## Styles and image
 
-[[UI styles and tokens]] explains all three CSS files, their load order and responsive/dark-mode rules. The single local cover remains images/covers/versus.png and new albums still use it. [[AlbumServiceImpl]] owns that choice.
+## Placeholder source
 
-[[Landing flow]] · [[Publish flow]] · [[Contact flow]] · [[Legacy user flow]]
+[webapp/src/main/webapp/images/covers/placeholder.svg, lines 1–9](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/images/covers/placeholder.svg>)
+
+```xml
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-hidden="true">
+  <rect width="600" height="600" fill="#e8e8e8"/>
+  <circle cx="300" cy="300" r="230" fill="#2b2b2b"/>
+  <circle cx="300" cy="300" r="190" fill="none" stroke="#3a3a3a" stroke-width="2"/>
+  <circle cx="300" cy="300" r="150" fill="none" stroke="#3a3a3a" stroke-width="2"/>
+  <circle cx="300" cy="300" r="110" fill="none" stroke="#3a3a3a" stroke-width="2"/>
+  <circle cx="300" cy="300" r="70" fill="#bdbdbd"/>
+  <circle cx="300" cy="300" r="8" fill="#e8e8e8"/>
+</svg>
+```
+
+[[UI components]] · [[UI styles and tokens]] · [[Publish flow]] · [[Contact flow]]

@@ -5,7 +5,7 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "operations"]
 sources: ["webapp/src/main/resources/database.properties.example", "webapp/src/main/resources/mail.properties.example", "README.md"]
@@ -21,16 +21,16 @@ The repository README names Java 21, Maven 3.x and PostgreSQL 16. The local help
 
 [webapp/src/main/resources/database.properties.example, lines 1–4](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/database.properties.example>)
 
-```properties
+```text
 db.driver=org.postgresql.Driver
 db.url=jdbc:postgresql://localhost:5432/paw
 db.username=your_database_username
 db.password=your_database_password
 ```
 
-[webapp/src/main/resources/mail.properties.example, lines 1–10](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/mail.properties.example>)
+[webapp/src/main/resources/mail.properties.example, lines 1–16](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/mail.properties.example>)
 
-```properties
+```text
 mail.host=smtp.gmail.com
 mail.port=587
 mail.username=your_smtp_username
@@ -41,6 +41,12 @@ mail.smtp.connection-timeout-ms=5000
 mail.smtp.read-timeout-ms=10000
 mail.smtp.write-timeout-ms=10000
 app.mail.from=your_smtp_username
+
+# URL publica de la aplicacion, usada para los links de los mails.
+# Tiene que ser absoluta: el envio corre en un hilo @Async, donde no hay request
+# del que deducirla. En el server de la catedra la app cuelga de un context path.
+# Produccion: http://pawserver.it.itba.edu.ar/paw-2026b-14
+app.base-url=http://localhost:8080
 ```
 
 
@@ -57,10 +63,16 @@ mvn clean install
 mvn -pl webapp jetty:run
 ```
 
-These commands were not executed while authoring the vault. Starting with an empty PostgreSQL database and adequate table-creation permissions runs the current schema initializer. It creates tables but not sample content. Historical SQL and the optional development seed are separate in [[Schema history and seeds]].
+These commands were not executed while authoring the vault. Starting with an empty PostgreSQL database and adequate table-creation permissions runs the current schema initializer. It creates tables without seed rows and also runs targeted username/cover schema upgrades. Historical SQL and the optional development seed are separate in [[Schema history and seeds]].
 
-Submitting create/publish with a new email can send welcome mail. Submitting contact attempts synchronous delivery. Building the vault requires neither operation and no mail was sent.
+Publishing with a new email requests welcome mail. Contact requests asynchronous interest mail using the request Locale. The removed /create route is historical. Building the vault requires neither operation and no mail was sent.
 
 The deployment target host, external database state and server readiness are not verified. TODO.md records a course deployment blocker, but that document is not a live status check.
 
 [[Startup and dependency injection]] · [[Build and dependencies]] · [[Logging]] · [[Development tools]]
+
+## Mail links and deployment artifact
+
+app.base-url is now required by EmailServiceImpl. The committed example uses http://localhost:8080 and documents the course context path for production. Its value must include the application context path when needed, because mail workers cannot derive it from a request. The README inline mail example omits this new key; copy the committed example file and consult [[Known gaps and document drift]].
+
+The package output is webapp/target/app.war. TODO.md now says database access and upload procedure are confirmed but the first deployment still needs to be performed and validated. This is a document claim, not a checked live environment.

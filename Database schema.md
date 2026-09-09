@@ -5,28 +5,35 @@ type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "persistence"]
-sources: ["persistence/src/main/resources/schema.sql"]
+sources: ["persistence/src/main/resources/schema.sql", "persistence/src/test/resources/schema.sql"]
 ---
 
 # Database schema
 
-Startup uses the four CREATE TABLE IF NOT EXISTS statements below. Every table has a generated numeric primary key. Required business fields are NOT NULL, and unique constraints implement identity. There are no FOREIGN KEY declarations and no release-year CHECK in this startup schema.
+The canonical PostgreSQL schema is persistence/src/main/resources/schema.sql, executed by [[WebConfig]] at every context startup. It defines users, artists, images, albums and posts. The application does not run Flyway.
 
-| Table | Unique identity besides ID | Logical references |
-|---|---|---|
-| users | email | None |
-| artists | name | None |
-| albums | artist_id, title, release_year | artist_id → artists.id |
-| posts | user_id, album_id | user_id → users.id; album_id → albums.id |
+| Table | Values and constraints |
+|---|---|
+| users | SERIAL id; required username/email; unique email |
+| artists | SERIAL id; required unique name |
+| images | SERIAL id; required content_type and BYTEA data |
+| albums | SERIAL id; required title, artist_id, release_year; nullable cover_image_id; unique artist/title/year |
+| posts | SERIAL id; required user_id and album_id; unique user/album |
 
-The service normalizes input before comparisons, while the database constraints compare the stored values. Direct SQL with different casing or whitespace can bypass the intended normalized identity convention. The schema does not normalize automatically.
+The canonical startup schema has no foreign keys, year CHECK or image MIME/size constraints. The manual database/albums.sql bootstrap adds foreign keys and a year range check, so its guarantees differ. [[Schema history and seeds]] compares those paths.
 
-## Exact startup DDL
+## Startup upgrades
 
-[persistence/src/main/resources/schema.sql, lines 1–40](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/resources/schema.sql>)
+The script now does more than CREATE TABLE IF NOT EXISTS. It adds users.username if missing, fills null usernames with the email local part and makes the column NOT NULL. It adds albums.cover_image_id if missing and drops cover_path if present. Old fixed paths are discarded; existing albums default to null image references and the placeholder.
+
+These targeted alterations do not migrate legacy textual albums.artist or posts.publisher_email to the current references. The local setup helper rejects the textual-artist schema. The README claim that startup never touches existing data is stale: UPDATE and DROP COLUMN are present.
+
+## Canonical PostgreSQL source
+
+[persistence/src/main/resources/schema.sql, lines 1–58](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/resources/schema.sql>)
 
 ```sql
 -- Esquema de quieroVinilos para PostgreSQL.
@@ -36,7 +43,7 @@ The service normalizes input before comparisons, while the database constraints 
 -- condicion del enunciado: desplegado contra una base PostgreSQL vacia con
 -- permisos adecuados, la aplicacion genera sola todas las tablas que necesita.
 --
--- El orden sigue las dependencias del dominio: users y artists antes que albums y posts.
+-- El orden sigue las dependencias del dominio: users, artists e images antes que albums y posts.
 --
 -- Espejo funcional de persistence/src/test/resources/schema.sql, que declara lo
 -- mismo en dialecto HSQLDB para los tests. Si cambia uno, tiene que cambiar el otro.
@@ -48,10 +55,22 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT users_email_key UNIQUE (email)
 );
 
+-- Bases creadas antes de que existiera username no traen la columna. Se agrega
+-- nullable, se rellena con la parte local del email y recien ahi se vuelve NOT NULL.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100);
+UPDATE users SET username = split_part(email, '@', 1) WHERE username IS NULL;
+ALTER TABLE users ALTER COLUMN username SET NOT NULL;
+
 CREATE TABLE IF NOT EXISTS artists (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     CONSTRAINT artists_name_key UNIQUE (name)
+);
+
+CREATE TABLE IF NOT EXISTS images (
+    id SERIAL PRIMARY KEY,
+    content_type VARCHAR(100) NOT NULL,
+    data BYTEA NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS albums (
@@ -59,9 +78,15 @@ CREATE TABLE IF NOT EXISTS albums (
     title VARCHAR(255) NOT NULL,
     artist_id INTEGER NOT NULL,
     release_year INTEGER NOT NULL,
-    cover_path VARCHAR(255) NOT NULL,
+    cover_image_id INTEGER,
     CONSTRAINT albums_artist_title_year_key UNIQUE (artist_id, title, release_year)
 );
+
+-- Bases creadas antes de que existiera la tabla images traen cover_path (la portada
+-- fija compartida). Se reemplaza por cover_image_id; los albums viejos quedan en NULL y
+-- se muestran con el placeholder.
+ALTER TABLE albums ADD COLUMN IF NOT EXISTS cover_image_id INTEGER;
+ALTER TABLE albums DROP COLUMN IF EXISTS cover_path;
 
 CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
@@ -71,12 +96,47 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 ```
 
-## Read mapping
+## Test schema
 
-[[PostJdbcDao]] aliases columns because several joined tables have `id` columns. The aliases distinguish post_id, user_id and album_id, and the RowMapper passes each to [[PostSummary]] in constructor order. `INNER JOIN` means all referenced rows must exist to show the publication.
+HSQLDB uses generated identity IDs and LONGVARBINARY for image bytes. Tests create a fresh schema, so they do not exercise the PostgreSQL ALTER/UPDATE startup path. Both schemas omit foreign keys.
 
-There are no DAO update/delete methods. That narrows normal application writes, but it does not guarantee referential integrity. Direct SQL, old data or an invalid DAO caller can still create orphans, as the second-publisher [[PostJdbcDaoTest]] illustrates.
+[persistence/src/test/resources/schema.sql, lines 1–34](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/resources/schema.sql>)
 
-CREATE TABLE IF NOT EXISTS creates missing tables only. It does not add new columns to an existing table or reconcile constraints left by historical setup scripts. A database created using database/albums.sql can have foreign keys absent from a clean startup-created database. The actual local database was not inspected.
+```sql
+CREATE TABLE users (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    CONSTRAINT users_email_key UNIQUE (email)
+);
 
-[[Schema history and seeds]] compares every SQL path. [[Domain and identity]] provides the logical relationship diagram.
+CREATE TABLE artists (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    CONSTRAINT artists_name_key UNIQUE (name)
+);
+
+CREATE TABLE images (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    content_type VARCHAR(100) NOT NULL,
+    data LONGVARBINARY NOT NULL
+);
+
+CREATE TABLE albums (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    artist_id INTEGER NOT NULL,
+    release_year INTEGER NOT NULL,
+    cover_image_id INTEGER,
+    CONSTRAINT albums_artist_title_year_key UNIQUE (artist_id, title, release_year)
+);
+
+CREATE TABLE posts (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    album_id INTEGER NOT NULL,
+    CONSTRAINT posts_user_id_album_id_key UNIQUE (user_id, album_id)
+);
+```
+
+[[Domain and identity]] · [[Transactions and concurrency]] · [[Testing and evidence]]

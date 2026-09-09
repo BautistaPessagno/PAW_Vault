@@ -5,7 +5,7 @@ type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "services"]
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/ConcurrentPublishException.java"]
@@ -20,8 +20,6 @@ Unchecked business exception used when publish catches Spring DataIntegrityViola
 Project types referenced: none.
 
 Referenced by: [[PostServiceImpl]], [[PublishController]].
-
-Tests: no direct test source reference. See [[Testing and evidence]].
 
 ## Exact source
 

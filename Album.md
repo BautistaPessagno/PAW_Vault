@@ -5,7 +5,7 @@ type: "code"
 module: "models"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "domain"]
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Album.java"]
@@ -13,27 +13,13 @@ sources: ["models/src/main/java/ar/edu/itba/paw/models/Album.java"]
 
 # Album
 
-A catalog work, identified by normalized title, artist ID, and release year. The database ID is a separate surrogate key. `coverPath` is presentation data and does not participate in uniqueness. `artistId` is a primitive `long`, not an embedded [[Artist]]. [[AlbumJdbcDao]] creates it; [[PostServiceImpl]] uses its ID to create a [[Post]]. Getters expose the immutable constructor values.
+A catalog work identified by normalized title, artist ID and release year. coverImageId is a nullable Long referencing [[Image]], replacing coverPath. The cover does not participate in uniqueness. [[AlbumServiceImpl]] preserves the first stored album and its cover when another publisher reuses that identity.
 
 ## Connections
 
 Project types referenced: none.
 
-Referenced by: [[AlbumDao]], [[AlbumJdbcDao]], [[AlbumService]], [[AlbumServiceImpl]], [[PostServiceImpl]].
-
-Tests: [[AlbumJdbcDaoTest]], [[AlbumServiceImplTest]], [[PostServiceImplTest]]. See [[Testing and evidence]].
-
-## Stored values
-
-| Field | Java type |
-|---|---|
-| `id` | `long` |
-| `title` | `String` |
-| `artistId` | `long` |
-| `releaseYear` | `int` |
-| `coverPath` | `String` |
-
-Constructors assign these values directly. Getters return them. There are no setters, persistence annotations, custom equality methods or constructor-level validation.
+Referenced by: [[AlbumDao]], [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumService]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]], [[EmailServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
 
 ## Exact source
 
@@ -47,15 +33,15 @@ public class Album {
     private final String title;
     private final long artistId;
     private final int releaseYear;
-    private final String coverPath;
+    private final Long coverImageId;
 
     public Album(final long id, final String title, final long artistId, final int releaseYear,
-                 final String coverPath) {
+                 final Long coverImageId) {
         this.id = id;
         this.title = title;
         this.artistId = artistId;
         this.releaseYear = releaseYear;
-        this.coverPath = coverPath;
+        this.coverImageId = coverImageId;
     }
 
     public long getId() {
@@ -74,12 +60,12 @@ public class Album {
         return releaseYear;
     }
 
-    public String getCoverPath() {
-        return coverPath;
+    public Long getCoverImageId() {
+        return coverImageId;
     }
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

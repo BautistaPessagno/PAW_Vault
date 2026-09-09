@@ -5,7 +5,7 @@ type: "code"
 module: "persistence"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
 status: "documented"
 tags: ["codemap", "persistence"]
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java"]
@@ -13,15 +13,13 @@ sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.jav
 
 # PostJdbcDao
 
-`SUMMARY_SELECT` joins posts, users, albums and artists; its aliases match the static [[PostSummary]] RowMapper. `findFeatured` appends `ORDER BY p.id DESC LIMIT ?`; `findById` appends `WHERE p.id = ?`. `existsByUserIdAndAlbumId` reads a boolean count predicate. `create` uses SimpleJdbcInsert and translates Spring DuplicateKeyException into [[DuplicatePostKeyException]]. The pre-check in the service is only an early user-facing check; SQL uniqueness is the final concurrent guard. Inner joins hide orphan rows if the schema permits them. See [[Database schema]].
+Reads PostSummary through a four-table INNER JOIN of posts, users, albums and artists. Queries include albums.cover_image_id and use AlbumJdbcDao.readCoverImageId to preserve null. Image bytes are fetched separately through [[ImageController]]. findFeatured orders post IDs descending and binds the limit; findById filters one ID. Pair existence is a pre-check, and insert translates DuplicateKeyException to [[DuplicatePostKeyException]].
 
 ## Connections
 
-Project types referenced: [[DuplicatePostKeyException]], [[Post]], [[PostDao]], [[PostSummary]].
+Project types referenced: [[AlbumJdbcDao]], [[DuplicatePostKeyException]], [[Post]], [[PostDao]], [[PostSummary]].
 
-Referenced by: no other production Java type directly references this name; Spring discovers implementations through scanning.
-
-Tests: no direct test source reference. See [[Testing and evidence]].
+Referenced by: no direct project type reference; implementations may be injected through interfaces.
 
 ## Exact source
 
@@ -57,13 +55,13 @@ public class PostJdbcDao implements PostDao {
             resultSet.getString("album_title"),
             resultSet.getString("artist_name"),
             resultSet.getInt("album_release_year"),
-            resultSet.getString("album_cover_path")
+            AlbumJdbcDao.readCoverImageId(resultSet)
     );
 
     private static final String SUMMARY_SELECT =
             "SELECT p.id AS post_id, u.id AS user_id, u.email AS publisher_email, " +
                     "a.id AS album_id, a.title AS album_title, ar.name AS artist_name, " +
-                    "a.release_year AS album_release_year, a.cover_path AS album_cover_path " +
+                    "a.release_year AS album_release_year, a.cover_image_id AS album_cover_image_id " +
                     "FROM posts p JOIN users u ON u.id = p.user_id " +
                     "JOIN albums a ON a.id = p.album_id JOIN artists ar ON ar.id = a.artist_id ";
 
@@ -114,4 +112,4 @@ public class PostJdbcDao implements PostDao {
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

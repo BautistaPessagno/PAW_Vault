@@ -1,17 +1,21 @@
 ---
 title: "HelloWorldController"
-categories: ["Web"]
-type: "code"
+categories: ["History"]
+type: "historical-code"
 module: "webapp"
 project: "quieroVinilos"
 snapshot: "2026-09-09"
-commit: "16f3aa7784c3320f18efb82ee2b1f315d7632faf"
-status: "documented"
+commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+status: "removed"
+source_commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
 tags: ["codemap", "web"]
-sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/HelloWorldController.java"]
+sources: []
 ---
 
 # HelloWorldController
+
+> [!note] Historical source
+> This type is absent at ff96f27. The text and excerpt below describe the previous implementation at 041ce34.
 
 Legacy scaffold routes. GET `/create` binds [[UserForm]] as `form`; POST validates then invokes [[UserService]].create with Locale and redirects to `/profile/{id}`. GET `/profile/{userId}` resolves Optional to a User, then renders `helloworld/index`. Missing users throw [[UserNotFoundException]], which has no explicit 404 mapping here. The landing does not link to these routes. See [[Legacy user flow]].
 
@@ -25,7 +29,7 @@ Tests: no direct test source reference. See [[Testing and evidence]].
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/HelloWorldController.java, lines 1–54](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/HelloWorldController.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/HelloWorldController.java, lines 1–54](<https://bitbucket.org/itba/paw-2026b-14/src/041ce34404963b689d05443ca00abb7e75aa7f15/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/HelloWorldController.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
