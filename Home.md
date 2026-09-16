@@ -20,7 +20,7 @@ This vault maps quieroVinilos at commit `40328f0a23ce3814ab62a9f0124a6ba1e6ae71b
 2. [[Domain and identity]] explains accounts, catalog works, physical exemplars and inquiries.
 3. [[Architecture]] explains the six modules and their boundaries.
 4. [[Startup and dependency injection]] explains how the WAR becomes a running application.
-5. [[Authentication flow]], [[Landing flow]], [[Publish flow]], [[Contact flow]], [[Inquiry and sale flow]] and [[Cover image flow]] trace the current routes through the layers. [[Legacy user flow]] records the removed scaffold.
+5. [[Authentication flow]], [[Landing flow]], [[Publish flow]], [[Contact flow]], [[Inquiry and sale flow]] and [[Cover image flow]] trace the current routes through the layers with Mermaid diagrams and focused, source-linked code snippets. [[Legacy user flow]] records the removed scaffold.
 6. [[UI components]] and [[UI styles and tokens]] cover the latest shared JSP components and styles.
 7. [[Database schema]], [[Transactions and concurrency]], [[Validation and errors]], [[Views and assets]] and [[Mail delivery]] explain the shared mechanisms.
 8. [[Testing and evidence]] and [[Known gaps and document drift]] show what the available evidence does and does not establish.

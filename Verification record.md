@@ -11,6 +11,18 @@ status: verified-static
 
 # Verification record
 
+## Flow snippets and sequence diagrams, 2026-09-16
+
+Updated the six current flow notes with twelve focused Java snippets and six Mermaid sequence diagrams. The diagram style follows the previous Landing/Publish/Contact flow notes at vault commit 3920982: class participants, method-call arrows, return arrows and alt/opt branches. The calls reflect source revision 40328f0 rather than restoring outdated behavior.
+
+- All twelve added snippets match the cited source paths and line ranges. The vault now has 150 current excerpts and five historical excerpts matching their pinned Git objects.
+- Obsidian's loaded Mermaid renderer generated SVG successfully for all six diagrams. Authentication and cover sequence diagrams and their snippets were also observed in the reading-view DOM. This is documentation-rendering evidence, not application execution.
+- The Flows Base lists all six current flows; Obsidian reports zero unresolved links. Source coverage remains 257 tracked paths and 94 Java notes; all 436 local source-link targets exist.
+- Source main remains at 40328f0. A concurrent local edit to persistence/src/main/resources/schema.sql adds a legacy verification-token migration. This task preserved that edit and kept the snippets pinned to the committed revision. The earlier clean-checkout assertion belongs to the previous refresh, not this follow-up.
+- No application source edits or runtime tests were performed. Existing Obsidian configuration/Base formatting changes remain outside the documentation commit.
+
+[[Authentication flow]] · [[Landing flow]] · [[Publish flow]] · [[Contact flow]] · [[Inquiry and sale flow]] · [[Cover image flow]]
+
 ## Refresh through 40328f0, 2026-09-16
 
 The target is origin/main at `40328f0a23ce3814ab62a9f0124a6ba1e6ae71be`, fetched during this task. The initial local branch was the sale branch at aea81a9, whose tree already matched the target. The user then switched to local main at the target revision. Final source checks use that clean local main checkout. The diff from ff96f27 has 125 changed or added paths.
