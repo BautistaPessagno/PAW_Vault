@@ -4,27 +4,31 @@ categories: ["Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "testing"]
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java"]
 ---
 
 # ArtistJdbcDaoTest
 
-Runs the real JDBC DAO through a Spring HSQLDB context with transaction rollback. Fixture rows come from test populator.sql. Assertions inspect mapped objects and persisted row counts. This checks the test schema and DAO behavior, not production startup, PostgreSQL concurrency, JSPs or HTTP status.
+HSQLDB DAO tests using the Spring test context and SQL fixtures. Source evidence for [[ArtistJdbcDao]]; no new Maven execution is claimed.
 
-Production connections: [[Artist]], [[ArtistDao]].
-
-## Test cases
+Test methods in this revision:
 
 - `testFindOrCreateWhenArtistExistsReturnsExistingArtist`
 - `testFindOrCreateWhenArtistIsNewReturnsPersistedArtist`
+- `testFindAllWhenArtistsExistReturnsThemAlphabetically`
 
-## Exact test source
+## Connections
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java, lines 1–72](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java>)
+Project types referenced: [[Artist]], [[ArtistDao]], [[TestConfiguration]].
+
+Referenced by: none.
+
+## Exact source
+
+[persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java, lines 1–87](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -43,6 +47,7 @@ import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 @Rollback
 @Transactional
@@ -77,7 +82,7 @@ public class ArtistJdbcDaoTest {
         // 3. Assert
         Assertions.assertEquals(ARTIST_ID, result.getId());
         Assertions.assertEquals(ARTIST_NAME, result.getName());
-        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
+        Assertions.assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
     }
 
     @Test
@@ -95,10 +100,26 @@ public class ArtistJdbcDaoTest {
                 "id = " + result.getId() + " AND name = " + sqlString(name)));
     }
 
+    @Test
+    public void testFindAllWhenArtistsExistReturnsThemAlphabetically() {
+        // 1. Arrange
+        final String lastArtistName = "soda stereo";
+
+        // 2. Exercise
+        final List<Artist> result = artistDao.findAll();
+
+        // 3. Assert
+        Assertions.assertEquals(2, result.size());
+        Assertions.assertEquals(ARTIST_NAME, result.get(0).getName());
+        Assertions.assertEquals(lastArtistName, result.get(1).getName());
+    }
+
     private String sqlString(final String value) {
         return "'" + value.replace("'", "''") + "'";
     }
 }
 ```
 
-[[Testing and evidence]] · [[Source inventory]]
+## Context
+
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

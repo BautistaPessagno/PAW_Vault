@@ -4,26 +4,20 @@ categories: ["Navigation"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "navigation"]
+sources: []
 ---
 
 # Project snapshot
 
-quieroVinilos is the ITBA PAW 2026B group 14 project. This vault describes commit `ff96f275ae009bad4534751b7a4857cf45aea7ac`, including the merged image upload, asynchronous contact mail and dead-code cleanup. The local source checkout was clean at that exact commit when checked.
+quieroVinilos is the ITBA PAW 2026B group 14 project. This vault describes `40328f0a23ce3814ab62a9f0124a6ba1e6ae71be`, fetched from origin/main on 2026-09-16. The user switched the local source checkout to main during this refresh; local HEAD now matches that revision and the working tree is clean. The diff from ff96f27 contains 125 changed or added paths.
 
-Visitors can browse the eight newest publications, publish an album with an optional cover and request contact with its publisher. Images live in PostgreSQL and are served by ID. Both welcome and interest mail use asynchronous delivery and the request Locale. The inherited /create and /profile routes are removed.
+Visitors browse up to 16 available exemplars using text search, sorting and combined genre/condition/artist/year/price filters. Accounts register by email and choose credentials after following a verification link. Authenticated users publish and send persistent inquiries; sellers accept or reject inquiries in their inbox. Acceptance sells the exemplar and rejects its remaining pending inquiries. ADMIN adds access to an informational administration page.
 
-The application uses Java 21, classic Spring MVC 5.3.33, Spring JDBC, PostgreSQL and JSP/JSTL across six Maven modules. Thymeleaf renders email only. The WAR is now `webapp/target/app.war`.
+Each publication owns its commercial details and optional image. Album identity remains artist/title/year, with a legacy album-cover fallback. The six-module application uses Java 21, Spring MVC/JDBC 5.3.33, Spring Security 5.8.16, PostgreSQL, JSP/JSTL and Thymeleaf email. The WAR is webapp/target/app.war.
 
-## Scope and limits
+There is no payment processing, pagination, multiple-unit stock workflow, edit/delete interface, password-reset flow, token expiry or durable mail queue. The persisted inquiry is an initial message and status, not a threaded conversation. The user/album uniqueness rule remains even after a sale.
 
-[[Source inventory]] maps every tracked path. Each current Java class/interface/test has a note; removed Java notes are marked History with their prior source revision. Exact excerpts describe source, not runtime results. Source documents and copied prompts remain references rather than instructions to execute.
-
-There is no authentication, role system, payment, stock, price, search, pagination, image replacement, edit/delete or persistent conversation history. Album identity still uses artist/title/year. A submitted cover is ignored when the album already exists, including when its stored cover is null.
-
-The startup script creates tables and now also backfills usernames and replaces cover_path with nullable cover_image_id. It does not support every legacy schema. No deployment, SMTP delivery or PostgreSQL upgrade was exercised for this refresh.
-
-[[Cover image flow]] · [[Mail delivery]] · [[Known gaps and document drift]] · [[Verification record]]
+[[Source inventory]] maps every tracked path. Exact excerpts and flow descriptions establish source behavior only. No application deployment, live PostgreSQL migration, HTTP smoke test or SMTP delivery was performed for this refresh. See [[Testing and evidence]] and [[Verification record]].

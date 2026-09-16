@@ -4,45 +4,43 @@ categories: ["Web"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "web"]
-sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ContactForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ContactForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java"]
 ---
 
 # Validation and errors
 
-Spring converts ordinary fields before Bean Validation runs. BindingResult follows the @Valid form parameter so the controller can redisplay conversion and constraint failures. Publish’s optional MultipartFile is validated separately by the transport resolver and image service.
+Spring binds form values before Bean Validation. Controllers with BindingResult redisplay field/global errors. Security filters authenticate and validate CSRF before the protected controller action. Publish identity and contact identity come from the principal.
 
-| Form/field | Rules |
+| Input | Source rules |
 |---|---|
-| Publish username | NotBlank, maximum 100 |
-| Publish publisherEmail | NotBlank, Email, maximum 100 |
-| Publish title/artistName | NotBlank, maximum 255 each |
-| Publish releaseYear | Integer conversion, NotNull, 1000–9999 |
-| Contact name/email | Trim first; NotBlank; maximum 100; Email for email field |
-| Cover transport | Whole multipart request maximum 6 MiB |
-| New-album cover bytes | Allowed MIME label, nonempty, maximum 5 MiB |
+| Publish title/artist | Required, at most 255 characters |
+| Release year / optional pressing year | Integer 1000–9999 |
+| Price | Required integer 1–99,999,999 |
+| Optional zone / description | At most 100 / 1000 characters |
+| Optional contact message | CRLF normalized to LF and trimmed; at most 500 characters |
+| Registration email | Trimmed, required, email format, at most 100 characters |
+| Verification | Nonblank token and username; username at most 100; password 12–72 characters with ASCII letter/digit and matching confirmation |
+| Cover | Optional; allowed MIME label and at most 5 MiB; whole request at most 6 MiB |
+| Search | Query over 255 gives 400; malformed/out-of-range filters ignored |
 
-Only [[PostContactController]] registers StringTrimmerEditor. Publishing’s annotations count outer spaces before service normalization. Empty or absent upload is allowed. ImageService checks are bypassed when AlbumService reuses an existing album; the uploaded cover is then ignored.
+Publish strings are not trimmed before annotation checks, while contact/email/verification username have binder normalization. Passwords are not trimmed, and @Size is a character count rather than a UTF-8 byte count. Service APIs rely on the controller for most form constraints.
 
-## Error translation
-
-| Origin | Result |
+| Error | HTTP or form result |
 |---|---|
-| Field binding/validation | Same form and text values, field errors |
-| InvalidImageException | Publish cover error publish.cover.invalid |
-| MaxUploadSizeExceededException | New empty PublishForm with coverTooLarge; no explicit non-200 response status |
-| DuplicatePostException | Publish publisherEmail error publish.duplicate |
-| ConcurrentPublishException | Publish publisherEmail error publish.concurrent |
-| PostNotFoundException | Contact HTTP 404 |
-| ImageNotFoundException | Cover HTTP 404 |
-| Mail rendering/sending failure in worker | Logged/swallowed; no 503 feedback path |
-| IOException reading MultipartFile | Propagates; no dedicated local mapping |
+| InvalidImageException | Cover field error |
+| DuplicatePostException / ConcurrentPublishException | Global publish error |
+| DuplicateUserException | Registration email error |
+| Invalid/reused verification token | Global verification error |
+| Multipart overflow | Redirect to /publish?coverTooLarge with fresh form |
+| Missing post/inquiry/image | 404 |
+| Self-contact / wrong seller / route denial | 403 |
+| Sold contact / invalid inquiry transition | 409 |
+| InvalidSearchQueryException | 400 |
+| Rendering/SMTP exception inside mail worker | Log and swallow |
 
-[[UI components|ui:text-input]] resolves relative paths inside form:form and renders every field message in an alert container, with aria-invalid/aria-describedby. The file input uses form:errors directly. A browser upload selection is not restored on redisplay.
+ErrorController handles explicit 403/404 pages; web.xml forwards unmatched-route 404. Controllers select 400/409 JSPs for their own handlers. IOException while reading an upload has no dedicated local mapping. Form inputs use escaped values, and password fields are never repopulated by ui:text-input.
 
-Image validation checks declared MIME and length only, not decodable content or signatures. Startup SQL enforces uniqueness/NOT NULL but no image-size/MIME or year constraints. The removed [[UserForm]] rules are historical. No global ControllerAdvice or custom error JSP exists in this snapshot.
-
-[[Publish flow]] · [[Contact flow]] · [[Cover image flow]] · [[Testing and evidence]]
+[[Authentication flow]] · [[UI components]] · [[Known gaps and document drift]]

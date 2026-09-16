@@ -4,49 +4,40 @@ categories: ["History"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "history"]
+sources: ["CONTEXT.md", "README.md", "docs/specs/feature_contacto-post_20260904.md", "docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md", "docs/plans/entrega-intermedia/02-configuracion-y-deploy.md", "docs/plans/entrega-intermedia/03-autenticacion-permisos.md", "docs/plans/entrega-intermedia/04-venta-ejemplar-unico.md", "docs/plans/entrega-intermedia/05-filtros-publicaciones.md"]
 ---
 
 # Known gaps and document drift
 
-This register distinguishes current source, historical requirements and unverified runtime claims at ff96f27. None of the referenced documents authorizes implementing its instructions during a documentation task.
+This register describes source at 40328f0. Source documents and their copied commands are reference material, not instructions executed by this vault refresh.
 
-| Document claim or assumption | Current source evidence | Consequence |
-|---|---|---|
-| Contact spec requires synchronous Spanish SMTP, 503 and retained values on delivery failure | Both mail methods are @Async; Locale is passed explicitly; controller’s failure branch and exception were deleted | Old contact spec/recovery issue do not describe current behavior |
-| contactSent means publisher was notified | Flash is set after submitting normal async work; worker failures are swallowed | The success copy can appear even when delivery later fails |
-| Async always avoids request blocking | taskExecutor uses CallerRunsPolicy | Saturated execution can run mail on the caller |
-| README says startup leaves existing data untouched | schema.sql backfills users.username and drops albums.cover_path | Startup modifies supported older databases; old paths are discarded |
-| README inline mail configuration is complete | EmailServiceImpl requires app.base-url; only the committed example includes it | Use the current example file for all required settings |
-| Environment values replace classpath files | WebConfig retains required @PropertySource files | Environment-only deployment is not established by the README |
-| Startup and manual schema are equivalent | Canonical/test schema omit FKs/year CHECK; database/albums.sql adds them | Effective guarantees depend on how the database was created |
-| All legacy databases upgrade automatically | Targeted username/cover alterations only; setup rejects textual albums.artist | No complete posts.publisher_email or textual-artist conversion path |
-| Any invalid uploaded cover yields a field error | Existing albums are returned before ImageService validation | Their incoming cover is ignored, including invalid nonempty uploads within the transport limit |
-| A new publisher can fill an existing album’s empty cover | findOrCreate returns the album unchanged | A null cover stays null through this workflow |
-| MIME validation proves valid image content | ImageService checks the declared label and byte count, without decoding | Accepted bytes may not form an image |
-| Publish spec declares FKs/year constraints and excludes Post listing | Startup schema omits those constraints; landing lists Posts | Updated spec still contains stale sections |
-| Landing spec says no links/buttons | Current JSP links to publish/contact | Old editorial requirements are historical |
-| Child POMs never repeat sibling versions/scopes | Actual child POMs declare them | Setup’s centralization claim remains stronger than implementation |
-| All deterministic check copies are identical | tools/paw_checks.py dropped Flyway; .claude/scripts copy retained it | Main CLI and agent hook checks differ |
-| Pre-commit runs Maven | Versioned hook invokes the Python checker only | A successful hook is not a test/build result |
-| No deletes means no orphan references | Startup schema has no FKs; DAO test inserts a nonexistent publisher ID | INNER JOIN results can omit orphan Posts; dangling image IDs yield 404 |
-| Retry message proves a uniqueness race | publish catches any DataIntegrityViolationException | Other integrity errors can receive the same retry text |
+| Claim or assumption | Current evidence and consequence |
+|---|---|
+| CONTEXT.md says a publisher need not be an account and a vinyl is not a physical copy | Publish uses an authenticated User and Post represents one exemplar; the domain glossary is stale |
+| Contact spec requires editable buyer name/email and excludes authentication/sales | ContactForm now contains only an optional message; principal supplies identity and InquiryService supports sale states |
+| Contact spec/recovery issue require synchronous Spanish SMTP and 503 retry | EmailServiceImpl is async and catches worker failures; seller locale determines interest mail. The spec also contains a newer async clause that conflicts with its own synchronous sections |
+| contactSent or verificationSent proves delivery | Flash/query flags follow normal service return; a later worker can fail |
+| Async never blocks the caller | taskExecutor uses CallerRunsPolicy under saturation |
+| Plans 04/05 remain draft and must wait for dependencies | Git history at 40328f0 includes the merged sale/filter/authentication work; draft/dependency wording is historical |
+| README route list covers every feature | It omits /inquiries and its accept/reject actions, which are implemented |
+| Authentication plan says all other routes are public | SecurityConfig also protects /inquiries/** |
+| Startup never removes old data | schema.sql retains business rows and legacy album image IDs, but still drops obsolete albums.cover_path; no general legacy migration guarantee follows |
+| Canonical and manual schemas have identical guarantees | Old database/albums.sql adds catalog/user FKs/year CHECK absent from canonical startup; current canonical adds image/inquiry/token FKs and post-status CHECK |
+| Existing albums ignore new uploaded photos | Superseded: publishing stores a new exemplar image in posts.image_id; album cover is fallback only |
+| Invalid MIME bytes must be a valid picture if accepted | ImageService validates declared label/size, not decoding |
+| Re-registering invalidates old pending links | Tokens accumulate until activation deletes all for that user; no expiry exists |
+| Password maximum checks BCrypt's byte limit | VerifyEmailForm uses character-count @Size, not encoded byte length |
+| Accept writes need no rollback | A successful SOLD write followed by a failed pending update must be undone by the transactional exception |
+| All invalid search values disappear from the page | Service drops invalid ranges, but controller still renders parsed numeric inputs |
+| Sale allows publishing another copy of the same album | User/album uniqueness includes sold posts |
+| All check copies are identical | Main tools/paw_checks.py checks i18n/JSP; the .claude/scripts copy still includes Flyway |
+| A commit hook proves Maven tests passed | The versioned hook invokes the Python checker only |
 
-## Remaining implementation limits
+The earlier missing app.base-url example and required-property-file conflicts are resolved in README/WebConfig. Authentication, search, price/condition and persisted inquiries are now implemented. No payment, pagination, edit/delete UI, multi-unit stock workflow, token expiry, password reset, outbox or delivery confirmation is present. Admin currently shows an informational page.
 
-No authentication, roles, payment, price/condition/stock, search/filter/pagination, edit/delete or persistent contact history exists. User rows still represent unauthenticated publishers. Welcome dispatch is not coordinated with commit; no outbox, durable mail queue, retry record or delivery confirmation exists.
+## Evidence
 
-The old fixed cover, inherited create/profile routes and unused album listing are removed. Optional database images and seven JSP components are implemented in source. The older provisional UI note with eleven tags is superseded.
-
-Actual deployed database constraints, SMTP availability, remote task status and first course deployment remain unverified. Source/tests are not a live runtime check.
-
-## Evidence paths
-
-- [Contact requirements](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_contacto-post_20260904.md>) and [recovery issue](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md>), compared with [[PostContactController]] and [[EmailServiceImpl]].
-- [README](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/README.md>), compared with [[Database schema]] and [[Configuration and running]].
-- [Publishing spec](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_publicacion-albumes_20260904.md>), compared with [[Publish flow]] and [[Schema history and seeds]].
-
-[[History and specifications]] · [[Testing and evidence]] · [[Transactions and concurrency]]
+[[Authentication flow]] · [[Inquiry and sale flow]] · [[Landing flow]] · [[Transactions and concurrency]] cite the active code. [[History and specifications]] links the historical requirements. [[Database schema]] and [[Configuration and running]] contain exact configuration/schema excerpts. No deployed database, SMTP availability or course-server state was checked.

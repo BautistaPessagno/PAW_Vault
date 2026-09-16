@@ -17,11 +17,11 @@ sources: []
 > [!note] Historical source
 > This type is absent at ff96f27. The text and excerpt below describe the previous implementation at 041ce34.
 
-Legacy scaffold routes. GET `/create` binds [[UserForm]] as `form`; POST validates then invokes [[UserService]].create with Locale and redirects to `/profile/{id}`. GET `/profile/{userId}` resolves Optional to a User, then renders `helloworld/index`. Missing users throw [[UserNotFoundException]], which has no explicit 404 mapping here. The landing does not link to these routes. See [[Legacy user flow]].
+Legacy scaffold routes. GET `/create` binds [[UserForm]] as `form`; POST validates then invokes [[UserService]].create with Locale and redirects to `/profile/{id}`. GET `/profile/{userId}` resolves Optional to a User, then renders `helloworld/index`. Missing users throw [[Legacy UserNotFoundException]], which has no explicit 404 mapping here. The landing does not link to these routes. See [[Legacy user flow]].
 
 ## Connections
 
-Project types referenced: [[User]], [[UserForm]], [[UserNotFoundException]], [[UserService]].
+Project types referenced: [[User]], [[UserForm]], [[Legacy UserNotFoundException]], [[UserService]].
 
 Referenced by: no other production Java type directly references this name; Spring discovers implementations through scanning.
 

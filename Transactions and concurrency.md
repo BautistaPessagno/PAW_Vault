@@ -1,39 +1,36 @@
 ---
 title: "Transactions and concurrency"
-categories: ["Services"]
+categories: ["Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "services"]
-sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
+sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # Transactions and concurrency
 
-[[WebConfig]] enables transaction proxies and a DataSourceTransactionManager. Cooperating JdbcTemplate calls use the same transaction connection. Runtime exceptions leaving transactional services trigger rollback under the declared defaults.
+WebConfig enables transactional proxies with DataSourceTransactionManager. DAO calls made within a proxied service transaction share its connection; unchecked exceptions trigger rollback. Directly constructed service unit tests do not activate this behavior.
 
-| Method | Declared transaction | Effect |
-|---|---|---|
-| [[PostServiceImpl]].publish | Read/write | User, Artist, optional Image, Album and Post share one transaction |
-| PostServiceImpl.getFeatured/findById | Read-only | Summary reads |
-| PostServiceImpl.notifyInterest | None | Reads one summary and delegates asynchronous email |
-| [[UserServiceImpl]].findOrCreate | Read/write | Private create helper participates in this transaction |
-| UserServiceImpl.findById | Read-only | Publisher lookup |
-| [[ArtistServiceImpl]].findOrCreate | Read/write | Joins outer publish transaction |
-| [[AlbumServiceImpl]].findOrCreate | Read/write | Existing album skips cover creation; new album can store cover |
-| [[ImageServiceImpl]].create/findById | Read/write / read-only | Image bytes inserted/read through ImageDao |
+| Operation | Transaction and ordering |
+|---|---|
+| PostServiceImpl.search | Read-only summary query, limit 16 |
+| PostServiceImpl.publish | Account lookup, artist/album resolution, duplicate check, optional image and post insert in one transaction |
+| UserServiceImpl.register | Create/reuse pending account, store token, request verification mail |
+| UserServiceImpl.verifyEmail | Conditional activation, token deletion and welcome dispatch |
+| InquiryServiceImpl.submit | Lock post, validate buyer/status, create inquiry, request interest mail |
+| InquiryServiceImpl.accept | Lock post, authorize seller, sell post, accept chosen pending inquiry, reject competitors |
+| InquiryServiceImpl.reject | Lock post, authorize seller, reject pending inquiry |
+| Lookup/list/image reads | Read-only service transactions where declared in linked code notes |
 
-AlbumService.getFeatured and public UserService.create have been removed. Same-instance calls to the private create helper do not cross a proxy; the outer findOrCreate transaction already exists. Mockito service construction activates neither transactions nor async dispatch.
+Unique constraints arbitrate account email, artist name, album artist/title/year and post user/album. SELECT-before-INSERT does not make those sequences atomic. The publish service translates DuplicatePostKeyException specifically; other integrity errors receive ConcurrentPublishException without inspecting the violated constraint. That broad error does not prove a retry will succeed.
 
-## Concurrent identities
+PostJdbcDao first issues SELECT id ... FOR UPDATE, then reads the joined summary. All inquiry mutations use this post lock. Conditional updates provide an additional state guard. If accepting an already closed inquiry follows a successful SOLD update, the service exception relies on transaction rollback to restore the post.
 
-SELECT then INSERT is not atomic. Unique constraints arbitrate User email, Artist name, Album artist/title/year and Post user/album. PostJdbcDao translates duplicate inserts and PostServiceImpl translates that marker to a field-level business error. Other DataIntegrityViolationException values receive the broad ConcurrentPublishException message, without inspecting the violated constraint or retrying.
+User activation uses WHERE enabled=FALSE; an already activated account cannot have its credentials overwritten through a second link. Re-registration does not delete previous pending tokens. Publication uniqueness also remains after sale.
 
-A newly stored image rolls back if album/post creation later fails through the proxied publish transaction. Looking up an album before image creation avoids storing an unused image on the ordinary reuse path. This is source-derived transaction behavior; no concurrent PostgreSQL experiment was run.
+All three mail triggers occur before the service transaction commits. An async worker may send a message before a subsequent rollback. No after-commit listener or outbox is present. CallerRunsPolicy can execute mail on the calling thread when the bounded pool is saturated. [[Mail delivery]] explains the failure handling.
 
-## Mail is outside the commit guarantee
-
-New-user welcome dispatch occurs before publish commit. A later database rollback cannot undo that email. There is no after-commit event or outbox. Contact mail also uses @Async and has no request-scoped delivery result. The bounded executor falls back to CallerRunsPolicy when saturated, so mail may still occupy the caller in that condition. [[Mail delivery]] describes the pool and failure handling.
+[[Inquiry and sale flow]] · [[Database schema]] · [[Testing and evidence]]

@@ -1,13 +1,12 @@
 ---
 title: "TestConfiguration"
 categories: ["Testing"]
-type: "test"
+type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "testing"]
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java"]
 ---
 
@@ -15,13 +14,13 @@ sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfigurati
 
 Builds the persistence test Spring context. HSQLDB is an in-memory database named paw with PostgreSQL syntax mode. It initializes test schema.sql followed by populator.sql, scans persistence beans, and supplies a DataSourceTransactionManager. This does not load [[WebConfig]], production PostgreSQL or SMTP.
 
-Production connections: .
+## Connections
 
-## Test cases
+Project types referenced: none.
 
-This is shared test configuration, not a test class.
+Referenced by: [[AlbumJdbcDaoTest]], [[ArtistJdbcDaoTest]], [[EmailVerificationTokenJdbcDaoTest]], [[ImageJdbcDaoTest]], [[InquiryJdbcDaoTest]], [[PostJdbcDaoTest]], [[UserJdbcDaoTest]].
 
-## Exact test source
+## Exact source
 
 [persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java, lines 1–47](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java>)
 
@@ -75,4 +74,6 @@ public class TestConfiguration {
 }
 ```
 
-[[Testing and evidence]] · [[Source inventory]]
+## Context
+
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

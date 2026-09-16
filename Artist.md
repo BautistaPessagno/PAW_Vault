@@ -4,10 +4,9 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "domain"]
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Artist.java"]
 ---
 
@@ -20,15 +19,6 @@ The reusable artist identity. `id` is the generated database key; `name` is the 
 Project types referenced: none.
 
 Referenced by: [[ArtistDao]], [[ArtistJdbcDao]], [[ArtistJdbcDaoTest]], [[ArtistService]], [[ArtistServiceImpl]], [[ArtistServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
-
-## Stored values
-
-| Field | Java type |
-|---|---|
-| `id` | `long` |
-| `name` | `String` |
-
-Constructors assign these values directly. Getters return them. There are no setters, persistence annotations, custom equality methods or constructor-level validation.
 
 ## Exact source
 
@@ -58,4 +48,4 @@ public class Artist {
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

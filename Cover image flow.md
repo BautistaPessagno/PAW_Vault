@@ -4,82 +4,25 @@ categories: ["Flows", "Web"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java"]
+sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java"]
 ---
 
 # Cover image flow
 
-An optional cover belongs to an Album, not an individual Post. [[PublishForm]] receives MultipartFile through a lazy CommonsMultipartResolver. [[PublishController]] passes the declared MIME type and bytes to [[PostServiceImpl]], then [[AlbumServiceImpl]].
+New uploaded photos belong to the physical exemplar through posts.image_id. AlbumService no longer handles image creation. Existing catalog identities can be reused with a different publication photo, including when the legacy album cover is null.
 
-## Storage decisions
+1. [[PublishController]] passes the upload's declared MIME and bytes to [[PostServiceImpl]].
+2. After the duplicate publication check, nonempty bytes go to [[ImageServiceImpl]]. Allowed labels are image/png, image/jpeg and image/webp; size must not exceed 5,242,880 bytes.
+3. [[ImageJdbcDao]] stores the bytes; Post.imageId references them in the same publishing transaction. Empty or absent upload gives a null post image.
+4. [[PostJdbcDao]] reads COALESCE(p.image_id, a.cover_image_id). ui:vinyl-card uses /covers/{id}, or the SVG placeholder when both references are null.
 
-1. Existing artist/title/year identity returns the stored Album and ignores the submitted cover, even if the existing cover is null.
-2. A new album with no bytes stores a null image reference.
-3. A new album with bytes invokes [[ImageServiceImpl]]. It permits normalized image/png, image/jpeg and image/webp with 1–5,242,880 bytes.
-4. [[ImageJdbcDao]] inserts content_type and BYTEA data and returns the generated ID. Album and Post writes join the same publish transaction.
+The whole multipart request limit is 6,291,456 bytes. [[MultipartExceptionHandlerFilter]] redirects overflow to the empty publish form with coverTooLarge. web.xml places multipart parsing before Spring Security so CSRF can read the multipart token.
 
-Only the supplied MIME label and byte length are checked. There is no image decoder, signature validation, resizing or content deduplication. The HTML accept list is a file-picker hint. The whole multipart request limit is 6,291,456 bytes; excessive requests return an empty PublishForm with coverTooLarge.
+[[ImageController]] returns stored bytes and Content-Type with public max-age=31536000. The route is public; missing images return 404. No replace/delete route, ETag, decoder, signature check, resizing or content deduplication is implemented. [[Image]] now copies byte arrays on construction and retrieval.
 
-## Retrieval
+The schema enforces the new posts.image_id foreign key. The retained albums.cover_image_id fallback has no foreign key in the canonical startup schema; a dangling fallback yields 404 without automatic JSP recovery.
 
-ui:vinyl-card renders /images/covers/placeholder.svg when coverImageId is null. Otherwise it renders /covers/{id}. [[ImageController]] loads the Image through a read-only service call and returns bytes with stored Content-Type and Cache-Control public, max-age=31536000. Missing IDs return 404. There is no replace/delete route, authentication or conditional ETag response in this controller.
-
-An old album whose cover_path was removed by the startup script now displays the placeholder. A non-null dangling image ID instead requests a missing resource and gets 404; the JSP has no automatic fallback for that case. The startup schema does not enforce the image foreign key.
-
-## Image response source
-
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java, lines 1–46](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>)
-
-```java
-package ar.edu.itba.paw.webapp.controller;
-
-import ar.edu.itba.paw.models.Image;
-import ar.edu.itba.paw.services.ImageService;
-import ar.edu.itba.paw.webapp.exceptions.ImageNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-import java.util.concurrent.TimeUnit;
-
-@Controller
-public class ImageController {
-
-    // Una imagen nunca cambia una vez guardada, asi que el navegador puede cachearla por id.
-    private static final long CACHE_DAYS = 365;
-
-    private final ImageService imageService;
-
-    @Autowired
-    public ImageController(final ImageService imageService) {
-        this.imageService = imageService;
-    }
-
-    @RequestMapping(value = "/covers/{id:\\d+}", method = RequestMethod.GET)
-    public ResponseEntity<byte[]> cover(@PathVariable("id") final long id) {
-        final Image image = imageService.findById(id).orElseThrow(ImageNotFoundException::new);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(image.getContentType()))
-                .cacheControl(CacheControl.maxAge(CACHE_DAYS, TimeUnit.DAYS).cachePublic())
-                .body(image.getData());
-    }
-
-    @ExceptionHandler(ImageNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public void imageNotFound() {
-    }
-}
-```
-
-[[Database schema]] · [[UI components]] · [[ImageJdbcDaoTest]] · [[ImageServiceImplTest]]
+[[Database schema]] · [[Publish flow]] · [[UI components]]

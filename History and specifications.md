@@ -4,11 +4,10 @@ categories: ["History"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "history"]
-sources: ["docs/adr/0001-establish-quiero-vinilos-domain.md", "docs/adr/0002-own-the-album-catalog-locally.md", "docs/issues/01-mostrar-primer-album-en-landing.md", "docs/issues/02-completar-catalogo-inicial.md", "docs/issues/03-terminar-landing-editorial-responsive.md", "docs/issues/publicacion-albumes/01-convertir-artist-en-entidad.md", "docs/issues/publicacion-albumes/02-publicar-album-nuevo.md", "docs/issues/publicacion-albumes/03-reutilizar-catalogo-en-publicaciones.md", "docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md", "docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md", "docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md", "docs/setup.md", "docs/specs/feature_contacto-post_20260904.md", "docs/specs/feature_publicacion-albumes_20260904.md", "docs/specs/landing-quiero-vinilos.md", "TODO.md"]
+sources: ["CONTEXT.md", "README.md", "TODO.md", "docs/adr/0001-establish-quiero-vinilos-domain.md", "docs/adr/0002-own-the-album-catalog-locally.md", "docs/issues/01-mostrar-primer-album-en-landing.md", "docs/issues/02-completar-catalogo-inicial.md", "docs/issues/03-terminar-landing-editorial-responsive.md", "docs/issues/publicacion-albumes/01-convertir-artist-en-entidad.md", "docs/issues/publicacion-albumes/02-publicar-album-nuevo.md", "docs/issues/publicacion-albumes/03-reutilizar-catalogo-en-publicaciones.md", "docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md", "docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md", "docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md", "docs/plans/entrega-intermedia/02-configuracion-y-deploy.md", "docs/plans/entrega-intermedia/03-autenticacion-permisos.md", "docs/plans/entrega-intermedia/04-venta-ejemplar-unico.md", "docs/plans/entrega-intermedia/05-filtros-publicaciones.md", "docs/setup.md", "docs/specs/feature_contacto-post_20260904.md", "docs/specs/feature_publicacion-albumes_20260904.md", "docs/specs/landing-quiero-vinilos.md"]
 ---
 
 # History and specifications
@@ -33,16 +32,23 @@ The two ADRs establish the quieroVinilos domain and its locally owned catalog/as
 | [docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md>) | 01: Contactar al publicante desde un Post. **Status:** done |
 | [docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md>) | 02: Recuperarse de un fallo de entrega de contacto. **Status:** ready-for-agent |
 | [docs/setup.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/setup.md>) | Setup now describes the canonical startup schema and rejection of legacy textual artists; Flyway/admin-bootstrap sections were removed. Dependency-centralization claims still differ from the POMs. |
-| [docs/specs/feature_contacto-post_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_contacto-post_20260904.md>) | Historical requested behavior. Feature Specification: Contacto con publicante por Post. Compare with current flow notes and document-drift register. |
+| [docs/specs/feature_contacto-post_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_contacto-post_20260904.md>) | Partially updated for persisted messages and seller locale, but still includes conflicting synchronous delivery, editable identity and no-sale requirements. |
 | [docs/specs/feature_publicacion-albumes_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_publicacion-albumes_20260904.md>) | Updated to User-linked Posts, multipart publishing, optional Image storage and PostSummary. Some old no-Post-list and constraint assumptions remain; see [[Known gaps and document drift]]. |
 | [docs/specs/landing-quiero-vinilos.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/landing-quiero-vinilos.md>) | Now acknowledges PostDao and deleted scaffold routes; old no-action/gallery criteria remain in the body. |
 
-## Changes through ff96f27
+## Changes through 40328f0
 
-The merge includes optional cover storage and retrieval, WAR/log naming changes, asynchronous localized interest mail with home CTA, and cleanup of the scaffold and unused album listing. [[AlbumSummary]], [[HelloWorldController]], [[UserForm]], [[UserNotFoundException]] and [[EmailDeliveryException]] remain as historical notes with pinned pre-removal excerpts.
+The current merge includes authenticated accounts with email verification, persistent inquiries and seller actions, single-exemplar sale states, per-post photos, commercial details and combined catalog search/filter/sort. Source behavior is traced in [[Authentication flow]], [[Contact flow]], [[Inquiry and sale flow]] and [[Landing flow]].
 
-TODO.md now marks image handling covered and says database access/upload procedure are known, while the first course deployment remains pending validation. Its admin-bootstrap discussion is future design guidance, not an implemented listener, role or authenticated session.
+The new plans under docs/plans/entrega-intermedia describe configuration/deploy, authentication, single-exemplar sale and combined filters. Their draft/dependency labels are historical: the target Git history already contains these merges. Acceptance criteria and lists of tests to run are not evidence those tests ran during this refresh.
 
-The contact specification and recovery issue still require synchronous Spanish delivery, HTTP 503 and retained form input. Those requirements conflict with the new async source and deleted recovery path. Their done/ready labels and test-coverage claims are historical document assertions, not current runtime evidence.
+CONTEXT.md and the older publication/contact specifications lag behind ownership and sale behavior. README now documents optional property files, required app.base-url, registration and demo account setup, but its route table omits the inbox. TODO.md remains a source of historical planning claims, not live deployment evidence.
 
-No document instructions were executed. [[Known gaps and document drift]] records the remaining contradictions; [[Verification record]] records only checks performed for this vault refresh.
+The removed [[AlbumSummary]], [[HelloWorldController]], [[UserForm]], [[Legacy UserNotFoundException]] and [[EmailDeliveryException]] preserve their pinned historical code. The new [[UserNotFoundException]] belongs to services-contracts and is a separate class.
+
+- [docs/plans/entrega-intermedia/02-configuracion-y-deploy.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/02-configuracion-y-deploy.md>)
+- [docs/plans/entrega-intermedia/03-autenticacion-permisos.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/03-autenticacion-permisos.md>)
+- [docs/plans/entrega-intermedia/04-venta-ejemplar-unico.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/04-venta-ejemplar-unico.md>)
+- [docs/plans/entrega-intermedia/05-filtros-publicaciones.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/05-filtros-publicaciones.md>)
+
+[[Known gaps and document drift]] · [[Verification record]]

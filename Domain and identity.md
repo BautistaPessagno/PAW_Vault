@@ -4,49 +4,39 @@ categories: ["Domain"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "domain"]
-sources: ["CONTEXT.md", "models/src/main/java/ar/edu/itba/paw/models/Album.java", "models/src/main/java/ar/edu/itba/paw/models/Image.java", "models/src/main/java/ar/edu/itba/paw/models/PostSummary.java"]
+sources: ["CONTEXT.md", "models/src/main/java/ar/edu/itba/paw/models/Album.java", "models/src/main/java/ar/edu/itba/paw/models/Post.java", "models/src/main/java/ar/edu/itba/paw/models/User.java", "models/src/main/java/ar/edu/itba/paw/models/Inquiry.java", "models/src/main/java/ar/edu/itba/paw/models/Image.java"]
 ---
 
 # Domain and identity
 
-The catalog and publications have separate identities. [[Artist]] names a performer, [[Album]] identifies a work by artist/title/year, [[Image]] stores optional cover bytes, and [[Post]] connects a publisher [[User]] to an album. Two publishers can offer the same album without duplicating it.
+An Album is shared catalog metadata. A Post now represents one physical exemplar owned by an account. Its price, condition, pressing year, zone, description, image and sale status belong to the publication. An Inquiry records a buyer request for that exemplar.
+
+| Identity | Rule |
+|---|---|
+| [[User]] | Trimmed/lowercased unique email; display username is not unique; credentials chosen on verification |
+| [[Artist]] | Trimmed/lowercased unique name |
+| [[Album]] | Artist ID + normalized title + release year; first stored genre retained |
+| [[Post]] | Unique user ID + album ID, including SOLD posts |
+| [[Image]] | Generated ID, copied byte arrays, no deduplication |
+| [[Inquiry]] | Generated ID; repeated buyer/post submissions are not uniquely constrained |
+| [[EmailVerificationToken]] | Unique random token; multiple pending tokens per account are allowed |
 
 ```mermaid
 erDiagram
-    USERS ||--o{ POSTS : publishes
+    USERS ||--o{ POSTS : owns
     ARTISTS ||--o{ ALBUMS : performs
-    ALBUMS ||--o{ POSTS : appears_in
-    IMAGES o|--o{ ALBUMS : covers
-    ALBUMS {
-        int id PK
-        string title
-        int artist_id
-        int release_year
-        int cover_image_id "nullable"
-    }
-    IMAGES {
-        int id PK
-        string content_type
-        bytes data
-    }
+    ALBUMS ||--o{ POSTS : describes
+    IMAGES o|--o{ POSTS : photographs
+    POSTS ||--o{ INQUIRIES : receives
+    USERS ||--o{ INQUIRIES : sends
+    USERS ||--o{ EMAIL_VERIFICATION_TOKENS : verifies
 ```
 
-These are logical links. The startup schema has no foreign keys; the manual bootstrap has stronger constraints. See [[Database schema]].
+These are domain relationships; only some are database foreign keys. [[Database schema]] distinguishes enforced references from logical ones. PostSummary resolves the publication image first and the historical album cover second. The old album reference remains for compatibility.
 
-| Identity | Resolution |
-|---|---|
-| User | Email trimmed and lowercased with Locale.ROOT; existing username retained |
-| Artist | Name trimmed and lowercased |
-| Album | Artist ID + normalized title + release year |
-| Post | Unique user ID + album ID pair |
-| Image | Generated ID; no content deduplication |
+[[PostSummary]] and [[InquirySummary]] are joined read projections. [[PostSearchCriteria]] and [[SearchResult]] carry search input/output. [[Genre]], [[Condition]], [[PostStatus]], [[InquiryStatus]], [[PostSort]] and [[UserRole]] define fixed choices. [[PostInterestNotification]] is the mail payload, separate from the persisted inquiry.
 
-Normalization preserves internal spaces and accents. Username is neither normalized nor unique. Cover image ID is nullable and never part of album identity. The first creator fixes the cover; an existing album is returned unchanged even if another publisher submits a cover. An album created without a cover cannot gain one through findOrCreate.
-
-The six current model types are [[User]], [[Artist]], [[Album]], [[Image]], [[Post]] and [[PostSummary]]. PostSummary is a query projection rather than a table. Image has final fields but exposes a mutable byte array. [[PostInterestNotification]] remains a service-contract payload rather than persisted contact history. [[AlbumSummary]] is historical.
-
-CONTEXT.md identifies publishers by email without requiring an account. Current publishing nevertheless stores a User row; that does not imply authentication. The glossary does not yet define Image as a separate stored type. [[Known gaps and document drift]] records the distinction.
+CONTEXT.md still describes unauthenticated publishers and says a vinyl is not a physical copy. That glossary predates account ownership and exemplar sales. [[Known gaps and document drift]] records the conflict.

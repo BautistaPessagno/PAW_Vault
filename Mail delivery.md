@@ -4,38 +4,29 @@ categories: ["Services"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "services"]
-sources: ["services/src/main/resources/mail/welcome.html", "services/src/main/resources/mail/post-interest.html", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
+sources: ["services/src/main/resources/mail/welcome.html", "services/src/main/resources/mail/email-verification.html", "services/src/main/resources/mail/post-interest.html", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # Mail delivery
 
-Both mail operations in [[EmailServiceImpl]] use @Async, JavaMailSender, MimeMessageHelper and Thymeleaf HTML. Both receive the request Locale explicitly and log/catch rendering or sending failures.
+EmailServiceImpl has three @Async operations using Thymeleaf HTML and JavaMailSender. Each receives Locale explicitly and catches/logs rendering or SMTP exceptions.
 
-| Property | Welcome | Post interest |
-|---|---|---|
-| Trigger | New publisher user | Valid contact submission |
-| To | User email | Publisher address resolved from PostSummary |
-| From | app.mail.from | app.mail.from |
-| Reply-To | Not explicitly set | Contact email |
-| Locale | Caller Locale | Caller Locale |
-| Link | app.base-url + / | app.base-url + / |
-| Failure | Log and swallow | Log and swallow |
+| Message | Trigger | Language | Link / reply |
+|---|---|---|---|
+| Verification | Register new/pending account | Request locale | app.base-url + /verify?token= |
+| Welcome | Successful account activation | Verification request locale | Home link |
+| Post interest | Persist initial inquiry | Seller preferred locale, normalized by SupportedLocales | Home link; authenticated buyer Reply-To |
 
-## Execution and feedback
+All use app.mail.from and UTF-8 HTML. The interest template includes the optional buyer message using escaped Thymeleaf text. The constructor removes one trailing slash from app.base-url; deployments must include their context path. No attachment, copy to buyer, acceptance/rejection email or conversation reply delivery is implemented.
 
-[[WebConfig]] provides taskExecutor with core pool 2, maximum 5, queue capacity 50 and mail- thread prefix. CallerRunsPolicy runs rejected work in the caller under saturation rather than discarding it in that condition. Normal delivery runs in a worker, but the request can still wait for mail when this fallback applies.
+The pool has core 2, max 5, queue 50 and CallerRunsPolicy. Saturation can run work in the caller. Registration, verification and inquiry submission invoke mail before database commit. There is no durable queue, outbox, after-commit event or delivery acknowledgment. SMTP example timeouts apply to individual operations; their sum is not a measured end-to-end bound.
 
-The contact controller immediately redirects after a normal service return with contactSent=true. This is not SMTP delivery confirmation. The old 503 retry view and EmailDeliveryException have been removed. Failures inside the async method do not propagate back to that form. Failures before entering the method are not proven covered by its catch.
+The inquiry remains readable after a worker delivery failure if its transaction committed. Login verificationSent and landing contactSent feedback do not establish delivery. Old synchronous 503/retry requirements remain historical.
 
-app.base-url is a required configuration value for absolute home links outside request context. The constructor removes one trailing slash. UTF-8 HTML messages and th:text escape supplied text; interest email includes a mailto link, name, email and album details. No attachment, visitor-written body, CC, BCC or copy to the visitor is implemented.
-
-The SMTP example specifies 5000 ms connection and 10000 ms read/write timeouts. These are individual operation limits rather than a proven end-to-end duration. There is no durable queue, retry history or outbox, and welcome dispatch can precede a later database rollback.
-
-## Welcome template
+## welcome template
 
 [services/src/main/resources/mail/welcome.html, lines 1–21](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/welcome.html>)
 
@@ -63,9 +54,37 @@ The SMTP example specifies 5000 ms connection and 10000 ms read/write timeouts. 
 </html>
 ```
 
-## Interest template
+## email-verification template
 
-[services/src/main/resources/mail/post-interest.html, lines 1–32](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/post-interest.html>)
+[services/src/main/resources/mail/email-verification.html, lines 1–21](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/email-verification.html>)
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{email.verification.subject}">Confirmá tu correo</title>
+</head>
+<body style="margin: 0; padding: 24px; background-color: #f4f4f4; font-family: Arial, Helvetica, sans-serif; color: #222222;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 8px;">
+    <tr>
+        <td style="padding: 32px;">
+            <h1 style="margin: 0 0 16px; font-size: 20px;" th:text="#{email.verification.subject}">Confirmá tu correo</h1>
+            <p style="margin: 0 0 28px; font-size: 15px; line-height: 1.5;"
+               th:text="#{email.verification.body}">Confirmá tu correo para elegir tus credenciales y activar tu cuenta.</p>
+            <a th:href="${verificationUrl}" href="#"
+               style="display: inline-block; padding: 12px 24px; background-color: #1f2933; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px;"
+               th:text="#{email.verification.cta}">Confirmar correo</a>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
+```
+
+## post-interest template
+
+[services/src/main/resources/mail/post-interest.html, lines 1–36](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/resources/mail/post-interest.html>)
 
 ```html
 <!DOCTYPE html>
@@ -92,6 +111,10 @@ The SMTP example specifies 5000 ms connection and 10000 ms read/write timeouts. 
                 <span th:text="${artistName}">Artista</span>
                 (<span th:text="${releaseYear}">2026</span>)
             </p>
+            <p th:if="${message != null}" style="margin: 0 0 28px; font-size: 15px; line-height: 1.5;">
+                <strong th:text="#{email.postInterest.message}">Mensaje:</strong><br/>
+                <span style="white-space: pre-line;" th:text="${message}">Mensaje del interesado</span>
+            </p>
             <a th:href="${homeUrl}" href="#"
                style="display: inline-block; padding: 12px 24px; background-color: #1f2933; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px;"
                th:text="#{email.postInterest.cta}">Ver quieroVinilos</a>
@@ -102,4 +125,4 @@ The SMTP example specifies 5000 ms connection and 10000 ms read/write timeouts. 
 </html>
 ```
 
-[[Contact flow]] · [[EmailServiceImplTest]] · [[Configuration and running]]
+[[Authentication flow]] · [[Contact flow]] · [[EmailServiceImplTest]]

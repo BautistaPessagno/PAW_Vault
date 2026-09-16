@@ -4,49 +4,50 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "web"]
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java"]
 ---
 
 # PublishController
 
-GET /publish returns the form. POST validates the five ordinary fields, then reads optional MultipartFile content type and bytes and invokes PostService.publish with Locale. InvalidImageException maps to cover; duplicate/concurrent exceptions map to publisherEmail. Success redirects to /. MaxUploadSizeExceededException returns a new empty PublishForm with coverTooLarge=true. IOException from getBytes is declared and has no dedicated recovery branch. See [[Publish flow]].
+Authenticated publish uses the principal ID, validated PublishForm and optional multipart image. Re-populates Genre/Condition options when rendering errors. Invalid image, duplicate post and concurrent publication errors remain on the form; success redirects home. Oversize transport errors arrive through the dedicated filter redirect.
 
 ## Connections
 
-Project types referenced: [[ConcurrentPublishException]], [[DuplicatePostException]], [[InvalidImageException]], [[PostService]], [[PublishForm]].
+Project types referenced: [[AuthenticatedUser]], [[ConcurrentPublishException]], [[Condition]], [[DuplicatePostException]], [[Genre]], [[InvalidImageException]], [[PostService]], [[PublishForm]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java, lines 1–74](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java, lines 1–81](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
+import ar.edu.itba.paw.models.Condition;
+import ar.edu.itba.paw.models.Genre;
 import ar.edu.itba.paw.services.ConcurrentPublishException;
 import ar.edu.itba.paw.services.DuplicatePostException;
 import ar.edu.itba.paw.services.InvalidImageException;
 import ar.edu.itba.paw.services.PostService;
 import ar.edu.itba.paw.webapp.form.PublishForm;
+import ar.edu.itba.paw.webapp.security.AuthenticatedUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.Locale;
 
 @Controller
 public class PublishController {
@@ -59,45 +60,50 @@ public class PublishController {
     }
 
     @RequestMapping(value = "/publish", method = RequestMethod.GET)
-    public ModelAndView publishForm(@ModelAttribute("publishForm") final PublishForm form) {
-        return new ModelAndView("publish/index");
+    public ModelAndView publishForm(@ModelAttribute("publishForm") final PublishForm form,
+                                    @RequestParam(name = "coverTooLarge", required = false)
+                                    final String coverTooLarge) {
+        final ModelAndView modelAndView = publishView();
+        modelAndView.addObject("coverTooLarge", coverTooLarge != null);
+        return modelAndView;
+    }
+
+    // Las listas de los <select> van en la vista y no como @ModelAttribute de la clase:
+    // el redirect post-publicacion arrastraria el modelo entero como query string.
+    private static ModelAndView publishView() {
+        final ModelAndView modelAndView = new ModelAndView("publish/index");
+        modelAndView.addObject("genres", Genre.values());
+        modelAndView.addObject("conditions", Condition.values());
+        return modelAndView;
     }
 
     @RequestMapping(value = "/publish", method = RequestMethod.POST)
-    public ModelAndView publish(@Valid @ModelAttribute("publishForm") final PublishForm form,
-                                final BindingResult bindingResult, final Locale locale) throws IOException {
+    public ModelAndView publish(@AuthenticationPrincipal final AuthenticatedUser currentUser,
+                                @Valid @ModelAttribute("publishForm") final PublishForm form,
+                                final BindingResult bindingResult) throws IOException {
         if (bindingResult.hasErrors()) {
-            return publishForm(form);
+            return publishForm(form, null);
         }
 
         final MultipartFile cover = form.getCover();
         final boolean hasCover = cover != null && !cover.isEmpty();
         try {
-            postService.publish(form.getUsername(), form.getPublisherEmail(), form.getTitle(),
-                    form.getArtistName(), form.getReleaseYear(),
+            postService.publish(currentUser.getId(), form.getTitle(), form.getArtistName(),
+                    form.getReleaseYear(), form.getGenre(), form.getPrice(),
+                    form.getDescription(), form.getCondition(), form.getPressingYear(), form.getZone(),
                     hasCover ? cover.getContentType() : null,
-                    hasCover ? cover.getBytes() : null,
-                    locale);
+                    hasCover ? cover.getBytes() : null);
             return new ModelAndView("redirect:/");
         } catch (final InvalidImageException e) {
             bindingResult.rejectValue("cover", "publish.cover.invalid");
-            return publishForm(form);
+            return publishForm(form, null);
         } catch (final DuplicatePostException e) {
-            bindingResult.rejectValue("publisherEmail", "publish.duplicate");
-            return publishForm(form);
+            bindingResult.reject("publish.duplicate");
+            return publishForm(form, null);
         } catch (final ConcurrentPublishException e) {
-            bindingResult.rejectValue("publisherEmail", "publish.concurrent");
-            return publishForm(form);
+            bindingResult.reject("publish.concurrent");
+            return publishForm(form, null);
         }
-    }
-
-    // El resolver corta el request antes del binding, asi que el form llega vacio.
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ModelAndView coverTooLarge() {
-        final ModelAndView modelAndView = new ModelAndView("publish/index");
-        modelAndView.addObject("publishForm", new PublishForm());
-        modelAndView.addObject("coverTooLarge", true);
-        return modelAndView;
     }
 }
 ```

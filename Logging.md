@@ -4,8 +4,8 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
 tags: ["codemap", "operations"]
 sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/logback-test.xml"]
@@ -97,3 +97,5 @@ logback-test.xml remains in webapp main resources and is excluded from the packa
 ```
 
 [[Mail delivery]] · [[Configuration and running]]
+
+[[UserServiceImpl]] logs registration/verification user IDs. [[InquiryServiceImpl]] logs inquiry/post/buyer or seller IDs and competitor rejection counts. [[MultipartExceptionHandlerFilter]] logs oversized-upload request URIs. These explicit messages avoid inquiry text and addresses; exception details are still passed to the logger on mail failure.

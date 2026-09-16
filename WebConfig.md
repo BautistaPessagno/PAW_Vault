@@ -1,29 +1,28 @@
 ---
 title: "WebConfig"
-categories: ["Operations", "Web"]
+categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "operations"]
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # WebConfig
 
-Spring MVC composition root for scanned controllers, services and JDBC DAOs. Creates a SimpleDriverDataSource, transaction manager, startup schema initializer, JSP resolver, localized validation and mail rendering/sender beans. Adds a taskExecutor with core=2, max=5, queue=50 and CallerRunsPolicy, plus a lazy CommonsMultipartResolver limited to a 6 MiB whole request. Required database.properties and mail.properties remain classpath resources. Static /images resources serve the placeholder; [[ImageController]] serves stored bytes. See [[Startup and dependency injection]].
+Composes MVC, transaction and async beans and imports SecurityConfig. Optional classpath property files feed required Environment lookups. Uses DriverManagerDataSource, schema.sql initialization, a 2–5 worker mail pool with queue 50 and CallerRunsPolicy, lazy 6 MiB multipart parsing, JSP views, Spanish-default AcceptHeaderLocaleResolver and shared validation/mail bundles. See [[Startup and dependency injection]].
 
 ## Connections
 
-Project types referenced: [[EmailService]], [[ImageService]].
+Project types referenced: [[SecurityConfig]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java, lines 1–189](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java, lines 1–200](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.config;
@@ -33,12 +32,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -51,10 +51,12 @@ import org.springframework.validation.Validator;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 import org.thymeleaf.spring5.SpringTemplateEngine;
@@ -63,16 +65,17 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
-import java.sql.Driver;
+import java.util.Locale;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.Properties;
 
 @EnableWebMvc
 @EnableTransactionManagement
 @EnableAsync
+@Import(SecurityConfig.class)
 @ComponentScan({ "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services" })
-@PropertySource("classpath:database.properties")
-@PropertySource("classpath:mail.properties")
+@PropertySource(value = "classpath:database.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "classpath:mail.properties", ignoreResourceNotFound = true)
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -102,9 +105,9 @@ public class WebConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  public DataSource dataSource(final Environment environment) throws ClassNotFoundException {
-    final SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
-    dataSource.setDriverClass(Class.forName(environment.getRequiredProperty("db.driver")).asSubclass(Driver.class));
+  public DataSource dataSource(final Environment environment) {
+    final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName(environment.getRequiredProperty("db.driver"));
     dataSource.setUrl(environment.getRequiredProperty("db.url"));
     dataSource.setUsername(environment.getRequiredProperty("db.username"));
     dataSource.setPassword(environment.getRequiredProperty("db.password"));
@@ -133,16 +136,15 @@ public class WebConfig implements WebMvcConfigurer {
   }
 
   /*
-   * servlet-api 2.5 no trae multipart nativo, por eso Commons FileUpload. El nombre del
-   * bean es obligatorio: DispatcherServlet lo busca como "multipartResolver".
+   * Se conserva Commons FileUpload como resolver multipart de esta entrega. El nombre
+   * del bean es obligatorio: DispatcherServlet lo busca como "multipartResolver".
    */
   @Bean
   public MultipartResolver multipartResolver() {
     final CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
     multipartResolver.setMaxUploadSize(MAX_UPLOAD_SIZE_BYTES);
     multipartResolver.setDefaultEncoding(StandardCharsets.UTF_8.name());
-    // Sin esto el resolver parsea el request antes de elegir el handler, y un upload
-    // demasiado grande termina en un 500 sin pasar por el @ExceptionHandler del controller.
+    // El filtro multipart externo traduce el limite excedido antes de entrar al controller.
     multipartResolver.setResolveLazily(true);
     return multipartResolver;
   }
@@ -154,6 +156,13 @@ public class WebConfig implements WebMvcConfigurer {
     viewResolver.setPrefix("/WEB-INF/views/");
     viewResolver.setSuffix(".jsp");
     return viewResolver;
+  }
+
+  @Bean
+  public LocaleResolver localeResolver() {
+    final AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
+    localeResolver.setDefaultLocale(Locale.forLanguageTag("es"));
+    return localeResolver;
   }
 
   @Bean
@@ -193,6 +202,7 @@ public class WebConfig implements WebMvcConfigurer {
     final ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
     messageSource.setBasename("classpath:i18n/messages");
     messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
+    messageSource.setFallbackToSystemLocale(false);
     return messageSource;
   }
 

@@ -4,42 +4,43 @@ categories: ["Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "testing"]
 sources: ["services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java"]
 ---
 
 # EmailServiceImplTest
 
-Six tests use real Thymeleaf templates, StaticMessageSource and a capturing fake sender. They assert interest addresses/body, English copy, the absolute home CTA URL, interest failure swallowing, welcome content and welcome failure swallowing. The service is constructed directly, so these do not test @Async dispatch, pool saturation or actual SMTP.
+Service tests with mocks or a capturing mail sender. Direct construction does not activate transaction or async proxies. Source evidence for [[EmailServiceImpl]]; no new Maven execution is claimed.
 
-## Test methods
+Test methods in this revision:
 
 - `testSendPostInterestEmailWhenDeliverySucceedsBuildsExpectedMessage`
 - `testSendPostInterestEmailWhenLocaleIsEnglishUsesEnglishCopy`
 - `testSendPostInterestEmailWhenDeliverySucceedsIncludesCallToActionUrl`
+- `testSendPostInterestEmailWhenMessageIsPresentReturnsBodyWithMessage`
+- `testSendPostInterestEmailWhenMessageIsMissingReturnsBodyWithoutMessage`
 - `testSendPostInterestEmailWhenDeliveryFailsDoesNotPropagateFailure`
 - `testSendWelcomeEmailWhenDeliverySucceedsBuildsExpectedMessage`
 - `testSendWelcomeEmailWhenDeliveryFailsDoesNotPropagateFailure`
-
-These are source assertions, not a fresh passing test run.
+- `testSendVerificationEmailWhenDeliverySucceedsReturnsEmailWithSingleUseLink`
 
 ## Connections
 
-Project types referenced: [[Album]], [[EmailServiceImpl]], [[PostInterestNotification]], [[User]].
+Project types referenced: [[Album]], [[EmailServiceImpl]], [[PostInterestNotification]], [[User]], [[UserRole]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 
-[services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java, lines 1–203](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>)
+[services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java, lines 1–266](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>)
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.models.UserRole;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +66,9 @@ public class EmailServiceImplTest {
     private static final String FROM_EMAIL = "app@example.com";
     private static final String PUBLISHER_EMAIL = "publisher@example.com";
     private static final String CONTACT_EMAIL = "buyer@example.com";
+    private static final String CONTACT_MESSAGE = "Te ofrezco <b>35000</b>,\nlo paso a buscar el sabado.";
+    private static final String ESCAPED_CONTACT_MESSAGE =
+            "Te ofrezco &lt;b&gt;35000&lt;/b&gt;,\nlo paso a buscar el sabado.";
     private static final String BASE_URL = "http://pawserver.it.itba.edu.ar/paw-2026b-14";
     private static final Locale SPANISH = Locale.forLanguageTag("es");
     private static final Locale ENGLISH = Locale.forLanguageTag("en");
@@ -83,7 +87,7 @@ public class EmailServiceImplTest {
             throws MessagingException, IOException {
         // 1. Arrange
         final PostInterestNotification notification = new PostInterestNotification(
-                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, null, "Artaud", "Pescado Rabioso", 1973);
 
         // 2. Exercise
         emailService.sendPostInterestEmail(notification, SPANISH);
@@ -108,7 +112,7 @@ public class EmailServiceImplTest {
             throws MessagingException, IOException {
         // 1. Arrange
         final PostInterestNotification notification = new PostInterestNotification(
-                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, null, "Artaud", "Pescado Rabioso", 1973);
 
         // 2. Exercise
         emailService.sendPostInterestEmail(notification, ENGLISH);
@@ -124,7 +128,7 @@ public class EmailServiceImplTest {
             throws MessagingException, IOException {
         // 1. Arrange
         final PostInterestNotification notification = new PostInterestNotification(
-                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, null, "Artaud", "Pescado Rabioso", 1973);
 
         // 2. Exercise
         emailService.sendPostInterestEmail(notification, SPANISH);
@@ -135,11 +139,45 @@ public class EmailServiceImplTest {
     }
 
     @Test
+    public void testSendPostInterestEmailWhenMessageIsPresentReturnsBodyWithMessage()
+            throws MessagingException, IOException {
+        // 1. Arrange
+        final PostInterestNotification notification = new PostInterestNotification(
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, CONTACT_MESSAGE, "Artaud", "Pescado Rabioso", 1973);
+
+        // 2. Exercise
+        emailService.sendPostInterestEmail(notification, SPANISH);
+
+        // 3. Assert
+        final String body = mailSender.getLastMessage().getContent().toString();
+        Assertions.assertTrue(body.contains("Mensaje:"));
+        // El pre-line va en el span y no en el <p>, para que el unico salto de linea que se
+        // respete sea el del mensaje y no la indentacion del template.
+        Assertions.assertTrue(body.contains(
+                "<span style=\"white-space: pre-line;\">" + ESCAPED_CONTACT_MESSAGE + "</span>"));
+    }
+
+    @Test
+    public void testSendPostInterestEmailWhenMessageIsMissingReturnsBodyWithoutMessage()
+            throws MessagingException, IOException {
+        // 1. Arrange
+        final PostInterestNotification notification = new PostInterestNotification(
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, null, "Artaud", "Pescado Rabioso", 1973);
+
+        // 2. Exercise
+        emailService.sendPostInterestEmail(notification, SPANISH);
+
+        // 3. Assert
+        final String body = mailSender.getLastMessage().getContent().toString();
+        Assertions.assertFalse(body.contains("Mensaje:"));
+    }
+
+    @Test
     public void testSendPostInterestEmailWhenDeliveryFailsDoesNotPropagateFailure() {
         // 1. Arrange
         mailSender.failNextDelivery();
         final PostInterestNotification notification = new PostInterestNotification(
-                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
+                42L, PUBLISHER_EMAIL, "Ana", CONTACT_EMAIL, null, "Artaud", "Pescado Rabioso", 1973);
 
         // 2. Exercise
         Assertions.assertDoesNotThrow(() -> emailService.sendPostInterestEmail(notification, SPANISH));
@@ -152,7 +190,7 @@ public class EmailServiceImplTest {
     public void testSendWelcomeEmailWhenDeliverySucceedsBuildsExpectedMessage()
             throws MessagingException, IOException {
         // 1. Arrange
-        final User user = new User(7L, "Luz", CONTACT_EMAIL);
+        final User user = new User(7L, "Luz", CONTACT_EMAIL, "hash", UserRole.USER, true, "es");
 
         // 2. Exercise
         emailService.sendWelcomeEmail(user, SPANISH);
@@ -169,13 +207,33 @@ public class EmailServiceImplTest {
     public void testSendWelcomeEmailWhenDeliveryFailsDoesNotPropagateFailure() {
         // 1. Arrange
         mailSender.failNextDelivery();
-        final User user = new User(7L, "Luz", CONTACT_EMAIL);
+        final User user = new User(7L, "Luz", CONTACT_EMAIL, "hash", UserRole.USER, true, "es");
 
         // 2. Exercise
         Assertions.assertDoesNotThrow(() -> emailService.sendWelcomeEmail(user, SPANISH));
 
         // 3. Assert
         Assertions.assertNull(mailSender.getLastMessage());
+    }
+
+    @Test
+    public void testSendVerificationEmailWhenDeliverySucceedsReturnsEmailWithSingleUseLink()
+            throws MessagingException, IOException {
+        // 1. Arrange
+        final User user = new User(7L, "Luz", CONTACT_EMAIL, null,
+                UserRole.USER, false, "es");
+        final String token = "safe-token";
+
+        // 2. Exercise
+        emailService.sendVerificationEmail(user, token, SPANISH);
+
+        // 3. Assert
+        final MimeMessage message = mailSender.getLastMessage();
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(CONTACT_EMAIL, firstAddress(message.getRecipients(Message.RecipientType.TO)));
+        Assertions.assertEquals("Confirmá tu correo en quieroVinilos", message.getSubject());
+        Assertions.assertTrue(message.getContent().toString()
+                .contains("href=\"" + BASE_URL + "/verify?token=" + token + "\""));
     }
 
     private static SpringTemplateEngine templateEngine() {
@@ -196,11 +254,15 @@ public class EmailServiceImplTest {
         source.addMessage("email.welcome.subject", SPANISH, "Bienvenido a quieroVinilos");
         source.addMessage("email.welcome.body", SPANISH, "Hola {0}, gracias por registrarte.");
         source.addMessage("email.welcome.cta", SPANISH, "Ver quieroVinilos");
+        source.addMessage("email.verification.subject", SPANISH, "Confirmá tu correo en quieroVinilos");
+        source.addMessage("email.verification.body", SPANISH, "Hola {0}, confirmá tu correo para activar tu cuenta.");
+        source.addMessage("email.verification.cta", SPANISH, "Confirmar correo");
         source.addMessage("email.postInterest.subject", SPANISH, "Alguien está interesado en {0}");
         source.addMessage("email.postInterest.heading", SPANISH, "Hay interés en tu publicación");
         source.addMessage("email.postInterest.intro", SPANISH, "{0} está interesado en tu publicación.");
         source.addMessage("email.postInterest.contact", SPANISH, "Contacto:");
         source.addMessage("email.postInterest.album", SPANISH, "Álbum:");
+        source.addMessage("email.postInterest.message", SPANISH, "Mensaje:");
         source.addMessage("email.postInterest.cta", SPANISH, "Ver quieroVinilos");
 
         source.addMessage("email.postInterest.subject", ENGLISH, "Someone is interested in {0}");
@@ -208,6 +270,7 @@ public class EmailServiceImplTest {
         source.addMessage("email.postInterest.intro", ENGLISH, "{0} is interested in your post.");
         source.addMessage("email.postInterest.contact", ENGLISH, "Contact:");
         source.addMessage("email.postInterest.album", ENGLISH, "Album:");
+        source.addMessage("email.postInterest.message", ENGLISH, "Message:");
         source.addMessage("email.postInterest.cta", ENGLISH, "Go to quieroVinilos");
         return source;
     }

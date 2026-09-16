@@ -4,33 +4,23 @@ categories: ["Web"]
 type: "guide"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
 sources: ["webapp/src/main/webapp/css/tokens.css", "webapp/src/main/webapp/css/components.css", "webapp/src/main/webapp/css/style.css"]
 ---
 
 # UI styles and tokens
 
-The committed product JSPs load tokens.css, then components.css, then style.css. All three files were rechecked at ff96f27. style.css now adds a muted .hint class for the optional cover guidance.
+ui:head loads tokens.css, components.css and style.css in that order. Tokens define palette aliases, system font stacks, radii, shadows, focus and control sizing. Dark mode follows prefers-color-scheme.
 
-## Responsibility and cascade
+components.css styles typography, buttons, bound inputs/selects/textareas, linked vinyl cards and commercial metadata. style.css owns page/form layouts, account navigation, search/filter controls, inquiry lists and error pages. Filters use a responsive grid; account and action rows wrap. Disabled-button styles apply to controls disabled by submit-once.js.
 
-| File | Owns | Connects to |
-|---|---|---|
-| tokens.css | Light/dark palette aliases, font stacks, radii, shadows, focus ring | Variables used by both other CSS files |
-| components.css | Typography, primary/ghost buttons in sm/md sizes, inputs, editorial/compact vinyl cards | Classes emitted by [[UI components]] |
-| style.css | Body background, page shell/header, form surfaces, post grid and notices | Page layout in [[Views and assets]] |
-
-Tokens map --room-* colors to semantic --color-* variables. Dark mode changes the room palette under prefers-color-scheme: dark; fonts are system stacks, not downloaded assets. Components use color-mix, clamp, aspect-ratio and CSS variables. Their actual browser support and contrast were not tested in this documentation task.
-
-The post grid uses four columns, three at <=1024px and two at <=600px. Compact vinyl cards become one-column on small screens. Buttons/cards have hover motion; prefers-reduced-motion removes their transitions. Input transitions remain enabled. There is no JavaScript theme switcher.
-
-The legacy create JSP is removed. All remaining product views import the three shared style files.
+The catalog uses four columns, three below 1024px and two below 600px. Compact cards adapt at the smaller breakpoint. Reduced-motion rules remove button/card transitions. There is no JavaScript theme switch. Browser rendering, contrast and responsive layout were not tested in this documentation refresh.
 
 ## tokens.css
 
-[webapp/src/main/webapp/css/tokens.css, lines 1–57](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/tokens.css>)
+[webapp/src/main/webapp/css/tokens.css, lines 1–62](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/tokens.css>)
 
 ```css
 :root {
@@ -59,6 +49,11 @@ The legacy create JSP is removed. All remaining product views import the three s
     --color-danger: var(--room-danger);
     --color-accent-soft: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface));
     --color-secondary-soft: color-mix(in srgb, var(--color-accent-secondary) 14%, var(--color-surface));
+
+    /* Un vinilo es negro en los dos temas, asi que estos no se invierten en dark. */
+    --color-vinyl: #17151c;
+    --color-vinyl-groove: #262231;
+    --color-vinyl-sheen: rgba(255, 255, 255, 0.13);
 
     --font-body: "Avenir Next", "Segoe UI", Arial, sans-serif;
     --font-display: Georgia, "Times New Roman", serif;
@@ -89,12 +84,11 @@ The legacy create JSP is removed. All remaining product views import the three s
         --room-danger: #ef5a48;
     }
 }
-
 ```
 
 ## components.css
 
-[webapp/src/main/webapp/css/components.css, lines 1–280](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/components.css>)
+[webapp/src/main/webapp/css/components.css, lines 1–359](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/components.css>)
 
 ```css
 /* Box model: la biblioteca asume border-box aunque se use sin demo.css. */
@@ -181,6 +175,13 @@ The legacy create JSP is removed. All remaining product views import the three s
     outline: 0;
 }
 
+.button:disabled {
+    cursor: progress;
+    opacity: 0.6;
+    pointer-events: none;
+    transform: none;
+}
+
 .button--primary {
     background: var(--color-accent);
     color: var(--color-text-on-accent);
@@ -242,6 +243,11 @@ The legacy create JSP is removed. All remaining product views import the three s
     outline: 0;
 }
 
+textarea.input-field__control {
+    min-height: 7rem;
+    resize: vertical;
+}
+
 .input-field--error .input-field__control {
     border-color: var(--color-danger);
 }
@@ -270,6 +276,22 @@ The legacy create JSP is removed. All remaining product views import the three s
     transform: translateY(-2px);
 }
 
+.vinyl-card--linked {
+    cursor: pointer;
+}
+
+.vinyl-card__link {
+    inset: 0;
+    position: absolute;
+    z-index: 1;
+}
+
+.vinyl-card__link:focus-visible {
+    border-radius: var(--radius-lg);
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
 .vinyl-card__cover {
     aspect-ratio: 1;
     background: var(--color-surface-muted);
@@ -291,6 +313,30 @@ The legacy create JSP is removed. All remaining product views import the three s
     padding: 1.4rem;
 }
 
+.vinyl-card__price {
+    display: grid;
+    gap: 0.15rem;
+    margin-block: 0.15rem 0.1rem;
+}
+
+.vinyl-card__price-label {
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.vinyl-card__price-value {
+    color: var(--color-accent);
+    font-size: clamp(1.65rem, 3vw, 2rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+}
+
 .vinyl-card__metadata {
     display: grid;
     gap: 0.7rem;
@@ -307,11 +353,22 @@ The legacy create JSP is removed. All remaining product views import the three s
     margin: 0;
 }
 
+.vinyl-card__description {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    display: -webkit-box;
+    line-clamp: 3;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
 .vinyl-card__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.55rem;
     margin-top: 0.5rem;
+    position: relative;
+    z-index: 2;
 }
 
 .vinyl-card--editorial {
@@ -377,11 +434,27 @@ The legacy create JSP is removed. All remaining product views import the three s
         transition: none;
     }
 }
+.page-header__actions,
+.account-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.account-nav__logout {
+  margin: 0;
+}
+
+.account-nav__identity {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
 ```
 
 ## style.css
 
-[webapp/src/main/webapp/css/style.css, lines 1–119](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/style.css>)
+[webapp/src/main/webapp/css/style.css, lines 1–311](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/style.css>)
 
 ```css
 html {
@@ -407,6 +480,14 @@ body {
     padding: 3rem 2rem 6rem;
 }
 
+/* El 404 es la unica pantalla sin header ni nada debajo: se centra en la ventana
+   entera y con padding vertical simetrico, si no queda cabecera arriba. */
+.page-shell--centered {
+    align-content: center;
+    min-height: 100vh;
+    padding-block: clamp(3rem, 8vh, 5rem);
+}
+
 .page-header {
     align-items: center;
     display: flex;
@@ -426,6 +507,44 @@ body {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
     padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.search-bar {
+    /* Los filtros son mas altos que el buscador: todo se alinea por abajo. */
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.search-bar__control {
+    flex: 1 1 18rem;
+    max-width: 34rem;
+}
+
+.filter-grid {
+    display: grid;
+    flex: 1 0 100%;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.filter-field {
+    color: var(--color-text-muted);
+    display: grid;
+    font-size: 0.82rem;
+    gap: 0.35rem;
+}
+
+/* Los artistas se guardan en minuscula para poder deduplicarlos: el filtro los
+   muestra capitalizados sin tocar lo que hay en la base. */
+.artist-name {
+    text-transform: capitalize;
+}
+
+.search-bar__summary {
+    color: var(--color-text-muted);
+    margin: -1.5rem 0 0;
 }
 
 .post-grid {
@@ -464,6 +583,30 @@ body {
     gap: 1rem;
 }
 
+.inquiry-section {
+    display: grid;
+    gap: 1rem;
+}
+
+.inquiry-list {
+    display: grid;
+    gap: 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.inquiry-card {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 48rem;
+}
+
+.inquiry-card h3,
+.inquiry-card p {
+    margin: 0;
+}
+
 .notice,
 .error,
 .empty-state {
@@ -486,9 +629,127 @@ body {
     background: var(--color-surface-muted);
 }
 
+/* 404 */
+.not-found {
+    align-items: center;
+    display: grid;
+    gap: clamp(3rem, 7vw, 7rem);
+    /* Columnas acotadas + justify-content: el bloque se centra en el shell en vez de
+       estirarse hasta los 78rem y quedar pegado a los bordes. */
+    grid-template-columns: minmax(0, 24rem) minmax(0, 34rem);
+    justify-content: center;
+}
+
+.not-found__record {
+    aspect-ratio: 1;
+    background: repeating-radial-gradient(circle at 50% 50%,
+        var(--color-vinyl) 0 3px,
+        var(--color-vinyl-groove) 3px 5px);
+    border-radius: 50%;
+    box-shadow: var(--shadow-card-hover);
+    display: grid;
+    margin-inline: auto;
+    place-items: center;
+    position: relative;
+    width: min(100%, 24rem);
+}
+
+/* Brillo diagonal: sin esto el disco se lee plano contra el fondo. */
+.not-found__record::before {
+    background: linear-gradient(118deg, transparent 32%, var(--color-vinyl-sheen) 47%, transparent 60%);
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    position: absolute;
+}
+
+.not-found__code {
+    align-content: center;
+    background: var(--color-accent);
+    border-radius: 50%;
+    color: var(--color-text-on-accent);
+    display: grid;
+    gap: 0.45rem;
+    height: 42%;
+    justify-items: center;
+    margin: 0;
+    position: relative;
+    width: 42%;
+}
+
+.not-found__digits {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.6vw, 2.35rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+/* El agujero del centro del disco. */
+.not-found__code::after {
+    background: var(--color-vinyl);
+    border-radius: 50%;
+    content: "";
+    height: 0.7rem;
+    width: 0.7rem;
+}
+
+.not-found__intro {
+    display: grid;
+    gap: clamp(1.5rem, 2.6vw, 2.25rem);
+    justify-items: start;
+}
+
+.not-found__intro .text-h1 {
+    font-size: clamp(2.4rem, 4.6vw, 3.6rem);
+}
+
+/* Corta el parrafo antes del borde de la columna: dos renglones parejos leen mejor
+   que uno largo y otro de tres palabras. */
+.not-found__intro .text-lead {
+    max-width: 30rem;
+}
+
+.not-found__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-block-start: 0.5rem;
+}
+
 @media (max-width: 1024px) {
     .post-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 860px) {
+    /* 1fr + max-width y no una columna de ancho fijo: con minmax(0, 32rem) la
+       columna se planta en 32rem y desborda apenas la ventana es mas angosta. */
+    .not-found {
+        gap: clamp(2.5rem, 6vw, 3.5rem);
+        grid-template-columns: minmax(0, 1fr);
+        margin-inline: auto;
+        max-width: 32rem;
+        text-align: center;
+    }
+
+    .not-found__record {
+        width: min(100%, 18rem);
+    }
+
+    /* stretch y no center: con justify-items centrado el h1 se mide por su max-content
+       y se desborda a lo ancho en pantallas angostas. */
+    .not-found__intro {
+        justify-items: stretch;
+    }
+
+    .not-found__intro .text-lead {
+        margin-inline: auto;
+    }
+
+    .not-found__actions {
+        justify-content: center;
     }
 }
 
@@ -502,7 +763,11 @@ body {
         gap: 1rem;
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .not-found__intro .text-h1 {
+        font-size: clamp(1.95rem, 8vw, 2.6rem);
+    }
 }
 ```
 
-[[UI components]] · [[Known gaps and document drift]]
+[[UI components]] · [[Views and assets]]

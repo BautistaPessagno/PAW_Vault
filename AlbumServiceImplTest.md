@@ -4,41 +4,36 @@ categories: ["Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "testing"]
 sources: ["services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java"]
 ---
 
 # AlbumServiceImplTest
 
-Four Mockito tests cover preserving an existing album cover, storing a cover for a new album, and new albums with null or empty bytes. These compare returned values with mocked persistence; they do not exercise database rollback or image validation under a Spring proxy.
+Service tests with mocks or a capturing mail sender. Direct construction does not activate transaction or async proxies. Source evidence for [[AlbumServiceImpl]]; no new Maven execution is claimed.
 
-## Test methods
+Test methods in this revision:
 
 - `testFindOrCreateWhenIdentityMatchesExistingAlbumReturnsStoredAlbumWithItsCover`
-- `testFindOrCreateWhenAlbumIsNewAndCoverProvidedReturnsAlbumWithStoredCover`
-- `testFindOrCreateWhenAlbumIsNewAndCoverIsNullReturnsAlbumWithoutCover`
-- `testFindOrCreateWhenAlbumIsNewAndCoverIsEmptyReturnsAlbumWithoutCover`
-
-These are source assertions, not a fresh passing test run.
+- `testFindOrCreateWhenAlbumIsNewReturnsAlbumWithoutExemplarImage`
 
 ## Connections
 
-Project types referenced: [[Album]], [[AlbumDao]], [[AlbumServiceImpl]], [[Image]], [[ImageService]].
+Project types referenced: [[Album]], [[AlbumDao]], [[AlbumServiceImpl]], [[Genre]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 
-[services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java, lines 1–110](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java>)
+[services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java, lines 1–67](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java>)
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Album;
-import ar.edu.itba.paw.models.Image;
+import ar.edu.itba.paw.models.Genre;
 import ar.edu.itba.paw.persistence.AlbumDao;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -57,14 +52,10 @@ public class AlbumServiceImplTest {
     private static final String NORMALIZED_TITLE = "versus";
     private static final long ARTIST_ID = 1;
     private static final int RELEASE_YEAR = 1997;
-    private static final String COVER_CONTENT_TYPE = "image/png";
-    private static final byte[] COVER_DATA = {(byte) 0x89, 0x50, 0x4E, 0x47};
+    private static final Genre GENRE = Genre.HIP_HOP;
 
     @Mock
     private AlbumDao albumDao;
-
-    @Mock
-    private ImageService imageService;
 
     @InjectMocks
     private AlbumServiceImpl albumService;
@@ -73,13 +64,12 @@ public class AlbumServiceImplTest {
     public void testFindOrCreateWhenIdentityMatchesExistingAlbumReturnsStoredAlbumWithItsCover() {
         // 1. Arrange
         final Long storedCoverImageId = 5L;
-        final Album expected = new Album(1, NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, storedCoverImageId);
+        final Album expected = new Album(1, NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, GENRE, storedCoverImageId);
         Mockito.when(albumDao.findByArtistTitleYear(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR))
                 .thenReturn(Optional.of(expected));
 
         // 2. Exercise
-        final Album result = albumService.findOrCreate(TITLE, ARTIST_ID, RELEASE_YEAR,
-                COVER_CONTENT_TYPE, COVER_DATA);
+        final Album result = albumService.findOrCreate(TITLE, ARTIST_ID, RELEASE_YEAR, GENRE);
 
         // 3. Assert
         Assertions.assertEquals(expected.getId(), result.getId());
@@ -90,60 +80,22 @@ public class AlbumServiceImplTest {
     }
 
     @Test
-    public void testFindOrCreateWhenAlbumIsNewAndCoverProvidedReturnsAlbumWithStoredCover() {
+    public void testFindOrCreateWhenAlbumIsNewReturnsAlbumWithoutExemplarImage() {
         // 1. Arrange
-        final Image storedCover = new Image(7, COVER_CONTENT_TYPE, COVER_DATA);
-        final Album expected = new Album(2, NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, storedCover.getId());
+        final Album expected = new Album(2, NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, GENRE, null);
         Mockito.when(albumDao.findByArtistTitleYear(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR))
                 .thenReturn(Optional.empty());
-        Mockito.when(imageService.create(COVER_CONTENT_TYPE, COVER_DATA)).thenReturn(storedCover);
-        Mockito.when(albumDao.create(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, storedCover.getId()))
+        Mockito.when(albumDao.create(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, GENRE))
                 .thenReturn(expected);
 
         // 2. Exercise
-        final Album result = albumService.findOrCreate(TITLE, ARTIST_ID, RELEASE_YEAR,
-                COVER_CONTENT_TYPE, COVER_DATA);
-
-        // 3. Assert
-        Assertions.assertEquals(expected.getId(), result.getId());
-        Assertions.assertEquals(storedCover.getId(), result.getCoverImageId());
-    }
-
-    @Test
-    public void testFindOrCreateWhenAlbumIsNewAndCoverIsNullReturnsAlbumWithoutCover() {
-        // 1. Arrange
-        final Album expected = new Album(2, NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, null);
-        Mockito.when(albumDao.findByArtistTitleYear(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR))
-                .thenReturn(Optional.empty());
-        Mockito.when(albumDao.create(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, null))
-                .thenReturn(expected);
-
-        // 2. Exercise
-        final Album result = albumService.findOrCreate(TITLE, ARTIST_ID, RELEASE_YEAR, null, null);
+        final Album result = albumService.findOrCreate(TITLE, ARTIST_ID, RELEASE_YEAR, GENRE);
 
         // 3. Assert
         Assertions.assertEquals(expected.getId(), result.getId());
         Assertions.assertNull(result.getCoverImageId());
     }
 
-    @Test
-    public void testFindOrCreateWhenAlbumIsNewAndCoverIsEmptyReturnsAlbumWithoutCover() {
-        // 1. Arrange
-        final byte[] emptyCover = {};
-        final Album expected = new Album(2, NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, null);
-        Mockito.when(albumDao.findByArtistTitleYear(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR))
-                .thenReturn(Optional.empty());
-        Mockito.when(albumDao.create(NORMALIZED_TITLE, ARTIST_ID, RELEASE_YEAR, null))
-                .thenReturn(expected);
-
-        // 2. Exercise
-        final Album result = albumService.findOrCreate(TITLE, ARTIST_ID, RELEASE_YEAR,
-                COVER_CONTENT_TYPE, emptyCover);
-
-        // 3. Assert
-        Assertions.assertEquals(expected.getId(), result.getId());
-        Assertions.assertNull(result.getCoverImageId());
-    }
 }
 ```
 

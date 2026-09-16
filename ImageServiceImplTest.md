@@ -4,8 +4,8 @@ categories: ["Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/ImageServiceImplTest.java"]
 ---
@@ -14,20 +14,11 @@ sources: ["services/src/test/java/ar/edu/itba/paw/services/ImageServiceImplTest.
 
 Four Mockito tests cover unsupported MIME type, empty bytes, bytes above 5 MiB and valid PNG-labeled data. Does not cover the exact upper boundary, MIME normalization, null MIME/data, JPEG/WebP success or byte-signature validation. Direct service instances do not activate transactions.
 
-## Test methods
-
-- `testCreateWhenContentTypeIsNotAnImageReturnsInvalidImageException`
-- `testCreateWhenDataIsEmptyReturnsInvalidImageException`
-- `testCreateWhenDataExceedsMaxSizeReturnsInvalidImageException`
-- `testCreateWhenImageIsValidReturnsPersistedImage`
-
-These are source assertions, not a fresh passing test run.
-
 ## Connections
 
 Project types referenced: [[Image]], [[ImageDao]], [[ImageServiceImpl]], [[InvalidImageException]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 

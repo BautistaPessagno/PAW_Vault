@@ -4,33 +4,33 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "web"]
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java"]
 ---
 
 # PublishForm
 
-Mutable Spring form containing username and publisherEmail with 100-character limits, title and artistName with 255-character limits, required Integer releaseYear in 1000–9999, and optional MultipartFile cover. Text/email/year annotations remain unchanged. cover has no Bean Validation annotation; multipart transport limits and [[ImageServiceImpl]] validate that input later. See [[Validation and errors]].
+Required title/artist up to 255 characters, release year 1000–9999 and price 1–99,999,999. Optional Genre, Condition, zone up to 100, pressing year 1000–9999, description up to 1000 and MultipartFile cover. No publisher identity or stock field remains.
 
 ## Connections
 
-Project types referenced: none.
+Project types referenced: [[Condition]], [[Genre]].
 
 Referenced by: [[PublishController]].
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java, lines 1–85](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java, lines 1–128](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.form;
 
+import ar.edu.itba.paw.models.Condition;
+import ar.edu.itba.paw.models.Genre;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.constraints.Email;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
@@ -38,15 +38,6 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 public class PublishForm {
-
-    @NotBlank(message = "{publish.username.required}")
-    @Size(max = 100, message = "{publish.username.size}")
-    private String username;
-
-    @NotBlank(message = "{publish.publisherEmail.required}")
-    @Email(message = "{publish.publisherEmail.invalid}")
-    @Size(max = 100, message = "{publish.publisherEmail.size}")
-    private String publisherEmail;
 
     @NotBlank(message = "{publish.title.required}")
     @Size(max = 255, message = "{publish.title.size}")
@@ -61,23 +52,26 @@ public class PublishForm {
     @Max(value = 9999, message = "{publish.releaseYear.range}")
     private Integer releaseYear;
 
+    private Genre genre;
+
+    @NotNull(message = "{publish.price.required}")
+    @Min(value = 1, message = "{publish.price.range}")
+    @Max(value = 99999999, message = "{publish.price.range}")
+    private Integer price;
+
+    private Condition condition;
+
+    @Size(max = 100, message = "{publish.zone.size}")
+    private String zone;
+
+    @Min(value = 1000, message = "{publish.pressingYear.range}")
+    @Max(value = 9999, message = "{publish.pressingYear.range}")
+    private Integer pressingYear;
+
+    @Size(max = 1000, message = "{publish.description.size}")
+    private String description;
+
     private MultipartFile cover;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(final String username) {
-        this.username = username;
-    }
-
-    public String getPublisherEmail() {
-        return publisherEmail;
-    }
-
-    public void setPublisherEmail(final String publisherEmail) {
-        this.publisherEmail = publisherEmail;
-    }
 
     public String getTitle() {
         return title;
@@ -101,6 +95,54 @@ public class PublishForm {
 
     public void setReleaseYear(final Integer releaseYear) {
         this.releaseYear = releaseYear;
+    }
+
+    public Genre getGenre() {
+        return genre;
+    }
+
+    public void setGenre(final Genre genre) {
+        this.genre = genre;
+    }
+
+    public Integer getPrice() {
+        return price;
+    }
+
+    public void setPrice(final Integer price) {
+        this.price = price;
+    }
+
+    public Condition getCondition() {
+        return condition;
+    }
+
+    public void setCondition(final Condition condition) {
+        this.condition = condition;
+    }
+
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(final String zone) {
+        this.zone = zone;
+    }
+
+    public Integer getPressingYear() {
+        return pressingYear;
+    }
+
+    public void setPressingYear(final Integer pressingYear) {
+        this.pressingYear = pressingYear;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
     }
 
     public MultipartFile getCover() {

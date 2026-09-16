@@ -4,16 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "services"]
 sources: ["services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java"]
 ---
 
 # ArtistServiceImpl
 
-`findOrCreate` applies `name.trim().toLowerCase(Locale.ROOT)` and delegates to [[ArtistDao]] inside a transaction. Trimming removes outer spaces; lowercasing is locale-independent. Accents and internal whitespace are not normalized. During [[Publish flow]] this call joins the outer publish transaction.
+Trims and lowercases artist names before findOrCreate. findAll delegates under a read-only transaction to the alphabetical DAO query.
 
 ## Connections
 
@@ -23,7 +22,7 @@ Referenced by: [[ArtistServiceImplTest]].
 
 ## Exact source
 
-[services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java, lines 1–26](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>)
+[services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java, lines 1–33](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -35,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.List;
 
 @Service
 public class ArtistServiceImpl implements ArtistService {
@@ -51,9 +51,15 @@ public class ArtistServiceImpl implements ArtistService {
     public Artist findOrCreate(final String name) {
         return artistDao.findOrCreate(name.trim().toLowerCase(Locale.ROOT));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Artist> findAll() {
+        return artistDao.findAll();
+    }
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -4,16 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "services"]
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/DuplicatePostException.java"]
 ---
 
 # DuplicatePostException
 
-Unchecked business exception for a user who already published the same album. It can originate from the pre-check or from translated database uniqueness failure. [[PublishController]] maps it to `publish.duplicate` on publisherEmail and redisplays the submitted form.
+Unchecked business exception for a user who already published the same album. It can originate from the pre-check or from translated database uniqueness failure. [[PublishController]] maps it to the global form error `publish.duplicate` and redisplays the submitted form.
 
 ## Connections
 
@@ -34,4 +33,4 @@ public class DuplicatePostException extends RuntimeException {
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

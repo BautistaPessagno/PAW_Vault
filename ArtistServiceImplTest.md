@@ -4,10 +4,9 @@ categories: ["Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "testing"]
 sources: ["services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java"]
 ---
 
@@ -15,13 +14,13 @@ sources: ["services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest
 
 Uses MockitoExtension, mocked dependencies and InjectMocks to exercise service logic directly. These tests check the assertions listed in the exact source below. They do not create a Spring transaction or async proxy and therefore do not establish real rollback or scheduling behavior.
 
-Production connections: [[Artist]], [[ArtistDao]], [[ArtistServiceImpl]].
+## Connections
 
-## Test cases
+Project types referenced: [[Artist]], [[ArtistDao]], [[ArtistServiceImpl]].
 
-- `testFindOrCreateWhenNameMatchesExistingArtistReturnsNormalizedArtist`
+Referenced by: none.
 
-## Exact test source
+## Exact source
 
 [services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java, lines 1–37](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java>)
 
@@ -65,4 +64,6 @@ public class ArtistServiceImplTest {
 }
 ```
 
-[[Testing and evidence]] · [[Source inventory]]
+## Context
+
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

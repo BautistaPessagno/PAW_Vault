@@ -4,26 +4,25 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "services"]
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java"]
 ---
 
 # PostInterestNotification
 
-An immutable payload crossing from [[PostServiceImpl]] to [[EmailServiceImpl]]. It carries post ID, private recipient address, contact name and email, album title, artist name and year. It has no persistence mapping and creates no contact-request row. The post ID is used in logs; contact email becomes Reply-To; the remaining fields populate the HTML template.
+Mail payload with post ID, seller address, authenticated buyer name/email, optional inquiry message and album facts. [[Inquiry]] stores the request independently of delivery; this payload is not a database entity.
 
 ## Connections
 
 Project types referenced: none.
 
-Referenced by: [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[PostServiceImpl]].
+Referenced by: [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]].
 
 ## Exact source
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java, lines 1–52](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java>)
+[services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java, lines 1–59](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -34,17 +33,19 @@ public final class PostInterestNotification {
     private final String publisherEmail;
     private final String contactName;
     private final String contactEmail;
+    private final String message;
     private final String albumTitle;
     private final String artistName;
     private final int releaseYear;
 
     public PostInterestNotification(final long postId, final String publisherEmail, final String contactName,
-                                    final String contactEmail, final String albumTitle, final String artistName,
-                                    final int releaseYear) {
+                                    final String contactEmail, final String message, final String albumTitle,
+                                    final String artistName, final int releaseYear) {
         this.postId = postId;
         this.publisherEmail = publisherEmail;
         this.contactName = contactName;
         this.contactEmail = contactEmail;
+        this.message = message;
         this.albumTitle = albumTitle;
         this.artistName = artistName;
         this.releaseYear = releaseYear;
@@ -66,6 +67,11 @@ public final class PostInterestNotification {
         return contactEmail;
     }
 
+    // null cuando el interesado no dejo ningun mensaje.
+    public String getMessage() {
+        return message;
+    }
+
     public String getAlbumTitle() {
         return albumTitle;
     }
@@ -82,4 +88,4 @@ public final class PostInterestNotification {
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

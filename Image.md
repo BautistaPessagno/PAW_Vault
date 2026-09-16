@@ -4,28 +4,30 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Image.java"]
 ---
 
 # Image
 
-Stored image value with long id, String contentType and byte[] data. [[ImageJdbcDao]] reads and writes the bytes; [[ImageController]] serves them. Fields are final, but the constructor and getData expose the original mutable byte array without defensive copies. There is no image validation in this model.
+Stored MIME label and binary content. The constructor and getData both copy the byte array, so callers cannot mutate the stored model through their array references. [[ImageServiceImpl]] validates MIME labels and size before persistence.
 
 ## Connections
 
 Project types referenced: none.
 
-Referenced by: [[AlbumServiceImplTest]], [[ImageController]], [[ImageDao]], [[ImageJdbcDao]], [[ImageJdbcDaoTest]], [[ImageService]], [[ImageServiceImpl]], [[ImageServiceImplTest]].
+Referenced by: [[ImageController]], [[ImageDao]], [[ImageJdbcDao]], [[ImageJdbcDaoTest]], [[ImageService]], [[ImageServiceImpl]], [[ImageServiceImplTest]], [[PostServiceImplTest]].
 
 ## Exact source
 
-[models/src/main/java/ar/edu/itba/paw/models/Image.java, lines 1–26](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Image.java>)
+[models/src/main/java/ar/edu/itba/paw/models/Image.java, lines 1–28](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Image.java>)
 
 ```java
 package ar.edu.itba.paw.models;
+
+import java.util.Arrays;
 
 public class Image {
 
@@ -36,7 +38,7 @@ public class Image {
     public Image(final long id, final String contentType, final byte[] data) {
         this.id = id;
         this.contentType = contentType;
-        this.data = data;
+        this.data = Arrays.copyOf(data, data.length);
     }
 
     public long getId() {
@@ -48,7 +50,7 @@ public class Image {
     }
 
     public byte[] getData() {
-        return data;
+        return Arrays.copyOf(data, data.length);
     }
 }
 ```

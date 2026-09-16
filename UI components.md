@@ -4,21 +4,62 @@ categories: ["Web"]
 type: "guide"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-sources: ["webapp/src/main/webapp/WEB-INF/tags/button.tag", "webapp/src/main/webapp/WEB-INF/tags/h1.tag", "webapp/src/main/webapp/WEB-INF/tags/h3.tag", "webapp/src/main/webapp/WEB-INF/tags/p.tag", "webapp/src/main/webapp/WEB-INF/tags/span.tag", "webapp/src/main/webapp/WEB-INF/tags/text-input.tag", "webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag"]
+sources: ["webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/button.tag", "webapp/src/main/webapp/WEB-INF/tags/h1.tag", "webapp/src/main/webapp/WEB-INF/tags/h3.tag", "webapp/src/main/webapp/WEB-INF/tags/head.tag", "webapp/src/main/webapp/WEB-INF/tags/p.tag", "webapp/src/main/webapp/WEB-INF/tags/select.tag", "webapp/src/main/webapp/WEB-INF/tags/span.tag", "webapp/src/main/webapp/WEB-INF/tags/text-input.tag", "webapp/src/main/webapp/WEB-INF/tags/textarea.tag", "webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag"]
 ---
 
 # UI components
 
-Seven JSP tags are committed in the UI merge at `ff96f275ae009bad4534751b7a4857cf45aea7ac`. Pages declare `<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>`. [[Views and assets]] shows their callers and [[UI styles and tokens]] explains their CSS. The seven-tag set remains; vinyl-card now renders database-cover URLs or the placeholder.
+There are 11 shared JSP tags under webapp/src/main/webapp/WEB-INF/tags. Pages declare the ui tag directory. head and account-nav centralize shared page resources and account actions; select and textarea extend the bound form controls.
 
-Publish and contact retain Spring form:form with modelAttribute. ui:text-input wraps spring:bind inside that form context, preserving values and displaying all field errors.
+Spring form:form provides the binding context and integrates CSRF with Spring Security. Plain logout/inquiry POST forms explicitly emit sec:csrfInput. User values use escaped outputs; password inputs omit retained values. File input remains directly in the publish JSP.
+
+## account-nav
+
+Shows login/register for anonymous users and escaped display name, inquiry link and POST logout with CSRF for authenticated users. ADMIN also sees its section link.
+
+[webapp/src/main/webapp/WEB-INF/tags/account-nav.tag, lines 1–32](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/account-nav.tag>)
+
+```jsp
+<%@ tag body-content="empty" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
+<spring:message code="auth.navigation.label" var="navigationLabel"/>
+<spring:message code="auth.login.action" var="loginLabel"/>
+<spring:message code="auth.register.action" var="registerLabel"/>
+<spring:message code="auth.logout.action" var="logoutLabel"/>
+<spring:message code="auth.admin.action" var="adminLabel"/>
+<spring:message code="inquiry.navigation" var="inquiryLabel"/>
+<c:url value="/logout" var="logoutUrl"/>
+<nav class="account-nav" aria-label="${navigationLabel}">
+    <sec:authorize access="isAnonymous()">
+        <ui:button label="${loginLabel}" variant="ghost" size="sm" href="/login"/>
+        <ui:button label="${registerLabel}" variant="primary" size="sm" href="/register"/>
+    </sec:authorize>
+    <sec:authorize access="isAuthenticated()">
+        <%-- getUsername() del UserDetails es el email (con el que se inicia sesion). En la
+             cabecera va el nombre que la persona eligio al verificar la cuenta. --%>
+        <sec:authentication property="principal.displayName" var="displayName" scope="page"/>
+        <span class="account-nav__identity"><c:out value="${displayName}"/></span>
+        <ui:button label="${inquiryLabel}" variant="ghost" size="sm" href="/inquiries"/>
+        <sec:authorize access="hasRole('ADMIN')">
+            <ui:button label="${adminLabel}" variant="ghost" size="sm" href="/admin"/>
+        </sec:authorize>
+        <form class="account-nav__logout" action="${logoutUrl}" method="post">
+            <sec:csrfInput/>
+            <ui:button label="${logoutLabel}" variant="ghost" size="sm" type="submit"/>
+        </form>
+    </sec:authorize>
+</nav>
+```
 
 ## button
 
-Required label; optional variant, size, type and href. Defaults to primary and md. A nonempty href becomes a context-aware anchor; otherwise type is submit only when explicitly requested, or button. Labels and URLs use c:out. Variant and size are inserted into CSS class names without a whitelist; current callers supply fixed values. CSS defines primary/ghost and sm/md. There is no disabled attribute or reset type.
+Renders a context-aware anchor for href or a button otherwise. Supports primary/ghost and sm/md; submit must be explicit. Escapes labels.
 
 [webapp/src/main/webapp/WEB-INF/tags/button.tag, lines 1–19](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>)
 
@@ -46,7 +87,7 @@ Required label; optional variant, size, type and href. Defaults to primary and m
 
 ## h1
 
-Required text and optional tone. Renders h1 directly, escapes text with c:out, and adds text--accent only for tone=accent.
+Escaped heading with optional accent tone.
 
 [webapp/src/main/webapp/WEB-INF/tags/h1.tag, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>)
 
@@ -61,7 +102,7 @@ Required text and optional tone. Renders h1 directly, escapes text with c:out, a
 
 ## h3
 
-Required text. Renders h3 directly with text text-h3 classes and escapes its content. Used by vinyl-card.
+Escaped card heading.
 
 [webapp/src/main/webapp/WEB-INF/tags/h3.tag, lines 1–5](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>)
 
@@ -73,9 +114,37 @@ Required text. Renders h3 directly with text text-h3 classes and escapes its con
 <h3 class="text text-h3"><c:out value="${text}" /></h3>
 ```
 
+## head
+
+Emits charset, viewport, localized title, SVG favicon, tokens/components/style CSS and deferred submit-once.js.
+
+[webapp/src/main/webapp/WEB-INF/tags/head.tag, lines 1–19](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>)
+
+```jsp
+<%@ tag body-content="empty" pageEncoding="UTF-8" %>
+<%@ attribute name="titleCode" required="true" rtexprvalue="true" type="java.lang.String" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<c:url value="/images/covers/placeholder.svg" var="faviconUrl"/>
+<c:url value="/css/tokens.css" var="tokensCss"/>
+<c:url value="/css/components.css" var="componentsCss"/>
+<c:url value="/css/style.css" var="cssUrl"/>
+<c:url value="/js/submit-once.js" var="submitOnceJs"/>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title><spring:message code="${titleCode}"/></title>
+    <link rel="icon" type="image/svg+xml" href="${faviconUrl}"/>
+    <link rel="stylesheet" href="${tokensCss}"/>
+    <link rel="stylesheet" href="${componentsCss}"/>
+    <link rel="stylesheet" href="${cssUrl}"/>
+    <script src="${submitOnceJs}" defer></script>
+</head>
+```
+
 ## p
 
-Required text and optional variant. Escapes text and defaults to text-body; variant is inserted into the class suffix. CSS defines body and lead; cards use lead for artist names.
+Escaped paragraph; variant selects the text class suffix.
 
 [webapp/src/main/webapp/WEB-INF/tags/p.tag, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/p.tag>)
 
@@ -88,9 +157,54 @@ Required text and optional variant. Escapes text and defaults to text-body; vari
 <p class="text text-${empty variant ? 'body' : variant}"><c:out value="${text}" /></p>
 ```
 
+## select
+
+Binds enum options from an Object[] with localized labels and an empty choice, retaining selection and rendering errors.
+
+[webapp/src/main/webapp/WEB-INF/tags/select.tag, lines 1–36](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>)
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="path" required="true" %>
+<%@ attribute name="label" required="true" %>
+<%@ attribute name="items" required="true" type="java.lang.Object[]" %>
+<%@ attribute name="messagePrefix" required="true" %>
+<%@ attribute name="emptyLabel" required="true" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<spring:bind path="${path}">
+    <c:set var="fieldName" value="${status.expression}" />
+    <c:set var="hasError" value="${status.error}" />
+    <c:set var="errorId" value="${fieldName}-error" />
+
+    <div class="input-field ${hasError ? 'input-field--error' : ''}">
+        <label class="input-field__label" for="<c:out value="${fieldName}" />"><c:out value="${label}" /></label>
+        <select class="input-field__control"
+                id="<c:out value="${fieldName}" />"
+                name="<c:out value="${fieldName}" />"
+                <c:if test="${hasError}">aria-invalid="true" aria-describedby="<c:out value="${errorId}" />"</c:if>>
+            <option value=""><c:out value="${emptyLabel}" /></option>
+            <c:forEach items="${items}" var="item">
+                <c:set var="itemName">${item}</c:set>
+                <spring:message code="${messagePrefix}.${itemName}" var="itemLabel" />
+                <option value="<c:out value="${itemName}" />" ${status.value eq itemName ? 'selected' : ''}><c:out value="${itemLabel}" /></option>
+            </c:forEach>
+        </select>
+        <c:if test="${hasError}">
+            <div class="input-field__errors" id="<c:out value="${errorId}" />" role="alert">
+                <c:forEach items="${status.errorMessages}" var="errorMessage">
+                    <p class="input-field__error"><c:out value="${errorMessage}" /></p>
+                </c:forEach>
+            </div>
+        </c:if>
+    </div>
+</spring:bind>
+```
+
 ## span
 
-Required text and optional variant. Escapes text, always uses text-inline, and adds text--muted only for variant=muted. Cards use it for year labels and values.
+Escaped inline text; muted variant selects the muted class.
 
 [webapp/src/main/webapp/WEB-INF/tags/span.tag, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/span.tag>)
 
@@ -105,7 +219,7 @@ Required text and optional variant. Escapes text, always uses text-inline, and a
 
 ## text-input
 
-Required path and localized label; optional type, maxLength, min and max. Used inside Spring form:form, with relative paths such as contactEmail or title. spring:bind inherits the form model path and exposes status.expression as name/id and status.value as retained input. Types are limited to text/search/email/number. c:out escapes field names, values and errors. The tag renders every status.errorMessages entry in a role=alert container and connects invalid inputs through aria-invalid and aria-describedby. It has no required, placeholder or minLength attribute; server Bean Validation supplies required-field rules. See [[Validation and errors]], [[PublishForm]] and [[ContactForm]].
+Uses spring:bind for field value/errors and accessibility attributes. Supports text/search/email/number/password. Password values are omitted on redisplay. Numeric bounds and maxLength are optional.
 
 [webapp/src/main/webapp/WEB-INF/tags/text-input.tag, lines 1–40](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>)
 
@@ -121,7 +235,7 @@ Required path and localized label; optional type, maxLength, min and max. Used i
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <c:set var="safeType" value="text" />
-<c:if test="${type eq 'search' or type eq 'email' or type eq 'number'}">
+<c:if test="${type eq 'search' or type eq 'email' or type eq 'number' or type eq 'password'}">
     <c:set var="safeType" value="${type}" />
 </c:if>
 
@@ -136,7 +250,7 @@ Required path and localized label; optional type, maxLength, min and max. Used i
                id="<c:out value="${fieldName}" />"
                name="<c:out value="${fieldName}" />"
                type="${safeType}"
-               value="<c:out value="${status.value}" />"
+               <c:if test="${safeType ne 'password'}">value="<c:out value="${status.value}" />"</c:if>
                <c:if test="${maxLength ne null}">maxlength="${maxLength}"</c:if>
                <c:if test="${min ne null}">min="${min}"</c:if>
                <c:if test="${max ne null}">max="${max}"</c:if>
@@ -152,16 +266,55 @@ Required path and localized label; optional type, maxLength, min and max. Used i
 </spring:bind>
 ```
 
+## textarea
+
+Binds escaped multiline text, optional maxlength and field errors; used for publication descriptions and inquiry messages.
+
+[webapp/src/main/webapp/WEB-INF/tags/textarea.tag, lines 1–29](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>)
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="path" required="true" %>
+<%@ attribute name="label" required="true" %>
+<%@ attribute name="maxLength" required="false" type="java.lang.Integer" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<spring:bind path="${path}">
+    <c:set var="fieldName" value="${status.expression}" />
+    <c:set var="hasError" value="${status.error}" />
+    <c:set var="errorId" value="${fieldName}-error" />
+
+    <div class="input-field ${hasError ? 'input-field--error' : ''}">
+        <label class="input-field__label" for="<c:out value="${fieldName}" />"><c:out value="${label}" /></label>
+        <textarea class="input-field__control"
+                  id="<c:out value="${fieldName}" />"
+                  name="<c:out value="${fieldName}" />"
+                  rows="4"
+                  <c:if test="${maxLength ne null}">maxlength="${maxLength}"</c:if>
+                  <c:if test="${hasError}">aria-invalid="true" aria-describedby="<c:out value="${errorId}" />"</c:if>><c:out value="${status.value}" /></textarea>
+        <c:if test="${hasError}">
+            <div class="input-field__errors" id="<c:out value="${errorId}" />" role="alert">
+                <c:forEach items="${status.errorMessages}" var="errorMessage">
+                    <p class="input-field__error"><c:out value="${errorMessage}" /></p>
+                </c:forEach>
+            </div>
+        </c:if>
+    </div>
+</spring:bind>
+```
+
 ## vinyl-card
 
-Required item is typed as [[PostSummary]]; variant defaults to editorial and is inserted into the CSS class suffix. Current callers use editorial on landing and compact on contact. c:url resolves /images/covers/placeholder.svg when coverImageId is null, otherwise /covers/{id}; vinylCard.cover.alt localizes alt text and vinylCard.year labels the year. c:out escapes image attributes. h3, p and span render title, artist and year. jsp:doBody renders the page-supplied contact button. The card does not display publisher email.
+Renders PostSummary cover/placeholder, price or unavailable copy, album year and optional genre, condition, zone, pressing year and description. Optional href makes the card linked; jsp:doBody supplies actions. Does not show seller email.
 
-[webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag, lines 1–42](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>)
+[webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag, lines 1–101](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>)
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
 <%@ attribute name="item" required="true" type="ar.edu.itba.paw.models.PostSummary" %>
 <%@ attribute name="variant" required="false" %>
+<%@ attribute name="href" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
@@ -178,8 +331,22 @@ Required item is typed as [[PostSummary]]; variant defaults to editorial and is 
     <spring:argument value="${item.title}" />
 </spring:message>
 <spring:message code="vinylCard.year" var="yearLabel" />
+<spring:message code="vinylCard.price" var="priceLabel" />
+<spring:message code="vinylCard.condition" var="conditionLabel" />
+<spring:message code="vinylCard.zone" var="zoneLabel" />
+<spring:message code="vinylCard.genre" var="genreLabel" />
+<spring:message code="vinylCard.pressingYear" var="pressingYearLabel" />
+<c:if test="${not empty href}">
+    <c:url value="${href}" var="cardHref" />
+    <spring:message code="vinylCard.open" var="openLabel">
+        <spring:argument value="${item.title}" />
+    </spring:message>
+</c:if>
 
-<article class="vinyl-card vinyl-card--${empty variant ? 'editorial' : variant}">
+<article class="vinyl-card vinyl-card--${empty variant ? 'editorial' : variant}${empty href ? '' : ' vinyl-card--linked'}">
+    <c:if test="${not empty href}">
+        <a class="vinyl-card__link" href="<c:out value="${cardHref}" />" aria-label="<c:out value="${openLabel}" />"></a>
+    </c:if>
     <div class="vinyl-card__cover">
         <img src="<c:out value="${coverUrl}" />"
              alt="<c:out value="${coverAlt}" />"
@@ -189,12 +356,56 @@ Required item is typed as [[PostSummary]]; variant defaults to editorial and is 
         <ui:h3 text="${item.title}" />
         <ui:p text="${item.artistName}" variant="lead" />
 
+        <c:choose>
+            <c:when test="${not empty item.price}">
+                <spring:message code="vinylCard.price.format" var="priceValue">
+                    <spring:argument value="${item.price}" />
+                </spring:message>
+            </c:when>
+            <c:otherwise>
+                <spring:message code="vinylCard.price.unavailable" var="priceValue" />
+            </c:otherwise>
+        </c:choose>
+        <div class="vinyl-card__price">
+            <span class="vinyl-card__price-label"><c:out value="${priceLabel}" /></span>
+            <span class="vinyl-card__price-value"><c:out value="${priceValue}" /></span>
+        </div>
+
         <dl class="vinyl-card__metadata">
             <div class="vinyl-card__datum">
                 <dt><ui:span text="${yearLabel}" variant="muted" /></dt>
                 <dd><ui:span text="${item.releaseYear}" /></dd>
             </div>
+            <c:if test="${not empty item.condition}">
+                <spring:message code="condition.${item.condition}" var="conditionValue" />
+                <div class="vinyl-card__datum">
+                    <dt><ui:span text="${conditionLabel}" variant="muted" /></dt>
+                    <dd><ui:span text="${conditionValue}" /></dd>
+                </div>
+            </c:if>
+            <c:if test="${not empty item.zone}">
+                <div class="vinyl-card__datum">
+                    <dt><ui:span text="${zoneLabel}" variant="muted" /></dt>
+                    <dd><ui:span text="${item.zone}" /></dd>
+                </div>
+            </c:if>
+            <c:if test="${not empty item.genre}">
+                <spring:message code="genre.${item.genre}" var="genreValue" />
+                <div class="vinyl-card__datum">
+                    <dt><ui:span text="${genreLabel}" variant="muted" /></dt>
+                    <dd><ui:span text="${genreValue}" /></dd>
+                </div>
+            </c:if>
+            <c:if test="${not empty item.pressingYear}">
+                <div class="vinyl-card__datum">
+                    <dt><ui:span text="${pressingYearLabel}" variant="muted" /></dt>
+                    <dd><ui:span text="${item.pressingYear}" /></dd>
+                </div>
+            </c:if>
         </dl>
+        <c:if test="${not empty item.description}">
+            <p class="text text-body vinyl-card__description"><c:out value="${item.description}" /></p>
+        </c:if>
 
         <div class="vinyl-card__actions">
             <jsp:doBody />
@@ -203,8 +414,4 @@ Required item is typed as [[PostSummary]]; variant defaults to editorial and is 
 </article>
 ```
 
-The earlier working-tree snapshot contained h2, h4, heading and wishlist-button. These files are absent from the committed version. See [[Known gaps and document drift]].
-
-[[Landing flow]] · [[Publish flow]] · [[Contact flow]]
-
-The optional file input is composed directly in the publish JSP with form:label/form:errors. ui:text-input is still for text/numeric values. [[Cover image flow]] explains image validation and storage.
+[[Views and assets]] · [[UI styles and tokens]] · [[Authentication flow]]

@@ -4,12 +4,42 @@ categories: [Testing]
 type: guide
 module: vault
 project: quieroVinilos
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: verified-static
 ---
 
 # Verification record
+
+## Refresh through 40328f0, 2026-09-16
+
+The target is origin/main at `40328f0a23ce3814ab62a9f0124a6ba1e6ae71be`, fetched during this task. The initial local branch was the sale branch at aea81a9, whose tree already matched the target. The user then switched to local main at the target revision. Final source checks use that clean local main checkout. The diff from ff96f27 has 125 changed or added paths.
+
+| Check | Result |
+|---|---|
+| Canonical root Markdown | 134 notes, excluding the CLAUDE symlink |
+| Current source coverage | All 257 tracked paths mapped exactly once; all 94 Java source/test files have dedicated notes |
+| Current exact excerpts | 138 match their cited source-line ranges |
+| Historical exact excerpts | Five match pinned pre-removal Git objects |
+| Source links/metadata | All 424 local source-link targets exist; all current source metadata refers to tracked paths |
+| Checkout identity | Every tracked source file byte-matches the target Git object |
+| Categories | Obsidian metadata has valid category lists on all 134 canonical notes |
+| Bases | All 12 query successfully through Obsidian CLI with vault=PAW_Vault |
+| All notes / Inbox | 133 categorized non-template notes / zero uncategorized notes |
+| Internal links | Obsidian unresolved total is zero; static wikilink resolution also passes |
+| Reading view | Inquiry and sale flow is in preview mode; rendered DOM contains the current owner/state/transaction explanation and one Mermaid SVG |
+| Repository static checker | python3 tools/paw_checks.py all reports i18n OK and jsp OK |
+| Whitespace | git diff --check passes |
+| Agent entry point | CLAUDE.md remains a relative symlink to AGENTS.md |
+| Source application preservation | No application edits by this task; source working tree is clean |
+
+The old web UserNotFoundException note is preserved as [[Legacy UserNotFoundException]]; the current [[UserNotFoundException]] is the new services-contracts class. Authentication, inquiries/sales, filters, per-post images, configuration, views, schema and related test explanations were updated together. Notes for unaffected tooling and historical code retain their earlier evidence dates.
+
+The pre-existing .obsidian/app.json and Categories/Architecture.base formatting changes are preserved outside this documentation commit. Bases were checked in their current working-tree form.
+
+No Maven test/build, JSP compilation, application server, PostgreSQL mutation/concurrency run, real SMTP delivery or deployment was performed. Source assertions, a rendered vault note and static checks do not establish application runtime behavior. Earlier records below retain their original counts and limits.
+
+[[Home]] · [[Source inventory]] · [[Testing and evidence]] · [[Known gaps and document drift]]
 
 ## Refresh through ff96f27, 2026-09-09
 

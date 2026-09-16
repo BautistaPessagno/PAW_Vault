@@ -4,16 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "services"]
 sources: ["services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java"]
 ---
 
 # EmailServiceImpl
 
-Both sendWelcomeEmail and sendPostInterestEmail are @Async. Each builds a Thymeleaf Context using the supplied Locale, sets homeUrl from required app.base-url, and sends UTF-8 HTML. One trailing slash is removed from baseUrl before adding /. Interest mail goes to the publisher with contact email in Reply-To. Both methods catch MessagingException and RuntimeException and log the full exception without returning delivery status. [[WebConfig]] supplies the bounded executor; its CallerRunsPolicy can run mail in the caller under saturation. See [[Mail delivery]].
+All three operations are @Async and render Thymeleaf HTML before sending through JavaMailSender. Verification links use app.base-url + /verify?token=; welcome and interest link home. Interest includes the optional message and buyer Reply-To. Rendering/SMTP exceptions are logged and swallowed. See [[Mail delivery]] for transaction and queue limits.
 
 ## Connections
 
@@ -23,7 +22,7 @@ Referenced by: [[EmailServiceImplTest]].
 
 ## Exact source
 
-[services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java, lines 1–108](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>)
+[services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java, lines 1–127](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -51,6 +50,7 @@ public class EmailServiceImpl implements EmailService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailServiceImpl.class);
     private static final String WELCOME_TEMPLATE = "welcome";
+    private static final String VERIFICATION_TEMPLATE = "email-verification";
     private static final String POST_INTEREST_TEMPLATE = "post-interest";
 
     private final JavaMailSender mailSender;
@@ -90,6 +90,23 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Async
+    @Override
+    public void sendVerificationEmail(final User user, final String token, final Locale locale) {
+        try {
+            final Context context = new Context(locale);
+            context.setVariable("verificationUrl", baseUrl + "/verify?token=" + token);
+            final String body = templateEngine.process(VERIFICATION_TEMPLATE, context);
+            final String subject = messageSource.getMessage("email.verification.subject", null, locale);
+            final MimeMessage message = createMessage(user.getEmail(), null, subject, body);
+
+            mailSender.send(message);
+            LOGGER.info("Verification email sent userId={}", user.getId());
+        } catch (final MessagingException | RuntimeException exception) {
+            LOGGER.error("Verification email delivery failed userId={}", user.getId(), exception);
+        }
+    }
+
     /*
      * @Async para no bloquear el request: entre los timeouts de conexion y de lectura, una
      * entrega SMTP lenta puede tardar hasta 15 segundos. Como corre en otro hilo, la
@@ -102,6 +119,7 @@ public class EmailServiceImpl implements EmailService {
             final Context context = new Context(locale);
             context.setVariable("contactName", notification.getContactName());
             context.setVariable("contactEmail", notification.getContactEmail());
+            context.setVariable("message", notification.getMessage());
             context.setVariable("albumTitle", notification.getAlbumTitle());
             context.setVariable("artistName", notification.getArtistName());
             context.setVariable("releaseYear", notification.getReleaseYear());

@@ -4,26 +4,25 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "persistence"]
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java"]
 ---
 
 # ArtistJdbcDao
 
-The constructor creates JdbcTemplate and a SimpleJdbcInsert for artists with generated `id`. `findByName` binds exact name with `?`, maps aliases through a shared static RowMapper, and returns Optional. `create` inserts the supplied name and returns an [[Artist]] with the generated key. `findOrCreate` uses lazy `orElseGet`, so inserts happen only on lookup misses. It does not catch concurrent uniqueness violations.
+Looks up an artist name before inserting it and lists artists with ORDER BY LOWER(name). The unique name constraint arbitrates competing inserts; the outer publishing service translates integrity errors.
 
 ## Connections
 
 Project types referenced: [[Artist]], [[ArtistDao]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java, lines 1–55](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>)
+[persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java, lines 1–66](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -37,6 +36,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -47,6 +47,11 @@ public class ArtistJdbcDao implements ArtistDao {
             resultSet.getLong("artist_id"),
             resultSet.getString("artist_name")
     );
+
+    // Los artistas se guardan en minuscula, pero el filtro de la landing los lista
+    // alfabeticamente igual que se ven en pantalla.
+    private static final String FIND_ALL_QUERY =
+            "SELECT id AS artist_id, name AS artist_name FROM artists ORDER BY LOWER(name)";
 
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert jdbcInsert;
@@ -80,9 +85,14 @@ public class ArtistJdbcDao implements ArtistDao {
         return findByName(name).orElseGet(() -> create(name));
     }
 
+    @Override
+    public List<Artist> findAll() {
+        return List.copyOf(jdbcTemplate.query(FIND_ALL_QUERY, ROW_MAPPER));
+    }
+
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

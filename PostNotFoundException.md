@@ -4,22 +4,21 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "services"]
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostNotFoundException.java"]
 ---
 
 # PostNotFoundException
 
-Unchecked missing-publication signal used when the contact GET lookup or notification lookup returns empty. [[PostContactController]] has a local ExceptionHandler and ResponseStatus NOT_FOUND, so this contact path returns HTTP 404.
+Unchecked missing-publication signal from InquiryService lookups and locking paths. [[PostContactController]] and [[InquiryController]] map it to HTTP 404.
 
 ## Connections
 
 Project types referenced: none.
 
-Referenced by: [[PostContactController]], [[PostServiceImpl]], [[PostServiceImplTest]].
+Referenced by: [[InquiryController]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]].
 
 ## Exact source
 
@@ -34,4 +33,4 @@ public class PostNotFoundException extends RuntimeException {
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

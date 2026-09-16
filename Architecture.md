@@ -4,15 +4,15 @@ categories: ["Architecture"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
 tags: ["codemap", "architecture"]
 ---
 
 # Architecture
 
-The module boundary separates interfaces from implementations. A controller receives a service interface through constructor injection. A service receives DAO interfaces and other services. JDBC implementations query the database and return immutable Java models. [[WebConfig]] assembles these objects at runtime.
+The module boundary separates interfaces from implementations. A controller receives a service interface through constructor injection. A service receives DAO interfaces and other services. JDBC implementations query the database and return Java models. [[WebConfig]] assembles these objects at runtime.
 
 ```mermaid
 flowchart TD
@@ -36,7 +36,7 @@ Solid arrows are project compile dependencies; dashed arrows are runtime depende
 | persistence | JDBC queries, row mappers and startup schema resource | [[PostJdbcDao]] and [[Database schema]] |
 | services-contracts | Business APIs, notification payload and business exceptions | [[PostService]], [[EmailService]] |
 | services | Normalization, orchestration, transactions and mail rendering | [[PostServiceImpl]], [[EmailServiceImpl]] |
-| webapp | HTTP binding, validation, views and composition | [[PublishController]], [[PublishForm]], [[WebConfig]] |
+| webapp | HTTP binding, validation, views and composition | [[PublishController]], [[SecurityConfig]], [[WebConfig]] |
 
 ## What crosses each boundary
 
@@ -50,3 +50,9 @@ Solid arrows are project compile dependencies; dashed arrows are runtime depende
 [[PostSummary]] avoids loading user, album and artist separately for each landing card. The former [[AlbumSummary]] catalog projection and album-listing APIs are removed. [[Image]] carries image bytes across the DAO/service boundary and [[ImageController]] returns them directly as an HTTP response.
 
 Start the concrete traces at [[Landing flow]], then [[Publish flow]] and [[Contact flow]]. [[Cover image flow]] traces upload and image responses. [[Legacy user flow]] describes routes removed from the current implementation.
+
+## Account and inquiry boundaries
+
+Security stays in webapp. [[AuthenticatedUser]] adapts the domain User to UserDetails, and [[SecurityConfig]] adapts BCrypt through the [[PasswordHasher]] contract. Services receive account IDs and ordinary values rather than Spring Security objects. [[InquiryService]] owns contact persistence, seller authorization and sale transactions. [[InquirySummary]] supplies both inbox lists through joined DAO queries.
+
+[[Authentication flow]] · [[Inquiry and sale flow]] · [[Landing flow]]

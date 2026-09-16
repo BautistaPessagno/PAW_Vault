@@ -4,8 +4,8 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java"]
 ---
@@ -18,7 +18,7 @@ Uses JdbcTemplate and SimpleJdbcInsert against images. findById selects aliased 
 
 Project types referenced: [[Image]], [[ImageDao]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 

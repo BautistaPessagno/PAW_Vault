@@ -4,33 +4,42 @@ categories: ["Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "persistence"]
-sources: ["database/users.sql", "database/albums.sql", "database/seed_dev_posts.sql", "persistence/src/test/resources/populator.sql"]
+sources: ["database/users.sql", "database/albums.sql", "database/seed_dev_posts.sql", "persistence/src/test/resources/populator.sql", "tools/sql/demo-users.sql"]
 ---
 
 # Schema history and seeds
 
-The canonical runtime schema is [[Database schema]]. The old V1/V2/V3 SQL files under persistence/src/main/resources/db/migration are deleted at ff96f27; no Flyway directory or dependency remains. Their prior contents are historical Git evidence, not scripts available for execution in this checkout.
+The canonical runtime schema lives in persistence/src/main/resources/schema.sql. The deleted Flyway migrations remain historical Git evidence. Manual bootstrap files are not the current startup schema.
 
-## Current SQL paths
-
-| Path | Purpose and limits |
+| Path | Role |
 |---|---|
-| persistence/src/main/resources/schema.sql | Startup create/targeted upgrade; no seed rows or foreign keys |
-| database/users.sql | Manual user bootstrap, required before database/albums.sql |
-| database/albums.sql | One-time manual tables and initial artist/album/post, with foreign keys and year CHECK |
-| database/seed_dev_posts.sql | Optional idempotent four-album development seed; normalized identities and no cover bytes |
-| persistence/src/test/resources/schema.sql | Fresh HSQLDB schema without PostgreSQL upgrade statements |
-| persistence/src/test/resources/populator.sql | User, artist, binary image, album and Post fixtures |
+| database/users.sql | Old manual user table bootstrap |
+| database/albums.sql | One-time catalog/post bootstrap with older foreign keys and year CHECK |
+| database/seed_dev_posts.sql | Optional idempotent development catalog/posts, with no images or credentials |
+| persistence/src/test/resources/populator.sql | HSQLDB fixtures for users, tokens, catalog, images, commercial/sold posts and inquiry states |
+| tools/sql/demo-users.sql | Optional manual enabled USER/ADMIN accounts; outside classpath, never automatic, preserves existing emails |
 
-The seed albums have null cover_image_id and use the placeholder. Publishing an existing seeded identity does not replace its absent cover; a new catalog identity is needed to exercise cover creation through the current form. database/albums.sql uses plain CREATE and is not the idempotent startup script.
+Startup adds the current auth/commercial/inquiry columns to supported older layouts. Old manual catalog FKs differ from a fresh canonical database. Earlier seeded users lack hashes and remain disabled until claimed through email verification. A new publication of an existing seeded album can now store its own photo; the old album cover is merely a fallback.
 
-The local setup helper no longer runs an artist migration. It stops on the unsupported textual artist schema and does not establish readiness of every Post/Image column on an existing database. No SQL in this note was executed for this refresh.
+The test fixture includes realistic related user rows, dated publications, nullable old details, AVAILABLE/SOLD posts and PENDING/ACCEPTED/REJECTED inquiries. Those fixtures do not exercise PostgreSQL upgrades. Demo credentials are documented in the source README; their values are not copied into this vault. No SQL was run for this refresh.
 
-## Manual album/bootstrap SQL
+## database/users.sql
+
+[database/users.sql, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/database/users.sql>)
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    CONSTRAINT users_email_key UNIQUE (email)
+);
+```
+
+## database/albums.sql
 
 [database/albums.sql, lines 1–57](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/database/albums.sql>)
 
@@ -94,7 +103,7 @@ WHERE album.title = 'versus'
 COMMIT;
 ```
 
-## Development seed
+## database/seed_dev_posts.sql
 
 [database/seed_dev_posts.sql, lines 1–49](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/database/seed_dev_posts.sql>)
 
@@ -150,25 +159,77 @@ ON CONFLICT (user_id, album_id) DO NOTHING;
 COMMIT;
 ```
 
-## Test fixture
+## persistence/src/test/resources/populator.sql
 
-[persistence/src/test/resources/populator.sql, lines 1–14](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/resources/populator.sql>)
+[persistence/src/test/resources/populator.sql, lines 1–64](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/resources/populator.sql>)
 
 ```sql
-INSERT INTO users (id, username, email)
-VALUES (1, 'bpessagno', 'bpessagno@itba.edu.ar');
+INSERT INTO users (id, username, email, password_hash, role, enabled, preferred_locale)
+VALUES (1, 'bpessagno', 'bpessagno@itba.edu.ar', '$2a$12$FpiCwPCeBQTF3ihFUejq2Oz4HO.SYw2n4z1fgYoZ3bpZI67EDcIFm', 'USER', TRUE, 'es');
+
+INSERT INTO users (id, username, email, password_hash, role, enabled, preferred_locale)
+VALUES (2, 'tgorganchian', 'tgorganchian@itba.edu.ar', '$2a$12$InUBNvxsWcA9mXYXqKOoAuysB1rA4gF.dteOO/IUP6YvMKzYvtvru', 'ADMIN', TRUE, 'fr');
+
+INSERT INTO users (id, username, email, password_hash, role, enabled, preferred_locale)
+VALUES (3, 'legacy', 'legacy@example.com', NULL, 'USER', FALSE, 'en');
+
+INSERT INTO email_verification_tokens (id, user_id, token)
+VALUES (1, 3, 'pending-user-verification-token');
 
 INSERT INTO artists (id, name)
 VALUES (1, 'illya kuryaki and the valderramas');
 
+INSERT INTO artists (id, name)
+VALUES (2, 'soda stereo');
+
 INSERT INTO images (id, content_type, data)
 VALUES (1, 'image/png', X'89504E470D0A1A0A');
 
-INSERT INTO albums (id, title, artist_id, release_year, cover_image_id)
-VALUES (1, 'versus', 1, 1997, 1);
+INSERT INTO albums (id, title, artist_id, release_year, genre, cover_image_id)
+VALUES (1, 'versus', 1, 1997, 'HIP_HOP', 1);
 
-INSERT INTO posts (id, user_id, album_id)
-VALUES (1, 1, 1);
+INSERT INTO albums (id, title, artist_id, release_year, genre, cover_image_id)
+VALUES (2, 'cancion animal', 2, 1990, 'ROCK', NULL);
+
+-- created_at no sigue el orden de los ids a proposito: asi los tests de orden
+-- distinguen "mas nuevo" (fecha) de "id mas alto".
+-- Post anterior a las columnas comerciales: todo NULL y stock por default.
+INSERT INTO posts (id, user_id, album_id, created_at)
+VALUES (1, 1, 1, '2026-02-15 10:00:00');
+
+-- Post con todos los datos comerciales cargados.
+INSERT INTO posts (id, user_id, album_id, price, description, item_condition, pressing_year, zone, stock, created_at)
+VALUES (2, 2, 1, 45000, 'Prensado japones, tapa con leve desgaste.', 'USED', 2015, 'Palermo', 2, '2026-01-01 10:00:00');
+
+-- Post de otro album y otro artista, el mas reciente y el mas barato.
+INSERT INTO posts (id, user_id, album_id, price, created_at)
+VALUES (3, 1, 2, 30000, '2026-03-01 10:00:00');
+
+INSERT INTO inquiries (id, post_id, buyer_id, message, created_at, status)
+VALUES (1, 2, 1, '¿Aceptarías una oferta?', '2026-03-02 10:00:00', 'PENDING');
+
+INSERT INTO inquiries (id, post_id, buyer_id, message, created_at, status)
+VALUES (2, 2, 3, NULL, '2026-03-03 10:00:00', 'PENDING');
+
+INSERT INTO inquiries (id, post_id, buyer_id, message, created_at, status)
+VALUES (3, 3, 2, 'Me interesa.', '2026-03-04 10:00:00', 'PENDING');
+
+-- Segunda consulta del mismo comprador, sobre otra publicacion y mas reciente: es la
+-- que distingue "mas nueva primero" de "unico resultado".
+INSERT INTO inquiries (id, post_id, buyer_id, message, created_at, status)
+VALUES (4, 1, 2, NULL, '2026-03-05 10:00:00', 'PENDING');
+
+-- Ejemplar ya vendido, con la consulta que lo cerro y la competidora que quedo rechazada.
+INSERT INTO posts (id, user_id, album_id, price, status, created_at)
+VALUES (4, 3, 2, 20000, 'SOLD', '2026-01-15 10:00:00');
+
+INSERT INTO inquiries (id, post_id, buyer_id, message, created_at, status)
+VALUES (5, 4, 1, 'Me lo llevo.', '2026-03-06 10:00:00', 'ACCEPTED');
+
+INSERT INTO inquiries (id, post_id, buyer_id, message, created_at, status)
+VALUES (6, 4, 2, NULL, '2026-03-07 10:00:00', 'REJECTED');
 ```
 
-[[Development tools]] · [[Known gaps and document drift]]
+[Optional demo seed](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/tools/sql/demo-users.sql>)
+
+[[Database schema]] · [[Authentication flow]] · [[Testing and evidence]]

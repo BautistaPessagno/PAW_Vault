@@ -4,20 +4,21 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "operations"]
-sources: ["webapp/src/main/resources/database.properties.example", "webapp/src/main/resources/mail.properties.example", "README.md"]
+sources: ["webapp/src/main/resources/database.properties.example", "webapp/src/main/resources/mail.properties.example", "README.md", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # Configuration and running
 
-The repository README names Java 21, Maven 3.x and PostgreSQL 16. The local helper script targets Homebrew PostgreSQL 18. This map records both rather than claiming the developer's installed database version was verified.
+README lists Java 21, Maven 3.x and PostgreSQL 16. The local helper targets Homebrew PostgreSQL 18; this refresh does not establish the installed or deployed database version.
 
-## Required local files
+WebConfig marks database.properties and mail.properties as optional classpath resources. Required values can come from those files or Environment property sources; unavailable required properties still fail startup. It now uses DriverManagerDataSource and no connection pool. Local credential files were not read or copied into this vault.
 
-[[WebConfig]] declares required classpath `database.properties` and `mail.properties`. The committed `.example` files show the keys. Local values are ignored by Git and were not read for this map.
+The committed example files enumerate database, SMTP and application URL keys. app.base-url must include the deployed context path for verification/home mail links. README now includes this key and documents uppercase environment names such as DB_URL and APP_BASE_URL. Those settings were inspected as source, not exercised in a deployment.
+
+## database.properties.example
 
 [webapp/src/main/resources/database.properties.example, lines 1–4](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/database.properties.example>)
 
@@ -27,6 +28,8 @@ db.url=jdbc:postgresql://localhost:5432/paw
 db.username=your_database_username
 db.password=your_database_password
 ```
+
+## mail.properties.example
 
 [webapp/src/main/resources/mail.properties.example, lines 1–16](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/mail.properties.example>)
 
@@ -49,30 +52,12 @@ app.mail.from=your_smtp_username
 app.base-url=http://localhost:8080
 ```
 
+## Reference workflow
 
-Database driver is dynamically loaded and checked as a java.sql.Driver. The datasource is SimpleDriverDataSource, with no connection pool configuration. getRequiredProperty fails when a required key is unavailable; mail.port is parsed as Integer. The two @PropertySource declarations also require their files to exist, so the README's environment-only alternative is not fully supported as written without resolving that file-loading requirement.
+Build from the source repository root. `mvn clean install` builds/tests and installs the six sibling modules. `mvn -pl webapp jetty:run` uses installed siblings. `mvn clean package` produces webapp/target/app.war. These commands were not executed by this documentation refresh.
 
-## Commands, shown for reference
+Startup runs the canonical schema and targeted backfills, but does not load demo users or development albums. tools/sql/demo-users.sql is an optional manual USER/ADMIN seed outside the packaged classpath. Account creation normally sends verification mail, and activation requests welcome mail; publishing itself does neither.
 
-```bash
-cd /Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b
-cp webapp/src/main/resources/database.properties.example webapp/src/main/resources/database.properties
-cp webapp/src/main/resources/mail.properties.example webapp/src/main/resources/mail.properties
-# Fill the local files with the intended database and SMTP settings.
-mvn clean install
-mvn -pl webapp jetty:run
-```
+No database changes, server startup, email or course deployment were performed. [[Schema history and seeds]] explains compatibility limits and [[Verification record]] records the actual checks.
 
-These commands were not executed while authoring the vault. Starting with an empty PostgreSQL database and adequate table-creation permissions runs the current schema initializer. It creates tables without seed rows and also runs targeted username/cover schema upgrades. Historical SQL and the optional development seed are separate in [[Schema history and seeds]].
-
-Publishing with a new email requests welcome mail. Contact requests asynchronous interest mail using the request Locale. The removed /create route is historical. Building the vault requires neither operation and no mail was sent.
-
-The deployment target host, external database state and server readiness are not verified. TODO.md records a course deployment blocker, but that document is not a live status check.
-
-[[Startup and dependency injection]] · [[Build and dependencies]] · [[Logging]] · [[Development tools]]
-
-## Mail links and deployment artifact
-
-app.base-url is now required by EmailServiceImpl. The committed example uses http://localhost:8080 and documents the course context path for production. Its value must include the application context path when needed, because mail workers cannot derive it from a request. The README inline mail example omits this new key; copy the committed example file and consult [[Known gaps and document drift]].
-
-The package output is webapp/target/app.war. TODO.md now says database access and upload procedure are confirmed but the first deployment still needs to be performed and validated. This is a document claim, not a checked live environment.
+[[Startup and dependency injection]] · [[Build and dependencies]] · [[Logging]]

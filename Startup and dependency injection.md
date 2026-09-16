@@ -4,64 +4,44 @@ categories: ["Architecture"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "architecture"]
-sources: ["webapp/src/main/webapp/WEB-INF/web.xml"]
+sources: ["webapp/src/main/webapp/WEB-INF/web.xml", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java"]
 ---
 
 # Startup and dependency injection
 
-The servlet container reads `WEB-INF/web.xml`. Its ContextLoaderListener creates an AnnotationConfigWebApplicationContext configured with [[WebConfig]]. The DispatcherServlet handles `/` and uses the web context to resolve controller mappings. There is no `main` method starting the app.
+The Servlet 4.0 descriptor creates a root AnnotationConfigWebApplicationContext with WebConfig. DispatcherServlet maps / and resolves MVC controllers and JSP logical names. WebConfig imports SecurityConfig and scans persistence, services and controllers.
 
-```mermaid
-flowchart LR
-    C[Servlet container] --> X[web.xml]
-    X --> L[ContextLoaderListener]
-    L --> W[WebConfig]
-    X --> D[DispatcherServlet]
-    W --> B[Scanned Spring beans]
-    W --> DS[DataSource]
-    DS --> I[DataSourceInitializer]
-    I --> SQL[schema.sql]
-    D --> CT[Controller]
-    CT --> V[ViewResolver]
-    V --> JSP[JSP under WEB-INF/views]
-```
+Request filters are declared in this order: UTF-8 CharacterEncodingFilter for all paths, MultipartExceptionHandlerFilter and MultipartFilter for /publish, then the Spring Security DelegatingFilterProxy for all paths. Multipart parsing precedes security so the CSRF token in the form can be read. A lazy overflow is translated by the outer exception filter.
 
-## Bean connections
+| Bean | Configuration |
+|---|---|
+| DataSource | DriverManagerDataSource, required db properties, no pool |
+| Transaction manager | DataSourceTransactionManager |
+| Schema initializer | classpath schema.sql, including backfills and constraint additions |
+| taskExecutor | Core 2, max 5, queue 50, mail- prefix, CallerRunsPolicy |
+| Multipart resolver | CommonsMultipartResolver, UTF-8, lazy parsing, 6 MiB request limit |
+| Locale resolver | AcceptHeaderLocaleResolver, Spanish default |
+| Message source | UTF-8 i18n/messages, no system-locale fallback |
+| View resolver | JstlView, /WEB-INF/views/ + name + .jsp |
+| Mail template engine | Thymeleaf, classpath mail/*.html |
+| Security beans | BCrypt encoder, PasswordHasher adapter, UserDetailsService, SecurityFilterChain |
 
-| Configuration | Result | Consumers |
-|---|---|---|
-| ComponentScan | Discovers @Repository, @Service and @Controller classes in the three configured packages | Constructor injection resolves interfaces to discovered implementations |
-| dataSource | SimpleDriverDataSource using required db properties | All JDBC DAOs, schema initializer, transaction manager |
-| transactionManager | DataSourceTransactionManager | Service @Transactional proxies |
-| dataSourceInitializer | Executes classpath schema.sql | Table creation, username backfill and cover-column upgrade |
-| taskExecutor | ThreadPoolTaskExecutor: core 2, max 5, queue 50, CallerRunsPolicy | Both EmailService @Async methods |
-| multipartResolver | Lazy CommonsMultipartResolver, UTF-8, 6 MiB whole request | Publish form upload |
-| viewResolver | JstlView, `/WEB-INF/views/` prefix, `.jsp` suffix | Logical controller view names |
-| mailSender | JavaMailSenderImpl, SMTP auth/TLS/timeouts | [[EmailServiceImpl]] |
-| mailTemplateEngine | Classpath `mail/` + name + `.html`, UTF-8 HTML | Welcome/contact rendering |
-| messageSource | ReloadableResourceBundleMessageSource, `i18n/messages`, UTF-8 | JSP, validation, mail subjects and templates |
-| validator/getValidator | LocalValidatorFactoryBean using that message source | @Valid form arguments |
-| addResourceHandlers | `/css/**`, `/js/**`, `/images/**` to matching web directories | Styles and placeholder image |
-
-@EnableTransactionManagement and @EnableAsync add proxy behavior. Direct `new` in tests does not activate them. WebConfig now declares a bounded async executor. CallerRunsPolicy can execute mail in the request thread under saturation. No connection pool or scheduler is defined. Configuration uses required classpath @PropertySource declarations; read [[Configuration and running]] for why environment-only deployment is not established by the README claim.
-
-A logical `landing/index` view becomes `/WEB-INF/views/landing/index.jsp`. A `redirect:/` result initiates another HTTP request rather than resolving a JSP. See [[Views and assets]].
+PropertySource files are optional; missing required values still fail Environment lookups. @Transactional and @Async operate through Spring proxies. The descriptor sets HttpOnly session cookies and routes unmatched 404 errors through ErrorController. Cover bytes use ImageController; /css, /js and /images use static resource handlers.
 
 ## Servlet descriptor
 
-[webapp/src/main/webapp/WEB-INF/web.xml, lines 1–41](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>)
+[webapp/src/main/webapp/WEB-INF/web.xml, lines 1–104](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>)
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app id="PAW" version="2.4"
-  xmlns="http://java.sun.com/xml/ns/j2ee"
+<web-app id="PAW" version="4.0"
+  xmlns="http://xmlns.jcp.org/xml/ns/javaee"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
-  <display-name>PAW test application</display-name>
+  xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
+  <display-name>quieroVinilos</display-name>
 
   <context-param>
     <param-name>contextClass</param-name>
@@ -75,6 +55,54 @@ A logical `landing/index` view becomes `/WEB-INF/views/landing/index.jsp`. A `re
       ar.edu.itba.paw.webapp.config.WebConfig,
 </param-value>
   </context-param>
+  <filter>
+    <filter-name>characterEncodingFilter</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>UTF-8</param-value>
+    </init-param>
+    <init-param>
+      <param-name>forceEncoding</param-name>
+      <param-value>true</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>characterEncodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  <filter>
+    <filter-name>multipartExceptionHandlerFilter</filter-name>
+    <filter-class>ar.edu.itba.paw.webapp.security.MultipartExceptionHandlerFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>multipartExceptionHandlerFilter</filter-name>
+    <url-pattern>/publish</url-pattern>
+  </filter-mapping>
+  <!--
+    Corre antes de la cadena de Spring Security para que el token CSRF del form multipart
+    de /publish ya este parseado cuando se valida. Solo esa ruta sube archivos.
+  -->
+  <filter>
+    <filter-name>multipartFilter</filter-name>
+    <filter-class>org.springframework.web.multipart.support.MultipartFilter</filter-class>
+    <init-param>
+      <param-name>multipartResolverBeanName</param-name>
+      <param-value>multipartResolver</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>multipartFilter</filter-name>
+    <url-pattern>/publish</url-pattern>
+  </filter-mapping>
+  <filter>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
   <listener>
     <listener-class>
       org.springframework.web.context.ContextLoaderListener
@@ -96,9 +124,22 @@ A logical `landing/index` view becomes `/WEB-INF/views/landing/index.jsp`. A `re
     <servlet-name>dispatcher</servlet-name>
     <url-pattern>/</url-pattern>
   </servlet-mapping>
+
+  <!--
+    Sin <secure>, el contenedor marca la cookie de sesion como Secure cuando el request
+    llega por HTTPS y la deja utilizable en el desarrollo local sobre HTTP.
+  -->
+  <session-config>
+    <cookie-config>
+      <http-only>true</http-only>
+    </cookie-config>
+  </session-config>
+
+  <error-page>
+    <error-code>404</error-code>
+    <location>/error/404</location>
+  </error-page>
 </web-app>
 ```
 
-[[WebConfig]] · [[Architecture]]
-
-[[ImageController]] separately maps /covers/{id} to stored bytes; it does not use the static /images handler. [[Cover image flow]] distinguishes upload and retrieval.
+[[WebConfig]] · [[SecurityConfig]] · [[Configuration and running]]

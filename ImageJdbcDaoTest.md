@@ -4,8 +4,8 @@ categories: ["Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java"]
 ---
@@ -14,19 +14,11 @@ sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTes
 
 Three transactional HSQLDB tests cover binary lookup, missing image and binary insert with generated ID and row count. Uses short byte fixtures and checks byte equality; it does not establish that the fixture decodes as a full image.
 
-## Test methods
-
-- `testFindByIdWhenImageExistsReturnsImage`
-- `testFindByIdWhenImageDoesNotExistReturnsEmpty`
-- `testCreateWhenDataIsValidReturnsPersistedImage`
-
-These are source assertions, not a fresh passing test run.
-
 ## Connections
 
 Project types referenced: [[Image]], [[ImageDao]], [[TestConfiguration]].
 
-Referenced by: no direct project type reference; implementations may be injected through interfaces.
+Referenced by: none.
 
 ## Exact source
 

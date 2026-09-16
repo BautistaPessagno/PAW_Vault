@@ -4,26 +4,25 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "domain"]
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Album.java"]
 ---
 
 # Album
 
-A catalog work identified by normalized title, artist ID and release year. coverImageId is a nullable Long referencing [[Image]], replacing coverPath. The cover does not participate in uniqueness. [[AlbumServiceImpl]] preserves the first stored album and its cover when another publisher reuses that identity.
+Shared catalog work identified by artist ID, normalized title and release year. Optional Genre is fixed when the identity is first created. coverImageId remains for historical album covers; new exemplar photos belong to [[Post]]. Reusing the identity preserves the stored album.
 
 ## Connections
 
-Project types referenced: none.
+Project types referenced: [[Genre]].
 
 Referenced by: [[AlbumDao]], [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumService]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]], [[EmailServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
 
 ## Exact source
 
-[models/src/main/java/ar/edu/itba/paw/models/Album.java, lines 1–38](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Album.java>)
+[models/src/main/java/ar/edu/itba/paw/models/Album.java, lines 1–44](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Album.java>)
 
 ```java
 package ar.edu.itba.paw.models;
@@ -33,14 +32,16 @@ public class Album {
     private final String title;
     private final long artistId;
     private final int releaseYear;
+    private final Genre genre;
     private final Long coverImageId;
 
     public Album(final long id, final String title, final long artistId, final int releaseYear,
-                 final Long coverImageId) {
+                 final Genre genre, final Long coverImageId) {
         this.id = id;
         this.title = title;
         this.artistId = artistId;
         this.releaseYear = releaseYear;
+        this.genre = genre;
         this.coverImageId = coverImageId;
     }
 
@@ -58,6 +59,10 @@ public class Album {
 
     public int getReleaseYear() {
         return releaseYear;
+    }
+
+    public Genre getGenre() {
+        return genre;
     }
 
     public Long getCoverImageId() {

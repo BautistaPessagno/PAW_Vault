@@ -4,35 +4,28 @@ categories: ["Testing"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "testing"]
-sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java", "services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/ImageServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java"]
+sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/EmailVerificationTokenJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/InquiryJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java", "persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java", "services/src/test/java/ar/edu/itba/paw/services/AlbumServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/ImageServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/InquiryServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java", "services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java"]
 ---
 
 # Testing and evidence
 
-The source contains five persistence DAO suites, six service suites and one shared TestConfiguration. Each has a linked source note. This refresh inspects their assertions; it does not report a new Maven run.
+The source has seven DAO test suites, seven service test suites and a shared TestConfiguration. This refresh inspects source and validates the vault; it does not report a new Maven run.
 
-| Area | Source evidence |
+| Area | Test source |
 |---|---|
-| [[ImageJdbcDaoTest]] | Binary read, missing ID and insert |
-| [[AlbumJdbcDaoTest]] | Identity lookup, uniqueness, different year and nullable image reference |
-| [[PostJdbcDaoTest]] | Summary image-ID mapping, lookup, duplicate pair and second publisher |
-| [[ArtistJdbcDaoTest]], [[UserJdbcDaoTest]] | Existing identity and insertion/lookup paths |
-| [[ImageServiceImplTest]] | Wrong MIME, empty/oversize bytes and valid labeled bytes |
-| [[AlbumServiceImplTest]] | Existing cover retained; new album with provided/null/empty cover |
-| [[PostServiceImplTest]] | Duplicate branches, catalog reuse and contact lookup paths with Locale |
-| [[EmailServiceImplTest]] | Addresses/body, English copy, absolute CTA, and swallowed welcome/contact failures |
-| [[UserServiceImplTest]], [[ArtistServiceImplTest]] | Identity normalization and reuse |
+| Registration/verification | [[UserServiceImplTest]], [[UserJdbcDaoTest]], [[EmailVerificationTokenJdbcDaoTest]] cover pending/existing accounts, normalized email, conditional activation and token deletion |
+| Search/filter/sort | [[PostServiceImplTest]], [[PostJdbcDaoTest]] cover query normalization/limits, invalid filters, sort orders, combined filters, literal wildcards and available-only listings |
+| Inquiry/sale | [[InquiryServiceImplTest]], [[InquiryJdbcDaoTest]] cover contactability, seller checks, guarded transitions, competitor rejection and seller locale |
+| Catalog/image | [[AlbumServiceImplTest]], [[AlbumJdbcDaoTest]], [[ArtistServiceImplTest]], [[ArtistJdbcDaoTest]], [[ImageServiceImplTest]], [[ImageJdbcDaoTest]] cover identity, genre, listing, bytes and MIME/size rules |
+| Mail | [[EmailServiceImplTest]] uses real templates with a fake sender, checking verification links, optional messages, addresses, English copy, home links and swallowed failures |
 
-Persistence tests use fresh HSQLDB schemas, Spring injection and rollback. They do not execute PostgreSQL’s production ALTER/UPDATE statements. Service tests use direct objects with mocks or a capturing sender, so transaction and @Async proxies are inactive. Email tests render real templates but use a StaticMessageSource and fake SMTP sender.
+DAO suites run against fresh HSQLDB schemas using Spring test transactions and fixtures. They do not execute production PostgreSQL ALTER/DO upgrades. Service suites use mocks/direct construction, so @Transactional and @Async proxies are absent. A sequence of mocked writes is not proof of rollback or concurrent locking.
 
-## What remains unverified
+No webapp test suite is tracked. There is no automated evidence here for a real security filter chain, CSRF/session behavior, multipart binding/overflow, JSP compilation or deployed routes. PostgreSQL concurrency, SMTP delivery and queue saturation need separate runtime checks. The guarded-lock DAO test reads a locked row but does not establish multi-connection race behavior.
 
-There are no webapp tests for multipart binding, oversized requests, file-input retry behavior, cover Content-Type/cache/404, JSP compilation, contact redirects or locale propagation through a real async proxy. There is no pool-saturation, durable delivery or actual PostgreSQL concurrency test. No test demonstrates a real upload can be decoded; ImageService checks MIME labels and byte size only.
+Some old test method names still say findFeatured even though they invoke the unified search API. PostServiceImplTest also retains a DefaultStock name while stock is now fixed by the DAO. The code excerpts show the actual assertions. There is no direct image-decode test because validation checks label/length only.
 
-The normal contact service test asserts no exception rather than the normalized notification payload. No ConcurrentPublishException test exists. The second-publisher DAO test inserts user ID 2 without a corresponding users row, matching the lack of foreign-key enforcement in that test schema.
-
-[[Verification record]] records vault/source checks and the actual static checker results. No server, database mutation, SMTP call, Maven build or test run was performed in this refresh.
+[[Verification record]] records the actual static checks and their limits. No source application changes, Maven build, database writes, server startup or SMTP call were made by this refresh.

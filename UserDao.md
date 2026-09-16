@@ -4,31 +4,31 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
 status: "documented"
-tags: ["codemap", "persistence"]
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/UserDao.java"]
 ---
 
 # UserDao
 
-The users persistence contract. `findById` and `findByEmail` return Optional; `create` always inserts; `findOrCreate` reuses an email without updating the username. [[UserJdbcDao]] implements all four. [[UserServiceImpl]] implements its own find-or-create orchestration with `findByEmail` and `create` so only new users receive welcome mail.
+Account lookup by ID/email, creation with role and preferred locale, and conditional activation. activateIfPending changes credentials only while enabled is false.
 
 ## Connections
 
-Project types referenced: [[User]].
+Project types referenced: [[User]], [[UserRole]].
 
 Referenced by: [[UserJdbcDao]], [[UserJdbcDaoTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
 
 ## Exact source
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/UserDao.java, lines 1–15](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/UserDao.java>)
+[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/UserDao.java, lines 1–16](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/UserDao.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.models.UserRole;
 
 import java.util.Optional;
 
@@ -37,12 +37,12 @@ public interface UserDao {
 
     Optional<User> findByEmail(String email);
 
-    User findOrCreate(String username, String email);
+    User create(String username, String email, String passwordHash, UserRole role, String preferredLocale);
 
-    User create(String username, String email);
+    boolean activateIfPending(long id, String username, String passwordHash);
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

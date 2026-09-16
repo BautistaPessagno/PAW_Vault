@@ -1,43 +1,39 @@
 ---
 title: "UserNotFoundException"
-categories: ["History"]
-type: "historical-code"
-module: "webapp"
+categories: ["Services"]
+type: "code"
+module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-09"
-commit: "ff96f275ae009bad4534751b7a4857cf45aea7ac"
-status: "removed"
-source_commit: "041ce34404963b689d05443ca00abb7e75aa7f15"
-tags: ["codemap", "web"]
-sources: []
+snapshot: "2026-09-16"
+commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+status: "documented"
+sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java"]
 ---
 
 # UserNotFoundException
 
-> [!note] Historical source
-> This type is absent at ff96f27. The text and excerpt below describe the previous implementation at 041ce34.
-
-Unchecked marker thrown by [[HelloWorldController]] for missing users. The class has no ResponseStatus and the controller has no handler for it. This snapshot therefore does not explicitly turn it into a 404; do not infer the contact controller behavior applies to this route.
+Service-contract exception for a missing publisher account during publish. This is a new type in ar.edu.itba.paw.services; the deleted web exception remains at [[Legacy UserNotFoundException]]. No dedicated HTTP mapping is declared here.
 
 ## Connections
 
-Project types referenced: none.
+Project types referenced: [[User]].
 
-Referenced by: [[HelloWorldController]].
-
-Tests: no direct test source reference. See [[Testing and evidence]].
+Referenced by: [[PostServiceImpl]].
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/exceptions/UserNotFoundException.java, lines 1–4](<https://bitbucket.org/itba/paw-2026b-14/src/041ce34404963b689d05443ca00abb7e75aa7f15/webapp/src/main/java/ar/edu/itba/paw/webapp/exceptions/UserNotFoundException.java>)
+[services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java, lines 1–7](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java>)
 
 ```java
-package ar.edu.itba.paw.webapp.exceptions;
+package ar.edu.itba.paw.services;
 
 public class UserNotFoundException extends RuntimeException {
+    public UserNotFoundException() {
+        super("User not found");
+    }
 }
 ```
 
 ## Context
 
-[[Architecture]] · [[Domain and identity]] · [[Source inventory]]
+[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]
