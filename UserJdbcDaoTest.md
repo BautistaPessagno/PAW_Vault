@@ -4,8 +4,8 @@ categories: ["Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java"]
 ---
@@ -22,6 +22,12 @@ Test methods in this revision:
 - `testCreateWhenUserIsNewReturnsPersistedNormalizedUser`
 - `testActivateIfPendingWhenUserIsPendingReturnsTrueAndEnabledUser`
 - `testActivateIfPendingWhenUserIsAlreadyEnabledReturnsFalseAndPreservesCredentials`
+- `testUpdateUsernameWhenUserExistsReturnsUpdatedUserAndPreservesAccountData`
+- `testUpdateUsernameWhenUserDoesNotExistReturnsEmptyAndPreservesUsers`
+- `testUpdatePasswordIfMatchesWhenExpectedHashIsCurrentReturnsUserWithNewHashAndPersistsIt`
+- `testUpdatePasswordIfMatchesWhenExpectedHashIsStaleReturnsEmptyAndPreservesHash`
+- `testUpdatePasswordWhenUserExistsReturnsUserWithNewHash`
+- `testUpdatePasswordWhenUserDoesNotExistReturnsEmpty`
 
 ## Connections
 
@@ -31,7 +37,7 @@ Referenced by: none.
 
 ## Exact source
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java, lines 1–151](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java>)
+[persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java, lines 1–248](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/UserJdbcDaoTest.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -179,6 +185,103 @@ public class UserJdbcDaoTest {
         Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, USERS_TABLE,
                 "id = " + USER_ID + " AND username = " + sqlString(USERNAME)
                         + " AND password_hash = " + sqlString(PASSWORD_HASH) + " AND enabled = TRUE"));
+    }
+
+    @Test
+    public void testUpdateUsernameWhenUserExistsReturnsUpdatedUserAndPreservesAccountData() {
+        // 1. Arrange
+        final String updatedUsername = "nuevo nombre";
+
+        // 2. Exercise
+        final Optional<User> result = userDao.updateUsername(USER_ID, updatedUsername);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals(updatedUsername, result.get().getUsername());
+        Assertions.assertEquals(USER_EMAIL, result.get().getEmail());
+        Assertions.assertEquals(PASSWORD_HASH, result.get().getPasswordHash());
+        Assertions.assertEquals(UserRole.USER, result.get().getRole());
+        Assertions.assertTrue(result.get().isEnabled());
+        Assertions.assertEquals("es", result.get().getPreferredLocale());
+    }
+
+    @Test
+    public void testUpdateUsernameWhenUserDoesNotExistReturnsEmptyAndPreservesUsers() {
+        // 1. Arrange
+        final long missingId = 999;
+
+        // 2. Exercise
+        final Optional<User> result = userDao.updateUsername(missingId, "nadie");
+
+        // 3. Assert
+        Assertions.assertFalse(result.isPresent());
+        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, USERS_TABLE));
+    }
+
+    @Test
+    public void testUpdatePasswordIfMatchesWhenExpectedHashIsCurrentReturnsUserWithNewHashAndPersistsIt() {
+        // 1. Arrange
+        final String newHash = "$2a$12$replacement";
+
+        // 2. Exercise
+        final Optional<User> result = userDao.updatePasswordIfMatches(USER_ID, PASSWORD_HASH, newHash);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals(newHash, result.get().getPasswordHash());
+        Assertions.assertEquals(USERNAME, result.get().getUsername());
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, USERS_TABLE,
+                "id = " + USER_ID + " AND username = " + sqlString(USERNAME)
+                        + " AND email = " + sqlString(USER_EMAIL)
+                        + " AND password_hash = " + sqlString(newHash)
+                        + " AND role = 'USER' AND enabled = TRUE AND preferred_locale = 'es'"));
+    }
+
+    @Test
+    public void testUpdatePasswordIfMatchesWhenExpectedHashIsStaleReturnsEmptyAndPreservesHash() {
+        // 1. Arrange
+        final String staleHash = "$2a$12$stale";
+
+        // 2. Exercise
+        final Optional<User> result = userDao.updatePasswordIfMatches(USER_ID, staleHash, "$2a$12$replacement");
+
+        // 3. Assert
+        Assertions.assertFalse(result.isPresent());
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, USERS_TABLE,
+                "id = " + USER_ID + " AND password_hash = " + sqlString(PASSWORD_HASH)));
+    }
+
+    @Test
+    public void testUpdatePasswordWhenUserExistsReturnsUserWithNewHash() {
+        // 1. Arrange
+        final String newHash = "$2a$12$hash-chosen-while-recovering";
+
+        // 2. Exercise
+        final Optional<User> result = userDao.updatePassword(USER_ID, newHash);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals(newHash, result.get().getPasswordHash());
+        Assertions.assertEquals(USERNAME, result.get().getUsername());
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, USERS_TABLE,
+                "id = " + USER_ID + " AND username = " + sqlString(USERNAME)
+                        + " AND email = " + sqlString(USER_EMAIL)
+                        + " AND password_hash = " + sqlString(newHash)
+                        + " AND role = 'USER' AND enabled = TRUE AND preferred_locale = 'es'"));
+    }
+
+    @Test
+    public void testUpdatePasswordWhenUserDoesNotExistReturnsEmpty() {
+        // 1. Arrange
+        final long missingUserId = 999;
+
+        // 2. Exercise
+        final Optional<User> result = userDao.updatePassword(missingUserId, "$2a$12$replacement");
+
+        // 3. Assert
+        Assertions.assertFalse(result.isPresent());
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, USERS_TABLE,
+                "id = " + USER_ID + " AND password_hash = " + sqlString(PASSWORD_HASH)));
     }
 
     private String sqlString(final String value) {

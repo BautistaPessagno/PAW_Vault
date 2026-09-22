@@ -4,12 +4,41 @@ categories: [Testing]
 type: guide
 module: vault
 project: quieroVinilos
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: verified-static
 ---
 
 # Verification record
+
+## Refresh through f12af08, 2026-09-22
+
+The target is `f12af080cf6a27101160f005102a20f436574cf7`, the head of local main and of the local origin/main ref; no fetch was performed. The source working tree was clean. The range from `40328f0` has 101 commits and 168 changed, added or deleted paths, including 29 new Java files and no deleted ones. Two non-Java files were deleted: database/albums.sql and views/inquiry/index.jsp.
+
+The 123 Java notes were regenerated from the Git objects at the target by a script whose output format was first calibrated against `40328f0`: it reproduced all 94 existing code notes byte for byte, including their Connections lines, which count project type names used outside comments. Summaries were then rewritten for every new or changed class and for unchanged classes whose behavior changed around them. Flow, mechanism and resource notes were rewritten from the current source with the same structure, and five flows plus the [[Paginated listings]] guide were added.
+
+| Check | Result |
+|---|---|
+| Canonical root Markdown | 170 notes, excluding the CLAUDE symlink |
+| Current source coverage | All 326 tracked paths mapped exactly once in [[Source inventory]]; all 123 Java source/test files have dedicated notes |
+| Current exact excerpts | 241 excerpts match their cited line ranges in the target Git objects |
+| Source links and metadata | All 326 distinct local source-link targets exist; every `sources` entry of the 159 notes pinned to `f12af08` is a tracked path |
+| Frontmatter | YAML parses on all 170 notes; every note has a valid category list |
+| Category counts | All notes Base scope 169 (template excluded); Inbox scope 0; Flows 12 (eleven flows and the audit) |
+| Internal links | A static resolver over note names and vault files finds zero unresolved wikilinks and embeds |
+| Diagrams | The twelve Mermaid diagrams written in this refresh parse and render with mermaid-cli 11.17 in headless Chromium |
+| Repository static checker | python3 tools/paw_checks.py all reports i18n OK and jsp OK |
+| Agent entry point | CLAUDE.md remains a relative symlink to AGENTS.md |
+
+Obsidian itself was not available from the environment used for this refresh, so Bases were not queried through the Obsidian CLI, the reading view was not inspected and Obsidian's bundled Mermaid version was not exercised. The category counts above come from the same filters evaluated over parsed frontmatter.
+
+Documentation conflicts found while reading the source, such as stale CONTEXT.md and TODO.md statements, implemented specifications still marked ready, the per-page catalog counter, the accent-sensitive submitted search and a likely failure of the demo seed against the new NOT NULL search_phrase columns, are recorded in [[Known gaps and document drift]]. The seed failure is a static inference.
+
+A `git status` run during inspection left an empty .git/index.lock in the source checkout. It was deleted immediately; no tracked source file changed. The pre-existing uncommitted vault changes to .obsidian/app.json, Categories/Architecture.base and the 2026-09-17 audit sections were preserved, and this refresh was not committed to the vault repository.
+
+No Maven test or build, JSP compilation, application server, PostgreSQL mutation or concurrency run, SMTP delivery or deployment was performed. Source assertions and static checks do not establish application runtime behavior. Earlier records below retain their original counts and limits.
+
+[[Home]] · [[Source inventory]] · [[Testing and evidence]] · [[Known gaps and document drift]]
 
 ## Flow snippets and sequence diagrams, 2026-09-16
 
@@ -145,3 +174,13 @@ The sandboxed Obsidian CLI initially exited with code 134. Retrying the same CLI
 No Maven tests, PostgreSQL mutations, server startup, actual SMTP delivery or course deployment were performed. No external issue tracker was queried. Existing test code and historical done labels are described as source evidence, not fresh successful executions. Agent-tooling files are inventoried by role rather than treated as runtime application code.
 
 [[Home]] · [[Testing and evidence]] · [[Source inventory]] · [[Vault guide]]
+
+## Audit de ejecución local, 2026-09-17
+
+[[Audit local 2026-09-17]] registra pruebas sobre el worktree `redesign-header-filtros`, commit `e5e926d4c1f2026494b3dc03768d984092b1052a`. No es una actualización del inventario de `40328f0`.
+
+- PostgreSQL confirmó 27 publicaciones con imagen, dos usuarios activos (IDs 1 y 3) y seis consultas PENDING. Los endpoints de las 27 imágenes respondieron 200 con contenido JPEG. Se observaron seis avisos de interés en Apple Mail.
+- Los once fragmentos del informe coinciden exactamente con sus archivos y líneas en la rama ejecutada. Los enlaces internos del informe resuelven. La cobertura completa del inventario histórico no se recalculó para esta rama.
+- Obsidian CLI, con `vault=PAW_Vault`, confirmó cero enlaces sin resolver, categorías válidas del informe, doce Bases consultables y cero notas en Inbox. Testing incluye el informe nuevo. Una comprobación preliminar que asumía JSON para todos los archivos Base se descartó: algunas vistas usan YAML; la validación final fue mediante Obsidian.
+- `CLAUDE.md` continúa como enlace relativo a `AGENTS.md`. Los checkouts de la aplicación se verificaron limpios; no hubo cambios de código. Se preservaron cambios preexistentes en `.obsidian/app.json` y `Categories/Architecture.base`.
+- Las limitaciones de pruebas negativas, del navegador y de alcance están detalladas en el informe. La evidencia de SMTP corresponde a esos seis mensajes, no a una garantía general de entrega.

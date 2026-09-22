@@ -4,15 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/DuplicatePostException.java"]
 ---
 
 # DuplicatePostException
 
-Unchecked business exception for a user who already published the same album. It can originate from the pre-check or from translated database uniqueness failure. [[PublishController]] maps it to the global form error `publish.duplicate` and redisplays the submitted form.
+Unchecked business exception for a user who already published the same album. Publishing raises it from the pre-check or a translated uniqueness failure; editing raises it when the new catalog identity collides with another post of the same owner. [[PublishController]] maps it to the global form error `publish.duplicate` and redisplays the submitted form.
 
 ## Connections
 

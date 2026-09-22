@@ -4,8 +4,8 @@ categories: ["Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java"]
 ---
@@ -22,19 +22,20 @@ Test methods in this revision:
 - `testSendPostInterestEmailWhenMessageIsPresentReturnsBodyWithMessage`
 - `testSendPostInterestEmailWhenMessageIsMissingReturnsBodyWithoutMessage`
 - `testSendPostInterestEmailWhenDeliveryFailsDoesNotPropagateFailure`
+- `testSendInquiryAcceptedEmailWhenDeliverySucceedsBuildsBuyerNotification`
 - `testSendWelcomeEmailWhenDeliverySucceedsBuildsExpectedMessage`
 - `testSendWelcomeEmailWhenDeliveryFailsDoesNotPropagateFailure`
 - `testSendVerificationEmailWhenDeliverySucceedsReturnsEmailWithSingleUseLink`
 
 ## Connections
 
-Project types referenced: [[Album]], [[EmailServiceImpl]], [[PostInterestNotification]], [[User]], [[UserRole]].
+Project types referenced: [[Album]], [[EmailServiceImpl]], [[InquiryAcceptedNotification]], [[PostInterestNotification]], [[User]], [[UserRole]].
 
 Referenced by: none.
 
 ## Exact source
 
-[services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java, lines 1–266](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>)
+[services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java, lines 1–297](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -120,7 +121,7 @@ public class EmailServiceImplTest {
         // 3. Assert
         final MimeMessage message = mailSender.getLastMessage();
         Assertions.assertEquals("Someone is interested in Artaud", message.getSubject());
-        Assertions.assertTrue(message.getContent().toString().contains("Go to quieroVinilos"));
+        Assertions.assertTrue(message.getContent().toString().contains("View my inquiries"));
     }
 
     @Test
@@ -135,7 +136,7 @@ public class EmailServiceImplTest {
 
         // 3. Assert
         final String body = mailSender.getLastMessage().getContent().toString();
-        Assertions.assertTrue(body.contains("href=\"" + BASE_URL + "/\""));
+        Assertions.assertTrue(body.contains("href=\"" + BASE_URL + "/inquiries\""));
     }
 
     @Test
@@ -184,6 +185,27 @@ public class EmailServiceImplTest {
 
         // 3. Assert
         Assertions.assertNull(mailSender.getLastMessage());
+    }
+
+    @Test
+    public void testSendInquiryAcceptedEmailWhenDeliverySucceedsBuildsBuyerNotification()
+            throws MessagingException, IOException {
+        // 1. Arrange
+        final InquiryAcceptedNotification notification = new InquiryAcceptedNotification(
+                9L, CONTACT_EMAIL, "Artaud", "Pescado Rabioso", 1973);
+
+        // 2. Exercise
+        emailService.sendInquiryAcceptedEmail(notification, SPANISH);
+
+        // 3. Assert
+        final MimeMessage message = mailSender.getLastMessage();
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(CONTACT_EMAIL, firstAddress(message.getRecipients(Message.RecipientType.TO)));
+        Assertions.assertEquals("Tu consulta por Artaud fue aceptada", message.getSubject());
+        final String body = message.getContent().toString();
+        Assertions.assertTrue(body.contains("Pescado Rabioso"));
+        Assertions.assertTrue(body.contains("1973"));
+        Assertions.assertTrue(body.contains("href=\"" + BASE_URL + "/inquiries/sent\""));
     }
 
     @Test
@@ -263,7 +285,12 @@ public class EmailServiceImplTest {
         source.addMessage("email.postInterest.contact", SPANISH, "Contacto:");
         source.addMessage("email.postInterest.album", SPANISH, "Álbum:");
         source.addMessage("email.postInterest.message", SPANISH, "Mensaje:");
-        source.addMessage("email.postInterest.cta", SPANISH, "Ver quieroVinilos");
+        source.addMessage("email.postInterest.cta", SPANISH, "Ver mis consultas");
+        source.addMessage("email.inquiryAccepted.subject", SPANISH, "Tu consulta por {0} fue aceptada");
+        source.addMessage("email.inquiryAccepted.heading", SPANISH, "Tu consulta fue aceptada");
+        source.addMessage("email.inquiryAccepted.intro", SPANISH, "El vendedor aceptó tu consulta por {0}.");
+        source.addMessage("email.inquiryAccepted.album", SPANISH, "Publicación:");
+        source.addMessage("email.inquiryAccepted.cta", SPANISH, "Ver mis consultas");
 
         source.addMessage("email.postInterest.subject", ENGLISH, "Someone is interested in {0}");
         source.addMessage("email.postInterest.heading", ENGLISH, "Someone is interested in your post");
@@ -271,7 +298,12 @@ public class EmailServiceImplTest {
         source.addMessage("email.postInterest.contact", ENGLISH, "Contact:");
         source.addMessage("email.postInterest.album", ENGLISH, "Album:");
         source.addMessage("email.postInterest.message", ENGLISH, "Message:");
-        source.addMessage("email.postInterest.cta", ENGLISH, "Go to quieroVinilos");
+        source.addMessage("email.postInterest.cta", ENGLISH, "View my inquiries");
+        source.addMessage("email.inquiryAccepted.subject", ENGLISH, "Your inquiry about {0} was accepted");
+        source.addMessage("email.inquiryAccepted.heading", ENGLISH, "Your inquiry was accepted");
+        source.addMessage("email.inquiryAccepted.intro", ENGLISH, "The seller accepted your inquiry about {0}.");
+        source.addMessage("email.inquiryAccepted.album", ENGLISH, "Listing:");
+        source.addMessage("email.inquiryAccepted.cta", ENGLISH, "View my inquiries");
         return source;
     }
 

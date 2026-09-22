@@ -4,25 +4,25 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java"]
 ---
 
 # EmailServiceImpl
 
-All three operations are @Async and render Thymeleaf HTML before sending through JavaMailSender. Verification links use app.base-url + /verify?token=; welcome and interest link home. Interest includes the optional message and buyer Reply-To. Rendering/SMTP exceptions are logged and swallowed. See [[Mail delivery]] for transaction and queue limits.
+Six @Async operations render Thymeleaf HTML and send through JavaMailSender. Verification and reset links use app.base-url plus /verify?token= or /reset-password?token=. Interest mail links /inquiries and sets the buyer as Reply-To; acceptance mail links /inquiries/sent; welcome links home; the password-changed notice has no link. Rendering/SMTP exceptions are logged and swallowed. See [[Mail delivery]] for queue limits.
 
 ## Connections
 
-Project types referenced: [[EmailService]], [[Post]], [[PostInterestNotification]], [[User]].
+Project types referenced: [[EmailService]], [[Inquiry]], [[InquiryAcceptedNotification]], [[Post]], [[PostInterestNotification]], [[User]].
 
 Referenced by: [[EmailServiceImplTest]].
 
 ## Exact source
 
-[services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java, lines 1–127](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>)
+[services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java, lines 1–187](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -52,6 +52,9 @@ public class EmailServiceImpl implements EmailService {
     private static final String WELCOME_TEMPLATE = "welcome";
     private static final String VERIFICATION_TEMPLATE = "email-verification";
     private static final String POST_INTEREST_TEMPLATE = "post-interest";
+    private static final String INQUIRY_ACCEPTED_TEMPLATE = "inquiry-accepted";
+    private static final String PASSWORD_CHANGED_TEMPLATE = "password-changed";
+    private static final String PASSWORD_RESET_TEMPLATE = "password-reset";
 
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
@@ -123,7 +126,7 @@ public class EmailServiceImpl implements EmailService {
             context.setVariable("albumTitle", notification.getAlbumTitle());
             context.setVariable("artistName", notification.getArtistName());
             context.setVariable("releaseYear", notification.getReleaseYear());
-            context.setVariable("homeUrl", baseUrl + "/");
+            context.setVariable("inquiriesUrl", baseUrl + "/inquiries");
             final String body = templateEngine.process(POST_INTEREST_TEMPLATE, context);
             final Object[] subjectArguments = {notification.getAlbumTitle()};
             final String subject = messageSource.getMessage(
@@ -135,6 +138,63 @@ public class EmailServiceImpl implements EmailService {
             LOGGER.info("Post interest email sent postId={}", notification.getPostId());
         } catch (final MessagingException | RuntimeException exception) {
             LOGGER.error("Post interest email delivery failed postId={}", notification.getPostId(), exception);
+        }
+    }
+
+    @Async
+    @Override
+    public void sendInquiryAcceptedEmail(final InquiryAcceptedNotification notification, final Locale locale) {
+        try {
+            final Context context = new Context(locale);
+            context.setVariable("albumTitle", notification.getAlbumTitle());
+            context.setVariable("artistName", notification.getArtistName());
+            context.setVariable("releaseYear", notification.getReleaseYear());
+            // El aviso es para el comprador: su consulta esta en la bandeja de enviadas.
+            context.setVariable("inquiriesUrl", baseUrl + "/inquiries/sent");
+            final String body = templateEngine.process(INQUIRY_ACCEPTED_TEMPLATE, context);
+            final Object[] subjectArguments = {notification.getAlbumTitle()};
+            final String subject = messageSource.getMessage(
+                    "email.inquiryAccepted.subject", subjectArguments, locale);
+            final MimeMessage message = createMessage(notification.getBuyerEmail(), null, subject, body);
+
+            mailSender.send(message);
+            LOGGER.info("Inquiry accepted email sent inquiryId={}", notification.getInquiryId());
+        } catch (final MessagingException | RuntimeException exception) {
+            LOGGER.error("Inquiry accepted email delivery failed inquiryId={}", notification.getInquiryId(), exception);
+        }
+    }
+
+    @Async
+    @Override
+    public void sendPasswordChangedEmail(final User user, final Locale locale) {
+        try {
+            final Context context = new Context(locale);
+            context.setVariable("username", user.getUsername());
+            final String body = templateEngine.process(PASSWORD_CHANGED_TEMPLATE, context);
+            final String subject = messageSource.getMessage("email.passwordChanged.subject", null, locale);
+            final MimeMessage message = createMessage(user.getEmail(), null, subject, body);
+
+            mailSender.send(message);
+            LOGGER.info("Password changed email sent userId={}", user.getId());
+        } catch (final MessagingException | RuntimeException exception) {
+            LOGGER.error("Password changed email delivery failed userId={}", user.getId(), exception);
+        }
+    }
+
+    @Async
+    @Override
+    public void sendPasswordResetEmail(final User user, final String token, final Locale locale) {
+        try {
+            final Context context = new Context(locale);
+            context.setVariable("resetUrl", baseUrl + "/reset-password?token=" + token);
+            final String body = templateEngine.process(PASSWORD_RESET_TEMPLATE, context);
+            final String subject = messageSource.getMessage("email.passwordReset.subject", null, locale);
+            final MimeMessage message = createMessage(user.getEmail(), null, subject, body);
+
+            mailSender.send(message);
+            LOGGER.info("Password reset email sent userId={}", user.getId());
+        } catch (final MessagingException | RuntimeException exception) {
+            LOGGER.error("Password reset email delivery failed userId={}", user.getId(), exception);
         }
     }
 

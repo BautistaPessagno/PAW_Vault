@@ -4,21 +4,21 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/User.java"]
 ---
 
 # User
 
-Account row with display username, normalized email, nullable password hash, USER/ADMIN role, enabled flag and preferred locale. Registration creates a disabled account; email verification chooses credentials and enables it. [[AuthenticatedUser]] adapts this value for Spring Security.
+Account row with display username, normalized email, nullable password hash, USER/ADMIN role, enabled flag and preferred locale. Registration creates a disabled account; email verification chooses credentials and enables it. The username can later be edited from the profile, and the hash replaced by a password change or recovery. [[AuthenticatedUser]] adapts this value for Spring Security.
 
 ## Connections
 
 Project types referenced: [[UserRole]].
 
-Referenced by: [[AuthenticatedUser]], [[AuthenticatedUserDetailsService]], [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[InquiryServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]], [[UserDao]], [[UserJdbcDao]], [[UserJdbcDaoTest]], [[UserNotFoundException]], [[UserService]], [[UserServiceImpl]], [[UserServiceImplTest]].
+Referenced by: [[AuthenticatedUser]], [[AuthenticatedUserDetailsService]], [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]], [[ProfileController]], [[UserDao]], [[UserJdbcDao]], [[UserJdbcDaoTest]], [[UserNotFoundException]], [[UserService]], [[UserServiceImpl]], [[UserServiceImplTest]].
 
 ## Exact source
 

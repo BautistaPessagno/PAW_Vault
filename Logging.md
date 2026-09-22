@@ -4,8 +4,8 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 tags: ["codemap", "operations"]
 sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/logback-test.xml"]
@@ -13,13 +13,25 @@ sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/lo
 
 # Logging
 
-SLF4J/Logback writes application records under `${catalina.base:-.}/logs`. The current application pattern is paw-2026b-14-webapp.%d{yyyy-MM-dd}.log; warnings use paw-2026b-14-webapp-warnings.%d{yyyy-MM-dd}.log. Both retain seven daily periods.
+SLF4J/Logback writes application records under `${catalina.base:-.}/logs`. The current application pattern is paw-2026b-14-webapp.%d{yyyy-MM-dd}.log; warnings use paw-2026b-14-webapp-warnings.%d{yyyy-MM-dd}.log. Both retain seven daily periods. The configuration files did not change in this range.
 
 The rolling appenders omit an explicit file element, so the active file uses the dated pattern as well. The source comments tie this naming to the course server log path; no remote log or deployment was checked.
 
-ar.edu.itba logs INFO to APP_FILE with additivity=false. Root WARN goes to WARNINGS_FILE, so application ERROR records are not automatically copied into that root appender. [[EmailServiceImpl]] logs userId/postId and passes the full exception on failure. [[ImageServiceImpl]] logs rejected type/size and stored image ID, type and byte count. The source does not establish what external mail exception text may contain.
+ar.edu.itba logs INFO to APP_FILE with additivity=false. Root WARN goes to WARNINGS_FILE, so application WARN and ERROR records, including the new dropped-mail warning from [[WebConfig]], stay in the application file and are not copied into the warnings file. logback-test.xml remains in webapp main resources and is excluded from the packaged WAR; it configures application DEBUG and root WARN to console.
 
-logback-test.xml remains in webapp main resources and is excluded from the packaged WAR. It configures application DEBUG and root WARN to console; other development classpaths may select it.
+## Application log lines
+
+| Source | Events |
+|---|---|
+| [[UserServiceImpl]] | Verification link sent, email verified, username updated, password changed, reset link sent, password reset, ignored or concurrent reset requests; user IDs only |
+| [[InquiryServiceImpl]] | Inquiry created, accepted (with competing rejections) and rejected; inquiry, post, buyer or seller IDs |
+| [[PostServiceImpl]] | Post deleted with publisher ID, detached inquiry count and own image ID |
+| [[ImageServiceImpl]] | Rejected type or size; stored image ID, type and byte count |
+| [[EmailServiceImpl]] | Success or failure of each of the six messages, with user, post or inquiry ID and the full exception on failure |
+| [[WebConfig]] | WARN when the saturated mail pool drops a task |
+| [[MultipartExceptionHandlerFilter]] | WARN with the request URI of an oversized upload |
+
+The inquiry, verification, password and reset success lines are now emitted inside after-commit callbacks, so they no longer appear for transactions that roll back. The explicit messages avoid inquiry text, email addresses and tokens. The unknown-account reset request is logged without the address. Exception objects are still passed to the logger on mail failure, and the source does not establish what external mail exception text may contain. Controllers do not log.
 
 ## Production configuration
 
@@ -96,6 +108,4 @@ logback-test.xml remains in webapp main resources and is excluded from the packa
 </configuration>
 ```
 
-[[Mail delivery]] · [[Configuration and running]]
-
-[[UserServiceImpl]] logs registration/verification user IDs. [[InquiryServiceImpl]] logs inquiry/post/buyer or seller IDs and competitor rejection counts. [[MultipartExceptionHandlerFilter]] logs oversized-upload request URIs. These explicit messages avoid inquiry text and addresses; exception details are still passed to the logger on mail failure.
+[[Mail delivery]] · [[Configuration and running]] · [[Transactions and concurrency]]

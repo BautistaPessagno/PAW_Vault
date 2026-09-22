@@ -4,21 +4,21 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUser.java"]
 ---
 
 # AuthenticatedUser
 
-Immutable UserDetails adapter. getUsername returns the login email, getDisplayName returns the chosen name, and getId/getEmail supply trusted publication/contact identity. ADMIN receives both authorities; enabled mirrors the account. Expiry and account-lock flags otherwise return true.
+Immutable UserDetails adapter. getUsername returns the login email, getDisplayName returns the chosen name, and getId/getEmail supply trusted publication/contact identity. ADMIN receives both authorities; enabled mirrors the account. Expiry and account-lock flags otherwise return true. [[ProfileController]] builds a fresh instance after a username change to refresh the session principal.
 
 ## Connections
 
 Project types referenced: [[User]], [[UserRole]].
 
-Referenced by: [[AuthenticatedUserDetailsService]], [[InquiryController]], [[PostContactController]], [[PublishController]].
+Referenced by: [[AuthenticatedUserDetailsService]], [[InquiryController]], [[PostContactController]], [[ProfileController]], [[PublishController]].
 
 ## Exact source
 

@@ -4,21 +4,21 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java"]
 ---
 
 # UserNotFoundException
 
-Service-contract exception for a missing publisher account during publish. This is a new type in ar.edu.itba.paw.services; the deleted web exception remains at [[Legacy UserNotFoundException]]. No dedicated HTTP mapping is declared here.
+Service-contract exception for a missing account in publish, inquiry notifications, username/password updates and password reset. [[ProfileController]] maps it to HTTP 404; other callers let it propagate. The deleted web exception remains at [[Legacy UserNotFoundException]].
 
 ## Connections
 
 Project types referenced: [[User]].
 
-Referenced by: [[PostServiceImpl]].
+Referenced by: [[InquiryServiceImpl]], [[PostServiceImpl]], [[ProfileController]], [[UserServiceImpl]], [[UserServiceImplTest]].
 
 ## Exact source
 

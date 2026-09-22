@@ -4,15 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java"]
 ---
 
 # ImageServiceImpl
 
-findById is read-only transactional. create normalizes the declared MIME type and accepts image/png, image/jpeg or image/webp with 1 through 5 * 1024 * 1024 bytes. Invalid inputs raise [[InvalidImageException]]. It does not decode image data or inspect signatures, so an accepted MIME label is not proof of valid image content. The transactional insert delegates to [[ImageDao]]. Logs report IDs, MIME type and byte length.
+findById is read-only transactional. create normalizes the declared MIME type and accepts image/png, image/jpeg or image/webp with 1 through 5 * 1024 * 1024 bytes. Invalid inputs raise [[InvalidImageException]]. It does not decode image data or inspect signatures, so an accepted MIME label is not proof of valid image content. The transactional insert and the new delete delegate to [[ImageDao]]. Logs report IDs, MIME type and byte length.
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: [[ImageServiceImplTest]].
 
 ## Exact source
 
-[services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java, lines 1–56](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>)
+[services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java, lines 1–62](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -79,6 +79,12 @@ public class ImageServiceImpl implements ImageService {
         final Image image = imageDao.create(normalizedType, data);
         LOGGER.info("Stored image {} ({}, {} bytes)", image.getId(), image.getContentType(), data.length);
         return image;
+    }
+
+    @Override
+    @Transactional
+    public boolean delete(final long id) {
+        return imageDao.delete(id);
     }
 }
 ```

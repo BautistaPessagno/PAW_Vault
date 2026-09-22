@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java"]
 ---
 
 # MultipartExceptionHandlerFilter
 
-Wraps /publish multipart processing before Spring Security. Catches a direct or immediately wrapped MaxUploadSizeExceededException and redirects to /publish?coverTooLarge. Other ServletException/RuntimeException values propagate.
+Wraps multipart processing for /publish and /post/* before Spring Security. Catches a direct or immediately wrapped MaxUploadSizeExceededException and redirects to the same /post/{id}/edit path, or otherwise to /publish, with ?coverTooLarge. Other ServletException/RuntimeException values propagate.
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: none.
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java, lines 1–37](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java, lines 1–39](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.security;
@@ -58,7 +58,9 @@ public final class MultipartExceptionHandlerFilter extends OncePerRequestFilter 
                 throw exception;
             }
             LOGGER.warn("Rejected a multipart request over the size limit uri={}", request.getRequestURI());
-            response.sendRedirect(request.getContextPath() + "/publish?coverTooLarge");
+            final String servletPath = request.getServletPath();
+            final String target = servletPath.matches("/post/[0-9]+/edit") ? servletPath : "/publish";
+            response.sendRedirect(request.getContextPath() + target + "?coverTooLarge");
         }
     }
 }

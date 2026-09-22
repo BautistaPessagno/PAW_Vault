@@ -18,6 +18,6 @@ sources: []
 
 The cleanup deleted [[HelloWorldController]], [[UserForm]], [[Legacy UserNotFoundException]] and both helloworld JSPs. At that removal revision, UserServiceImpl retained a private creation helper under findOrCreate. That was an intermediate implementation.
 
-At ff96f27, a visitor email resolved a publisher and there was no authentication. The current implementation has registration, verification and login through [[Authentication flow]]; [[Publish flow]] now requires an authenticated account. The removed /create and /profile routes have not returned.
+At ff96f27, a visitor email resolved a publisher and there was no authentication. The current implementation has registration, verification and login through [[Authentication flow]]; [[Publish flow]] now requires an authenticated account. The removed /create route has not returned. Since `f12af08` a different, authenticated /profile page exists for the logged-in account only; it takes no user ID and is traced in [[Profile flow]].
 
 Historical Java notes retain their exact pre-removal source linked to 041ce34. [[History and specifications]] records how the source documents were updated.

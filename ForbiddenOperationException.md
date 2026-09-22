@@ -4,21 +4,21 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/ForbiddenOperationException.java"]
 ---
 
 # ForbiddenOperationException
 
-Business authorization failure for self-contact or acting on another seller publication. Contact and inquiry controllers map it to HTTP 403.
+Business authorization failure: self-contact, acting on another seller's inquiry, or opening the edit/delete routes of another owner's publication. Contact, inquiry and publish controllers map it to HTTP 403.
 
 ## Connections
 
 Project types referenced: none.
 
-Referenced by: [[InquiryController]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]].
+Referenced by: [[InquiryController]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
 
 ## Exact source
 

@@ -4,15 +4,15 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/PostSearchCriteria.java"]
 ---
 
 # PostSearchCriteria
 
-Criteria passed from the landing controller through the service to the DAO: query, sort, genre, condition, artist ID, release year and minimum/maximum price. A null optional filter means no restriction. [[PostServiceImpl]] normalizes input before SQL.
+Criteria passed from the landing controller through the service to the DAO: query, sort, genre, condition, artist ID, release year and minimum/maximum price. A null optional filter means no restriction. [[PostServiceImpl]] normalizes input before SQL. artistId no longer has a visible control; it survives only through URLs and hidden inputs.
 
 ## Connections
 

@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java"]
 ---
 
 # ErrorController
 
-Renders HTTP 403 and 404 pages for all enumerated request verbs. web.xml forwards unmatched-route 404s here so MVC supplies view and locale resolution. Search/contact/inquiry handlers return their own 400/409 views.
+Renders HTTP 403 and 404 pages for all enumerated request verbs. web.xml forwards unmatched-route 404s here so MVC supplies view and locale resolution. Controllers map their own business exceptions to the error/400, 403, 404 and 409 views.
 
 ## Connections
 

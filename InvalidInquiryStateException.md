@@ -4,15 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/InvalidInquiryStateException.java"]
 ---
 
 # InvalidInquiryStateException
 
-Guarded sale or inquiry update did not find its expected open state. [[InquiryController]] maps it to HTTP 409.
+A guarded sale or inquiry update did not find its expected open state, or the inquiry's publication has been deleted. [[InquiryController]] maps it to HTTP 409.
 
 ## Connections
 

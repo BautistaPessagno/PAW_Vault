@@ -4,15 +4,15 @@ categories: ["Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java"]
 ---
 
 # ImageJdbcDaoTest
 
-Three transactional HSQLDB tests cover binary lookup, missing image and binary insert with generated ID and row count. Uses short byte fixtures and checks byte equality; it does not establish that the fixture decodes as a full image.
+Five transactional HSQLDB tests cover binary lookup, a missing image, binary insert with generated ID and row count, and deleting an existing or missing row. Uses short byte fixtures and checks byte equality; it does not establish that a fixture decodes as a full image.
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: none.
 
 ## Exact source
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java, lines 1–90](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java>)
+[persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java, lines 1–116](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ImageJdbcDaoTest.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -112,7 +112,33 @@ public class ImageJdbcDaoTest {
         Assertions.assertArrayEquals(data, result.getData());
         Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, IMAGES_TABLE,
                 "id = " + result.getId() + " AND content_type = '" + contentType + "'"));
-        Assertions.assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, IMAGES_TABLE));
+        Assertions.assertEquals(4, JdbcTestUtils.countRowsInTable(jdbcTemplate, IMAGES_TABLE));
+    }
+
+    @Test
+    public void testDeleteWhenImageExistsReturnsTrueAndRemovesRow() {
+        // 1. Arrange
+        final long unreferencedImageId = 3;
+
+        // 2. Exercise
+        final boolean result = imageDao.delete(unreferencedImageId);
+
+        // 3. Assert
+        Assertions.assertTrue(result);
+        Assertions.assertEquals(0, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, IMAGES_TABLE,
+                "id = " + unreferencedImageId));
+    }
+
+    @Test
+    public void testDeleteWhenImageDoesNotExistReturnsFalse() {
+        // 1. Arrange
+        // No inserts — using data from populator.sql
+
+        // 2. Exercise
+        final boolean result = imageDao.delete(MISSING_IMAGE_ID);
+
+        // 3. Assert
+        Assertions.assertFalse(result);
     }
 }
 ```

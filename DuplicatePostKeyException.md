@@ -4,15 +4,15 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/DuplicatePostKeyException.java"]
 ---
 
 # DuplicatePostKeyException
 
-Unchecked persistence-contract exception raised by [[PostJdbcDao]] after Spring reports a duplicate insert key. It has no custom message or cause constructor. [[PostServiceImpl]] translates it to [[DuplicatePostException]] so the controller need not import DAO-layer exceptions.
+Unchecked persistence-contract exception raised by [[PostJdbcDao]] when Spring reports a duplicate key on create, update or updateWithImage. It has no custom message or cause constructor. [[PostServiceImpl]] translates it to [[DuplicatePostException]] so the controller need not import DAO-layer exceptions.
 
 ## Connections
 

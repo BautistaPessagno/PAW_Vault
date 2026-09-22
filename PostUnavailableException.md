@@ -4,21 +4,21 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostUnavailableException.java"]
 ---
 
 # PostUnavailableException
 
-Contact attempted on a publication whose status is not AVAILABLE. [[PostContactController]] maps it to HTTP 409.
+The publication is no longer AVAILABLE. Raised for contact attempts and for edit or delete of a sold post. [[PostContactController]] and [[PublishController]] map it to HTTP 409.
 
 ## Connections
 
 Project types referenced: none.
 
-Referenced by: [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]].
+Referenced by: [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
 
 ## Exact source
 

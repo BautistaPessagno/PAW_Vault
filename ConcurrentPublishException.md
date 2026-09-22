@@ -4,15 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/ConcurrentPublishException.java"]
 ---
 
 # ConcurrentPublishException
 
-Unchecked business exception used when publish catches Spring DataIntegrityViolationException. [[PublishController]] maps it to `publish.concurrent` and retains form data. The comment describes a simultaneous identity insert, but the catch does not inspect a constraint name or prove that every integrity failure was caused by a race. Retrying is manual and not guaranteed to repair unrelated integrity failures.
+Unchecked business exception used when publish or update catches a Spring DataIntegrityViolationException other than a duplicate post key. [[PublishController]] maps it to `publish.concurrent` on both the publish and edit forms and retains form data. The catch does not inspect a constraint name, so it does not prove that every integrity failure was a race. Retrying is manual and not guaranteed to repair unrelated integrity failures.
 
 ## Connections
 

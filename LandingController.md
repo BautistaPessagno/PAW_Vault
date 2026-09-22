@@ -4,25 +4,25 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java"]
 ---
 
 # LandingController
 
-Public GET / binds q, sort, genre, condition, artistId, year, minPrice and maxPrice. Custom editors turn malformed enum/numeric filters into null. Calls the search service and artist list, then renders filter options and results. A too-long text query returns error/400. The model retains parsed filters even if service normalization ignores an out-of-range value.
+Public GET / binds q, sort, genre, condition, artistId, year, minPrice, maxPrice and page. Custom editors turn malformed enum/numeric filters into null. It calls the paged search and renders filters, results and the [[PostPage]]; the artist list is no longer loaded, so artistId only arrives through URLs. A too-long query returns 400 and an out-of-range page 404. The model retains parsed filters even when service normalization ignores them.
 
 ## Connections
 
-Project types referenced: [[ArtistService]], [[Condition]], [[Genre]], [[InvalidSearchQueryException]], [[PostSearchCriteria]], [[PostService]], [[PostSort]], [[SearchResult]].
+Project types referenced: [[Condition]], [[Genre]], [[InvalidSearchQueryException]], [[PageNotFoundException]], [[PostSearchCriteria]], [[PostService]], [[PostSort]], [[SearchResult]].
 
 Referenced by: none.
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java, lines 1–108](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java, lines 1–113](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
@@ -32,8 +32,8 @@ import ar.edu.itba.paw.models.Genre;
 import ar.edu.itba.paw.models.PostSearchCriteria;
 import ar.edu.itba.paw.models.PostSort;
 import ar.edu.itba.paw.models.SearchResult;
-import ar.edu.itba.paw.services.ArtistService;
 import ar.edu.itba.paw.services.InvalidSearchQueryException;
+import ar.edu.itba.paw.services.PageNotFoundException;
 import ar.edu.itba.paw.services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -55,12 +55,10 @@ import java.util.function.Function;
 public class LandingController {
 
     private final PostService postService;
-    private final ArtistService artistService;
 
     @Autowired
-    public LandingController(final PostService postService, final ArtistService artistService) {
+    public LandingController(final PostService postService) {
         this.postService = postService;
-        this.artistService = artistService;
     }
 
     // Sin estos editores Spring corta con un 400 cuando no puede convertir un parametro.
@@ -107,23 +105,24 @@ public class LandingController {
                                 @RequestParam(value = "artistId", required = false) final Long artistId,
                                 @RequestParam(value = "year", required = false) final Integer releaseYear,
                                 @RequestParam(value = "minPrice", required = false) final Integer minPrice,
-                                @RequestParam(value = "maxPrice", required = false) final Integer maxPrice) {
+                                @RequestParam(value = "maxPrice", required = false) final Integer maxPrice,
+                                @RequestParam(value = "page", defaultValue = "1") final int pageNumber) {
         final SearchResult result = postService.search(new PostSearchCriteria(query, sort, genre, condition,
-                artistId, releaseYear, minPrice, maxPrice));
+                artistId, releaseYear, minPrice, maxPrice), pageNumber);
         final ModelAndView mav = new ModelAndView("landing/index");
         mav.addObject("query", result.getQuery());
         mav.addObject("sort", sort == null ? PostSort.NEWEST : sort);
         mav.addObject("sorts", PostSort.values());
         mav.addObject("genres", Genre.values());
         mav.addObject("conditions", Condition.values());
-        mav.addObject("artists", artistService.findAll());
         mav.addObject("selectedGenre", genre);
         mav.addObject("selectedCondition", condition);
         mav.addObject("selectedArtistId", artistId);
         mav.addObject("selectedYear", releaseYear);
         mav.addObject("minPrice", minPrice);
         mav.addObject("maxPrice", maxPrice);
-        mav.addObject("posts", result.getPosts());
+        mav.addObject("posts", result.getPage().getPosts());
+        mav.addObject("postPage", result.getPage());
         return mav;
     }
 
@@ -131,6 +130,12 @@ public class LandingController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ModelAndView invalidSearchQuery() {
         return new ModelAndView("error/400");
+    }
+
+    @ExceptionHandler(PageNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ModelAndView pageNotFound() {
+        return new ModelAndView("error/404");
     }
 }
 ```

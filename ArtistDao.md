@@ -4,15 +4,15 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java"]
 ---
 
 # ArtistDao
 
-Find or create an artist and list all artists for the landing filter. [[ArtistJdbcDao]] returns the list in alphabetical name order.
+findOrCreate receives both the display name and the precomputed normalized identity. updateDisplayName rewrites the shown name. findSuggestions receives a query already compacted by [[SearchText]] and returns a ranked, limited list. The former findAll listing for a landing filter has been removed.
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: [[ArtistJdbcDao]], [[ArtistJdbcDaoTest]], [[ArtistServiceImpl]], 
 
 ## Exact source
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java, lines 1–11](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java>)
+[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java, lines 1–15](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -32,9 +32,13 @@ import ar.edu.itba.paw.models.Artist;
 import java.util.List;
 
 public interface ArtistDao {
-    Artist findOrCreate(String name);
+    Artist findOrCreate(String displayName, String normalizedName);
 
-    List<Artist> findAll();
+    Artist updateDisplayName(long id, String displayName);
+
+    // normalizedQuery llega ya pasada por SearchText.compact: el ranking se
+    // resuelve contra la columna search_phrase, sin traer la tabla entera.
+    List<Artist> findSuggestions(String normalizedQuery, int limit);
 }
 ```
 

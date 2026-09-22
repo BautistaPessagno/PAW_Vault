@@ -4,50 +4,53 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java"]
 ---
 
 # InquiryService
 
-Validates contactability, persists a buyer inquiry, lists sent/received inquiries and lets the owner accept or reject one. Buyer identity arguments come from [[AuthenticatedUser]] in the web controller.
+Validates contactability, persists a buyer inquiry, pages sent and received inquiries grouped by publication, counts both sides for the inbox sub-navigation and lets the owner accept or reject one. submit now takes only post ID, buyer ID and message; the buyer's name and email come from the stored account.
 
 ## Connections
 
-Project types referenced: [[Inquiry]], [[InquirySummary]], [[PostSummary]].
+Project types referenced: [[Inquiry]], [[InquiryPage]], [[PostSummary]].
 
 Referenced by: [[InquiryController]], [[InquiryServiceImpl]], [[PostContactController]].
 
 ## Exact source
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java, lines 1–24](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java>)
+[services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java, lines 1–27](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java>)
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Inquiry;
-import ar.edu.itba.paw.models.InquirySummary;
+import ar.edu.itba.paw.models.InquiryPage;
 import ar.edu.itba.paw.models.PostSummary;
-
-import java.util.List;
 
 public interface InquiryService {
 
     PostSummary findContactablePost(long postId, long buyerId);
 
-    // El nombre y el correo del comprador llegan del usuario autenticado, asi que no hace
-    // falta volver a buscarlos en la base.
-    Inquiry submit(long postId, long buyerId, String buyerUsername, String buyerEmail, String message);
+    Inquiry submit(long postId, long buyerId, String message);
 
-    List<InquirySummary> findSentBy(long buyerId);
+    // Las dos bandejas agrupan por publicacion y se paginan por grupo: varias consultas
+    // sobre el mismo ejemplar son una sola entrada y nunca quedan partidas entre paginas.
+    InquiryPage findSentGroupedByPost(long buyerId, int pageNumber);
 
-    List<InquirySummary> findReceivedBy(long sellerId);
+    InquiryPage findReceivedGroupedByPost(long sellerId, int pageNumber);
 
-    void accept(long inquiryId, long sellerId);
+    // Cada vista de la bandeja muestra el total de la otra en la sub-nav.
+    int countSentBy(long buyerId);
 
-    void reject(long inquiryId, long sellerId);
+    int countReceivedBy(long sellerId);
+
+    Inquiry accept(long inquiryId, long sellerId);
+
+    Inquiry reject(long inquiryId, long sellerId);
 }
 ```
 

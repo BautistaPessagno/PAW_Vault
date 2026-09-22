@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java"]
 ---
 
 # ImageController
 
-GET /covers/{id} accepts decimal digits, loads [[Image]] through [[ImageService]] and returns its byte array with stored Content-Type and public max-age of 365 days. A missing image raises [[ImageNotFoundException]] and the local handler returns 404. There is no authentication, replacement route or ETag logic in this controller. See [[Cover image flow]].
+GET /covers/{id} accepts decimal digits, loads [[Image]] through [[ImageService]] and returns its byte array with stored Content-Type and public max-age of 365 days. A missing image raises [[ImageNotFoundException]] and the local handler returns 404. There is no authentication, replacement route or ETag logic in this controller; an edited photo gets a new ID instead. See [[Cover image flow]].
 
 ## Connections
 

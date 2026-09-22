@@ -4,15 +4,15 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Artist.java"]
 ---
 
 # Artist
 
-The reusable artist identity. `id` is the generated database key; `name` is the normalized catalog name. [[ArtistServiceImpl]] trims and lowercases it before [[ArtistJdbcDao]] searches or inserts. The object itself performs no validation or normalization. Multiple [[Album]] records refer to its ID.
+The reusable artist identity. `id` is the generated database key and `name` is the display name as typed, trimmed but with its original casing. Identity lives in the persisted artists.normalized_name column (lowercase letters and digits only), which [[ArtistServiceImpl]] computes and this model does not carry. [[ArtistJdbcDao]] also stores a search_phrase for suggestions. An owner's edit can overwrite the shared display name. Multiple [[Album]] records refer to its ID.
 
 ## Connections
 

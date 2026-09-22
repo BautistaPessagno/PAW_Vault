@@ -4,15 +4,15 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java"]
 ---
 
 # UserJdbcDao
 
-Normalizes email using trim and Locale.ROOT lowercasing, maps role/enabled/preferred_locale, and creates disabled accounts. Activation uses UPDATE ... WHERE id = ? AND enabled = FALSE and reports whether exactly one row changed.
+Normalizes email with trim and Locale.ROOT lowercasing, maps role, enabled and preferred_locale, and creates disabled accounts. Activation uses WHERE enabled = FALSE. updateUsername and updatePassword rewrite one row and reread it; updatePasswordIfMatches also requires the current hash, so a stale form cannot overwrite a password chosen later.
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: none.
 
 ## Exact source
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java, lines 1–87](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java>)
+[persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java, lines 1–118](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -106,6 +106,37 @@ public class UserJdbcDao implements UserDao {
         // la segunda vez la fila ya esta enabled y no actualiza ninguna.
         return jdbcTemplate.update("UPDATE users SET username = ?, password_hash = ?, enabled = TRUE "
                         + "WHERE id = ? AND enabled = FALSE", username, passwordHash, id) == 1;
+    }
+
+    @Override
+    public Optional<User> updateUsername(final long id, final String username) {
+        if (jdbcTemplate.update("UPDATE users SET username = ? WHERE id = ?", username, id) != 1) {
+            return Optional.empty();
+        }
+        return findById(id);
+    }
+
+    @Override
+    public Optional<User> updatePasswordIfMatches(final long id, final String expectedPasswordHash,
+                                                  final String newPasswordHash) {
+        // El WHERE sobre el hash vigente evita que un formulario desactualizado pise una clave elegida despues.
+        if (jdbcTemplate.update("UPDATE users SET password_hash = ? WHERE id = ? AND password_hash = ?",
+                newPasswordHash, id, expectedPasswordHash) != 1) {
+            return Optional.empty();
+        }
+        return findById(id);
+    }
+
+    /*
+     * Sin WHERE sobre el hash vigente: quien recupera la clave justamente no lo conoce.
+     * Lo que autoriza el cambio es el token que llego al correo, y eso lo valida el service.
+     */
+    @Override
+    public Optional<User> updatePassword(final long id, final String newPasswordHash) {
+        if (jdbcTemplate.update("UPDATE users SET password_hash = ? WHERE id = ?", newPasswordHash, id) != 1) {
+            return Optional.empty();
+        }
+        return findById(id);
     }
 
     private static String normalize(final String email) {

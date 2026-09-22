@@ -4,8 +4,8 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/pom.xml", "persistence-contracts/pom.xml", "persistence/pom.xml", "pom.xml", "services-contracts/pom.xml", "services/pom.xml", "webapp/pom.xml", "models/.mvn/jvm.config", "models/.mvn/maven.config", "persistence-contracts/.mvn/jvm.config", "persistence-contracts/.mvn/maven.config", "persistence/.mvn/jvm.config", "persistence/.mvn/maven.config", "services-contracts/.mvn/jvm.config", "services-contracts/.mvn/maven.config", "services/.mvn/jvm.config", "services/.mvn/maven.config", "webapp/.mvn/jvm.config", "webapp/.mvn/maven.config"]
 ---
@@ -38,6 +38,7 @@ The five non-web modules are JARs; webapp produces app.war. Sibling dependencies
 | `javax.mail.version` | `1.6.2` |
 | `thymeleaf.version` | `3.0.15.RELEASE` |
 | `commons-fileupload.version` | `1.5` |
+| `maven-antrun-plugin.version` | `3.1.0` |
 
 ## models
 
@@ -124,8 +125,14 @@ The five non-web modules are JARs; webapp produces app.war. Sibling dependencies
 
 ## Build lifecycle
 
+The only POM changes since `40328f0` are build-side: the root POM manages maven-antrun-plugin 3.1.0, and webapp/pom.xml adds the `pampero` profile plus `overwrite=true` for the resources plugin. Module dependencies and scopes are unchanged.
+
 `mvn clean install` builds/tests the reactor and installs sibling SNAPSHOTs. `mvn clean package` produces webapp/target/app.war. Jetty remains 9.4.58.v20250814 with scan interval 10, port 8080 and useTestScope=true in the parent configuration. Child pluginManagement pins compiler 3.13.0 and Surefire 3.3.0; WAR plugin 3.4.0 excludes logback-test.xml.
 
 The per-module .mvn/jvm.config and maven.config files are empty. No Maven wrapper, Spring Boot starter, Flyway dependency, JPA persistence unit or frontend package manager is defined. No Maven command ran for this refresh.
+
+## Pampero profile
+
+`mvn clean package -Ppampero` swaps the resource set of the webapp module: src/main/resources is copied without database.properties and mail.properties, and src/pampero/resources contributes only those two files. In the validate phase an antrun target checks that both Pampero files exist and fails with a message naming the missing one. The result is still webapp/target/app.war. See [[Configuration and running]].
 
 [[Architecture]] · [[Configuration and running]] · [[Testing and evidence]]

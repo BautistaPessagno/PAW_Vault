@@ -4,8 +4,8 @@ categories: ["Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java"]
 ---
@@ -17,10 +17,14 @@ HSQLDB DAO tests using the Spring test context and SQL fixtures. Source evidence
 Test methods in this revision:
 
 - `testFindByArtistTitleYearWhenAlbumExistsReturnsAlbum`
+- `testFindByArtistTitleYearWhenTitleDiffersOnlyInCaseReturnsAlbum`
 - `testFindByArtistTitleYearWhenAlbumDoesNotExistReturnsEmpty`
 - `testCreateWhenAlbumAlreadyExistsReturnsDuplicateKeyExceptionWithoutChanges`
 - `testCreateWhenReleaseYearDiffersReturnsPersistedAlbum`
-- `testCreateWhenGenreIsNullReturnsAlbumWithoutGenreOrCover`
+- `testCreateWhenGenreIsNullThrowsDataIntegrityViolationWithoutPersistingAlbum`
+- `testCreateWhenGenreIsUnknownThrowsDataIntegrityViolationWithoutPersistingAlbum`
+- `testUpdateMetadataWhenAlbumExistsReturnsPersistedAlbum`
+- `testUpdateMetadataWhenAlbumDoesNotExistThrowsIllegalStateException`
 
 ## Connections
 
@@ -30,7 +34,7 @@ Referenced by: none.
 
 ## Exact source
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java, lines 1–139](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java>)
+[persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java, lines 1–194](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -43,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
@@ -97,6 +102,19 @@ public class AlbumJdbcDaoTest {
     }
 
     @Test
+    public void testFindByArtistTitleYearWhenTitleDiffersOnlyInCaseReturnsAlbum() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final Optional<Album> result = albumDao.findByArtistTitleYear("VERSUS", ARTIST_ID, ALBUM_RELEASE_YEAR);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals(ALBUM_ID, result.get().getId());
+        Assertions.assertEquals(ALBUM_TITLE, result.get().getTitle());
+    }
+
+    @Test
     public void testFindByArtistTitleYearWhenAlbumDoesNotExistReturnsEmpty() {
         // 1. Arrange
         final int otherReleaseYear = 2001;
@@ -124,48 +142,89 @@ public class AlbumJdbcDaoTest {
                         " AND artist_id = " + ARTIST_ID +
                         " AND release_year = " + ALBUM_RELEASE_YEAR +
                         " AND cover_image_id = " + ALBUM_COVER_IMAGE_ID));
-        Assertions.assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
+        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
     }
 
     @Test
     public void testCreateWhenReleaseYearDiffersReturnsPersistedAlbum() {
         // 1. Arrange
+        final String title = "Versus";
         final int releaseYear = 1998;
 
         // 2. Exercise
-        final Album result = albumDao.create(ALBUM_TITLE, ARTIST_ID, releaseYear, ALBUM_GENRE);
+        final Album result = albumDao.create(title, ARTIST_ID, releaseYear, ALBUM_GENRE);
 
         // 3. Assert
         Assertions.assertTrue(result.getId() > 0);
-        Assertions.assertEquals(ALBUM_TITLE, result.getTitle());
+        Assertions.assertEquals(title, result.getTitle());
         Assertions.assertEquals(ARTIST_ID, result.getArtistId());
         Assertions.assertEquals(releaseYear, result.getReleaseYear());
         Assertions.assertEquals(ALBUM_GENRE, result.getGenre());
         Assertions.assertNull(result.getCoverImageId());
         Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, ALBUMS_TABLE,
                 "id = " + result.getId() +
-                        " AND title = " + sqlString(ALBUM_TITLE) +
+                        " AND title = " + sqlString(title) +
                         " AND artist_id = " + ARTIST_ID +
                         " AND release_year = " + releaseYear +
                         " AND genre = " + sqlString(ALBUM_GENRE.name()) +
                         " AND cover_image_id IS NULL"));
-        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
+        Assertions.assertEquals(4, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
     }
 
     @Test
-    public void testCreateWhenGenreIsNullReturnsAlbumWithoutGenreOrCover() {
+    public void testCreateWhenGenreIsNullThrowsDataIntegrityViolationWithoutPersistingAlbum() {
         // 1. Arrange
         final int releaseYear = 1999;
 
         // 2. Exercise
-        final Album result = albumDao.create(ALBUM_TITLE, ARTIST_ID, releaseYear, null);
+        final Executable create = () -> albumDao.create(ALBUM_TITLE, ARTIST_ID, releaseYear, null);
 
         // 3. Assert
-        Assertions.assertTrue(result.getId() > 0);
-        Assertions.assertNull(result.getGenre());
-        Assertions.assertNull(result.getCoverImageId());
-        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, ALBUMS_TABLE,
-                "id = " + result.getId() + " AND genre IS NULL AND cover_image_id IS NULL"));
+        Assertions.assertThrows(DataIntegrityViolationException.class, create);
+        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
+    }
+
+    @Test
+    public void testCreateWhenGenreIsUnknownThrowsDataIntegrityViolationWithoutPersistingAlbum() {
+        // 1. Arrange
+        final int releaseYear = 1999;
+
+        // 2. Exercise
+        final Executable create = () -> jdbcTemplate.update(
+                "INSERT INTO albums (title, artist_id, release_year, genre) VALUES (?, ?, ?, ?)",
+                ALBUM_TITLE, ARTIST_ID, releaseYear, "UNKNOWN");
+
+        // 3. Assert
+        Assertions.assertThrows(DataIntegrityViolationException.class, create);
+        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
+    }
+
+    @Test
+    public void testUpdateMetadataWhenAlbumExistsReturnsPersistedAlbum() {
+        // 1. Arrange
+        final String updatedTitle = "Versus";
+        final Genre updatedGenre = Genre.SOUL_FUNK;
+
+        // 2. Exercise
+        final Album result = albumDao.updateMetadata(ALBUM_ID, updatedTitle, updatedGenre);
+
+        // 3. Assert
+        Assertions.assertEquals(ALBUM_ID, result.getId());
+        Assertions.assertEquals(updatedTitle, result.getTitle());
+        Assertions.assertEquals(updatedGenre, result.getGenre());
+        Assertions.assertEquals(ALBUM_COVER_IMAGE_ID, result.getCoverImageId());
+    }
+
+    @Test
+    public void testUpdateMetadataWhenAlbumDoesNotExistThrowsIllegalStateException() {
+        // 1. Arrange
+        final long missingAlbumId = 999;
+
+        // 2. Exercise
+        final Executable update = () -> albumDao.updateMetadata(missingAlbumId, "Missing", Genre.ROCK);
+
+        // 3. Assert
+        Assertions.assertThrows(IllegalStateException.class, update);
     }
 
     private String sqlString(final String value) {

@@ -4,15 +4,15 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Genre.java"]
 ---
 
 # Genre
 
-Fifteen catalog genre values, including OTHER. Stored on Album, optional for new and legacy data, with localized labels in [[Localization]]. It does not participate in album identity.
+Fifteen catalog genre values, including OTHER. Stored on [[Album]] and now required: PublishForm rejects a missing genre, and schema.sql backfills legacy nulls to OTHER before adding NOT NULL and a CHECK listing the fifteen names. Localized labels live in [[Localization]]. It does not participate in album identity, and an owner's edit can change the shared album's genre.
 
 ## Connections
 

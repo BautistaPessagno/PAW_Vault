@@ -4,15 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java"]
 ---
 
 # SupportedLocales
 
-Package-private locale utility for persisted preferences and seller notifications. Supports es/en/fr, defaulting null or unsupported languages to Spanish. Request UI locale resolution is configured separately in [[WebConfig]].
+Package-private locale utility for persisted preferences and mail recipients. Supports es/en/fr, defaulting null or unsupported languages to Spanish. It resolves the seller's language for interest mail and the buyer's for acceptance mail. Request UI locale resolution is configured separately in [[WebConfig]].
 
 ## Connections
 

@@ -4,35 +4,38 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java"]
 ---
 
 # VerifyEmailForm
 
-Requires token, username up to 100 characters and a confirmed password of 12–72 characters with an ASCII letter and a digit. @Size counts characters; it is not a UTF-8 byte-length check. Password values are not trimmed by the controller.
+Requires token and a username up to 100 characters. The password uses the shared [[ValidPassword]] constraint (12–72 characters with an ASCII letter and a digit), and [[MatchingPasswords]] reports a mismatch on passwordConfirmation. @Size counts characters, not UTF-8 bytes, and passwords are not trimmed.
 
 ## Connections
 
-Project types referenced: none.
+Project types referenced: [[MatchingPasswords]], [[PasswordsMatching]], [[ValidPassword]].
 
 Referenced by: [[AuthenticationController]].
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java, lines 1–62](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java, lines 1–56](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.form;
 
-import javax.validation.constraints.AssertTrue;
+import ar.edu.itba.paw.webapp.validation.MatchingPasswords;
+import ar.edu.itba.paw.webapp.validation.PasswordsMatching;
+import ar.edu.itba.paw.webapp.validation.ValidPassword;
+
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
-public class VerifyEmailForm {
+@MatchingPasswords
+public class VerifyEmailForm implements PasswordsMatching {
 
     @NotBlank(message = "{auth.verify.token.required}")
     private String token;
@@ -41,19 +44,10 @@ public class VerifyEmailForm {
     @Size(max = 100, message = "{auth.register.username.size}")
     private String username;
 
-    @NotBlank(message = "{auth.register.password.required}")
-    // El maximo es el tope de BCrypt, que ignora lo que pase de 72 bytes.
-    @Size(min = 12, max = 72, message = "{auth.register.password.size}")
-    @Pattern(regexp = ".*[A-Za-z].*", message = "{auth.register.password.letter}")
-    @Pattern(regexp = ".*[0-9].*", message = "{auth.register.password.number}")
+    @ValidPassword
     private String password;
 
     private String passwordConfirmation;
-
-    @AssertTrue(message = "{auth.register.password.mismatch}")
-    public boolean isPasswordConfirmed() {
-        return password != null && password.equals(passwordConfirmation);
-    }
 
     public String getToken() {
         return token;

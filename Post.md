@@ -4,21 +4,21 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Post.java"]
 ---
 
 # Post
 
-One physical exemplar offered by an authenticated publisher. Holds album/user IDs, required integer price on new inserts, optional description, condition, pressing year, zone and image ID, plus AVAILABLE or SOLD status. Historical stock stays in SQL and new inserts set it to one; this model has no stock field.
+One physical exemplar offered by an authenticated publisher. Holds album/user IDs, a positive price and a condition (both required by schema and form), optional description, pressing year, zone and image ID, plus AVAILABLE or SOLD status. Stock stays in SQL at one; this model has no stock field. Only AVAILABLE posts can be edited or deleted by their owner.
 
 ## Connections
 
 Project types referenced: [[Condition]], [[PostStatus]].
 
-Referenced by: [[EmailServiceImpl]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]].
+Referenced by: [[EmailServiceImpl]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
 
 ## Exact source
 

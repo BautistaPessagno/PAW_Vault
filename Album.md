@@ -4,15 +4,15 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Album.java"]
 ---
 
 # Album
 
-Shared catalog work identified by artist ID, normalized title and release year. Optional Genre is fixed when the identity is first created. coverImageId remains for historical album covers; new exemplar photos belong to [[Post]]. Reusing the identity preserves the stored album.
+Shared catalog work identified by artist ID, title and release year. The title keeps the casing the publisher typed; lookups compare LOWER(title), and PostgreSQL enforces a unique (artist_id, LOWER(title), release_year) index. Genre is now required (legacy nulls are backfilled to OTHER) and, together with the title casing, can be rewritten by an owner's edit through [[AlbumServiceImpl]]. coverImageId remains a historical album cover; exemplar photos belong to [[Post]].
 
 ## Connections
 

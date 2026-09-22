@@ -4,31 +4,32 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java"]
 ---
 
 # AlbumJdbcDao
 
-Binds artist/title/year identity and optional genre using JdbcTemplate and SimpleJdbcInsert. Reads nullable genre and legacy cover_image_id. New albums are inserted without a cover reference.
+A shared SELECT_ALBUM alias list feeds the static RowMapper. findByArtistTitleYear compares LOWER(title) = LOWER(?) with artist and year; create stores the title as given, the required genre and a search_phrase from [[SearchText]]. updateMetadata rewrites title, genre and search_phrase, then rereads the row, throwing IllegalStateException if it disappeared. readGenre now assumes a non-null genre.
 
 ## Connections
 
-Project types referenced: [[Album]], [[AlbumDao]], [[Genre]].
+Project types referenced: [[Album]], [[AlbumDao]], [[Genre]], [[SearchText]].
 
 Referenced by: [[PostJdbcDao]].
 
 ## Exact source
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java, lines 1–81](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java>)
+[persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java, lines 1–93](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.Album;
 import ar.edu.itba.paw.models.Genre;
+import ar.edu.itba.paw.models.SearchText;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -54,6 +55,11 @@ public class AlbumJdbcDao implements AlbumDao {
             readCoverImageId(resultSet)
     );
 
+    private static final String SELECT_ALBUM =
+            "SELECT id AS album_id, title AS album_title, artist_id AS album_artist_id, "
+                    + "release_year AS album_release_year, genre AS album_genre, "
+                    + "cover_image_id AS album_cover_image_id FROM albums ";
+
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert jdbcInsert;
 
@@ -64,8 +70,7 @@ public class AlbumJdbcDao implements AlbumDao {
     }
 
     static Genre readGenre(final ResultSet resultSet) throws SQLException {
-        final String genre = resultSet.getString("album_genre");
-        return genre == null ? null : Genre.valueOf(genre);
+        return Genre.valueOf(resultSet.getString("album_genre"));
     }
 
     @Autowired
@@ -80,10 +85,7 @@ public class AlbumJdbcDao implements AlbumDao {
     public Optional<Album> findByArtistTitleYear(final String title, final long artistId,
                                                  final int releaseYear) {
         return jdbcTemplate.query(
-                        "SELECT id AS album_id, title AS album_title, artist_id AS album_artist_id, " +
-                                "release_year AS album_release_year, genre AS album_genre, " +
-                                "cover_image_id AS album_cover_image_id " +
-                                "FROM albums WHERE artist_id = ? AND title = ? AND release_year = ?",
+                        SELECT_ALBUM + "WHERE artist_id = ? AND LOWER(title) = LOWER(?) AND release_year = ?",
                         ROW_MAPPER, artistId, title, releaseYear)
                 .stream()
                 .findAny();
@@ -100,9 +102,19 @@ public class AlbumJdbcDao implements AlbumDao {
         parameters.put("artist_id", artistId);
         parameters.put("release_year", releaseYear);
         parameters.put("genre", genre == null ? null : genre.name());
+        parameters.put("search_phrase", SearchText.phrase(title));
 
         final Number id = jdbcInsert.executeAndReturnKey(parameters);
         return new Album(id.longValue(), title, artistId, releaseYear, genre, null);
+    }
+
+    @Override
+    public Album updateMetadata(final long id, final String title, final Genre genre) {
+        if (jdbcTemplate.update("UPDATE albums SET title = ?, genre = ?, search_phrase = ? WHERE id = ?",
+                title, genre == null ? null : genre.name(), SearchText.phrase(title), id) != 1) {
+            throw new IllegalStateException("Album disappeared while updating metadata");
+        }
+        return jdbcTemplate.queryForObject(SELECT_ALBUM + "WHERE id = ?", ROW_MAPPER, id);
     }
 
 }

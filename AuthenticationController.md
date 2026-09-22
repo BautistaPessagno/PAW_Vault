@@ -4,33 +4,36 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java"]
 ---
 
 # AuthenticationController
 
-GET /login renders the login form; Spring Security handles login POST. Registration takes only email and redirects to /login?verificationSent. GET /verify copies the token into a form without activating; validated POST chooses credentials and redirects to /login?verified or renders an error. Email/username are trimmed before validation.
+GET /login renders the form; Spring Security handles POST /login. Registration takes only an email and redirects to /login?verificationSent. /verify copies the token into a form and the validated POST activates the account. POST /forgot-password always redirects to /login?resetLinkSent after a valid address, so it does not reveal which accounts exist. /reset-password keeps the token in an escaped hidden field; success redirects to /login?passwordReset, a reused password becomes a field error and an invalid or expired link a global error. Binders trim email and username.
 
 ## Connections
 
-Project types referenced: [[DuplicateUserException]], [[LoginForm]], [[RegisterForm]], [[UserService]], [[VerifyEmailForm]].
+Project types referenced: [[DuplicateUserException]], [[ForgotPasswordForm]], [[LoginForm]], [[RegisterForm]], [[ResetPasswordForm]], [[UnchangedPasswordException]], [[UserService]], [[VerifyEmailForm]].
 
 Referenced by: none.
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java, lines 1–88](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java, lines 1–141](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.services.DuplicateUserException;
+import ar.edu.itba.paw.services.UnchangedPasswordException;
 import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.webapp.form.ForgotPasswordForm;
 import ar.edu.itba.paw.webapp.form.LoginForm;
 import ar.edu.itba.paw.webapp.form.RegisterForm;
+import ar.edu.itba.paw.webapp.form.ResetPasswordForm;
 import ar.edu.itba.paw.webapp.form.VerifyEmailForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
@@ -65,6 +68,11 @@ public class AuthenticationController {
     @InitBinder("verifyEmailForm")
     public void initVerifyBinder(final WebDataBinder binder) {
         binder.registerCustomEditor(String.class, "username", new StringTrimmerEditor(false));
+    }
+
+    @InitBinder("forgotPasswordForm")
+    public void initForgotPasswordBinder(final WebDataBinder binder) {
+        binder.registerCustomEditor(String.class, "email", new StringTrimmerEditor(false));
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
@@ -111,6 +119,51 @@ public class AuthenticationController {
         }
         bindingResult.reject("auth.verify.invalid");
         return new ModelAndView("auth/verify");
+    }
+
+    @RequestMapping(value = "/forgot-password", method = RequestMethod.GET)
+    public ModelAndView forgotPasswordForm(@ModelAttribute("forgotPasswordForm") final ForgotPasswordForm form) {
+        return new ModelAndView("auth/forgot-password");
+    }
+
+    /*
+     * Redirige igual exista o no la cuenta: si respondiera distinto, el formulario serviria
+     * para averiguar que correos estan registrados. Quien decide a quien escribirle es el service.
+     */
+    @RequestMapping(value = "/forgot-password", method = RequestMethod.POST)
+    public ModelAndView forgotPassword(@Valid @ModelAttribute("forgotPasswordForm") final ForgotPasswordForm form,
+                                       final BindingResult bindingResult, final Locale locale) {
+        if (bindingResult.hasErrors()) {
+            return forgotPasswordForm(form);
+        }
+        userService.requestPasswordReset(form.getEmail(), locale);
+        return new ModelAndView("redirect:/login?resetLinkSent");
+    }
+
+    @RequestMapping(value = "/reset-password", method = RequestMethod.GET)
+    public ModelAndView resetPasswordForm(@RequestParam(name = "token", required = false) final String token,
+                                          @ModelAttribute("resetPasswordForm") final ResetPasswordForm form) {
+        form.setToken(token);
+        return new ModelAndView("auth/reset-password");
+    }
+
+    @RequestMapping(value = "/reset-password", method = RequestMethod.POST)
+    public ModelAndView resetPassword(@Valid @ModelAttribute("resetPasswordForm") final ResetPasswordForm form,
+                                      final BindingResult bindingResult, final Locale locale) {
+        if (bindingResult.hasErrors()) {
+            return new ModelAndView("auth/reset-password");
+        }
+        try {
+            if (userService.resetPassword(form.getToken(), form.getPassword(), locale).isPresent()) {
+                return new ModelAndView("redirect:/login?passwordReset");
+            }
+        } catch (final UnchangedPasswordException e) {
+            // El enlace sigue vivo: el error va en el campo para que reintente con otra clave.
+            bindingResult.rejectValue("password", "auth.resetPassword.unchanged");
+            return new ModelAndView("auth/reset-password");
+        }
+        bindingResult.reject("auth.resetPassword.invalid");
+        return new ModelAndView("auth/reset-password");
     }
 }
 ```

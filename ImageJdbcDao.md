@@ -4,15 +4,15 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java"]
 ---
 
 # ImageJdbcDao
 
-Uses JdbcTemplate and SimpleJdbcInsert against images. findById selects aliased ID, content type and binary data into [[Image]]; a missing ID returns Optional.empty. create binds content_type and data and returns the generated ID. It does not validate MIME content or size; [[ImageServiceImpl]] owns that policy.
+Uses JdbcTemplate and SimpleJdbcInsert against images. findById selects aliased ID, content type and binary data into [[Image]]; a missing ID returns Optional.empty. create binds content_type and data and returns the generated ID. delete removes one row by ID and returns whether it existed. MIME and size policy stays in [[ImageServiceImpl]].
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: none.
 
 ## Exact source
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java, lines 1–53](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>)
+[persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java, lines 1–58](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -76,6 +76,11 @@ public class ImageJdbcDao implements ImageDao {
         parameters.put("data", data);
         final Number id = jdbcInsert.executeAndReturnKey(parameters);
         return new Image(id.longValue(), contentType, data);
+    }
+
+    @Override
+    public boolean delete(final long id) {
+        return jdbcTemplate.update("DELETE FROM images WHERE id = ?", id) == 1;
     }
 }
 ```

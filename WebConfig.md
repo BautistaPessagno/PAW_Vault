@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # WebConfig
 
-Composes MVC, transaction and async beans and imports SecurityConfig. Optional classpath property files feed required Environment lookups. Uses DriverManagerDataSource, schema.sql initialization, a 2–5 worker mail pool with queue 50 and CallerRunsPolicy, lazy 6 MiB multipart parsing, JSP views, Spanish-default AcceptHeaderLocaleResolver and shared validation/mail bundles. See [[Startup and dependency injection]].
+Composes MVC, transaction and async beans and imports SecurityConfig. Optional classpath property files feed required Environment lookups. Uses DriverManagerDataSource, schema.sql initialization, a 2–5 worker mail pool with queue 50 whose rejection handler logs a warning and drops the task, a 30-second graceful shutdown, lazy 6 MiB multipart parsing, JSP views, Spanish-default AcceptHeaderLocaleResolver and shared validation/mail bundles. See [[Startup and dependency injection]].
 
 ## Connections
 
@@ -22,11 +22,13 @@ Referenced by: none.
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java, lines 1–200](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java, lines 1–207](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -66,7 +68,6 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.Properties;
 
 @EnableWebMvc
@@ -78,6 +79,8 @@ import java.util.Properties;
 @PropertySource(value = "classpath:mail.properties", ignoreResourceNotFound = true)
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(WebConfig.class);
 
   private static final String SMTP_PROTOCOL = "smtp";
 
@@ -99,8 +102,12 @@ public class WebConfig implements WebMvcConfigurer {
     executor.setMaxPoolSize(5);
     executor.setQueueCapacity(50);
     executor.setThreadNamePrefix("mail-");
-    // Si la cola se llena, el envio pasa al hilo que llama en vez de descartarse.
-    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    // Un SMTP lento nunca debe trasladarse al hilo del request. Si el pool se satura,
+    // el rechazo queda visible en logs y se descarta solamente ese aviso no critico.
+    executor.setRejectedExecutionHandler((task, poolExecutor) ->
+        LOGGER.warn("Mail task rejected: taskExecutor saturated, dropping email task"));
+    executor.setWaitForTasksToCompleteOnShutdown(true);
+    executor.setAwaitTerminationSeconds(30);
     return executor;
   }
 

@@ -4,25 +4,25 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java"]
 ---
 
 # UserService
 
-Account lookup, email-only registration and token-based activation with chosen username/password. Locale is supplied explicitly for outgoing mail; no findOrCreate publisher API remains.
+Account lookup, email-only registration, token activation, username update, a password change that proves the current password, silent password-reset requests and token-based reset. Locale is passed explicitly for outgoing mail.
 
 ## Connections
 
 Project types referenced: [[User]].
 
-Referenced by: [[AuthenticatedUserDetailsService]], [[AuthenticationController]], [[PostServiceImpl]], [[PostServiceImplTest]], [[SecurityConfig]], [[UserServiceImpl]].
+Referenced by: [[AuthenticatedUserDetailsService]], [[AuthenticationController]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]], [[ProfileController]], [[SecurityConfig]], [[UserServiceImpl]].
 
 ## Exact source
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java, lines 1–16](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java>)
+[services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java, lines 1–24](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/UserService.java>)
 
 ```java
 package ar.edu.itba.paw.services;
@@ -40,6 +40,14 @@ public interface UserService {
     User register(String email, Locale locale);
 
     Optional<User> verifyEmail(String token, String username, String rawPassword, Locale locale);
+
+    User updateUsername(long id, String username);
+
+    User changePassword(long id, String currentPassword, String newPassword, Locale locale);
+
+    void requestPasswordReset(String email, Locale locale);
+
+    Optional<User> resetPassword(String token, String newPassword, Locale locale);
 }
 ```
 

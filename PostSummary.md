@@ -4,25 +4,25 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/PostSummary.java"]
 ---
 
 # PostSummary
 
-Joined publication projection for cards and contact checks. Includes seller identity and preferred locale, album metadata, nullable legacy price/details, and publication status. coverImageId resolves posts.image_id first, falling back to albums.cover_image_id in [[PostJdbcDao]].
+Joined publication projection for catalog cards, the public detail page, edit-form population and contact checks. Includes seller ID, email and preferred locale, album ID/title/artist/year/genre, cover image ID, price (now a primitive int), condition, optional description, pressing year and zone, and publication status. coverImageId resolves posts.image_id first, falling back to albums.cover_image_id in [[PostJdbcDao]].
 
 ## Connections
 
 Project types referenced: [[Condition]], [[Genre]], [[PostStatus]].
 
-Referenced by: [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostServiceImplTest]], [[SearchResult]].
+Referenced by: [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostPage]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
 
 ## Exact source
 
-[models/src/main/java/ar/edu/itba/paw/models/PostSummary.java, lines 1–110](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSummary.java>)
+[models/src/main/java/ar/edu/itba/paw/models/PostSummary.java, lines 1–109](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSummary.java>)
 
 ```java
 package ar.edu.itba.paw.models;
@@ -39,8 +39,7 @@ public final class PostSummary {
     private final int releaseYear;
     private final Genre genre;
     private final Long coverImageId;
-    // Los posts anteriores a estas columnas no tienen precio: por eso es Integer y no int.
-    private final Integer price;
+    private final int price;
     private final String description;
     private final Condition condition;
     private final Integer pressingYear;
@@ -50,7 +49,7 @@ public final class PostSummary {
     public PostSummary(final long id, final long userId, final String publisherEmail,
                        final String publisherLocale, final long albumId,
                        final String title, final String artistName, final int releaseYear, final Genre genre,
-                       final Long coverImageId, final Integer price, final String description,
+                       final Long coverImageId, final int price, final String description,
                        final Condition condition, final Integer pressingYear, final String zone,
                        final PostStatus status) {
         this.id = id;
@@ -111,7 +110,7 @@ public final class PostSummary {
         return coverImageId;
     }
 
-    public Integer getPrice() {
+    public int getPrice() {
         return price;
     }
 

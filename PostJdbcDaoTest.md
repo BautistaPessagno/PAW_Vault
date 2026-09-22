@@ -4,8 +4,8 @@ categories: ["Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java"]
 ---
@@ -18,22 +18,30 @@ Test methods in this revision:
 
 - `testFindFeaturedWhenPostsExistReturnsNewestByPublishDateWithMappedDetails`
 - `testFindFeaturedWhenLimitIsSmallerThanPostsReturnsOnlyFirstOnes`
+- `testSearchWhenOffsetIsGivenReturnsTheFollowingStableSlice`
 - `testFindFeaturedWhenSortIsOldestReturnsOldestPublishDateFirst`
 - `testFindFeaturedWhenPostIsCreatedReturnsItFirstByNewest`
-- `testFindFeaturedWhenSortIsPriceAscReturnsCheapestFirstAndUnpricedLast`
-- `testFindFeaturedWhenSortIsPriceDescReturnsMostExpensiveFirstAndUnpricedLast`
+- `testFindFeaturedWhenSortIsPriceAscReturnsCheapestFirst`
+- `testFindFeaturedWhenSortIsPriceDescReturnsMostExpensiveFirst`
 - `testFindFeaturedWhenSortIsTitleAscReturnsAlphabeticalThenNewest`
 - `testFindFeaturedWhenSortIsTitleDescReturnsReverseAlphabetical`
 - `testFindFeaturedWhenSortIsArtistAscReturnsAlphabeticalByArtist`
 - `testFindFeaturedWhenSortIsArtistDescReturnsReverseAlphabeticalByArtist`
 - `testFindFeaturedWhenSortIsReleaseYearDescReturnsLatestAlbumFirst`
 - `testFindFeaturedWhenSortIsReleaseYearAscReturnsEarliestAlbumFirst`
-- `testFindByIdWhenPostPredatesDetailsReturnsSummaryWithNullDetails`
+- `testFindByIdWhenOptionalDetailsAreAbsentReturnsSummaryWithRequiredFields`
 - `testFindByIdWhenPostDoesNotExistReturnsEmpty`
 - `testExistsByUserIdAndAlbumIdWhenPostExistsReturnsTrue`
 - `testCreateWhenPublisherAlreadyPostedSameAlbumReturnsDuplicatePostKeyExceptionWithoutChanges`
 - `testCreateWhenAnotherPublisherPostsSameAlbumReturnsIndependentPostWithDetails`
-- `testCreateWhenOptionalDetailsAreNullReturnsPostWithNullColumns`
+- `testCreateWhenOptionalTextDetailsAreNullReturnsPostWithRequiredCondition`
+- `testCreateWhenPriceIsNotPositiveThrowsDataIntegrityViolationWithoutPersistingPost`
+- `testCreateWhenConditionIsNullThrowsDataIntegrityViolationWithoutPersistingPost`
+- `testCreateWhenConditionIsUnknownThrowsDataIntegrityViolationWithoutPersistingPost`
+- `testUpdateWhenPostExistsReturnsTrueAndPersistsEditableFields`
+- `testUpdateWithoutImageWhenAlbumHasCoverPreservesPostImageId`
+- `testUpdateWhenPostDoesNotExistReturnsFalse`
+- `testUpdateWhenConditionIsNullThrowsDataIntegrityViolationWithoutChangingPost`
 - `testMarkSoldIfAvailableWhenPostIsAvailableReturnsTrueAndSellsIt`
 - `testMarkSoldIfAvailableWhenPostIsAlreadySoldReturnsFalse`
 - `testFindFeaturedWhenAPostIsSoldReturnsOnlyTheAvailableOnes`
@@ -49,16 +57,29 @@ Test methods in this revision:
 - `testSearchWhenArtistAndYearAreGivenReturnsOnlyMatchingPosts`
 - `testSearchWhenPriceRangeIsGivenReturnsOnlyPricedPostsInsideRange`
 - `testSearchWhenAllFiltersAreCombinedReturnsIntersectionInRequestedOrder`
+- `testFindSearchSuggestionsWhenQueryMatchesPrefixAndContentReturnsRankedResults`
+- `testFindSearchSuggestionsWhenQueryOmitsSpacesReturnsExactMatch`
+- `testFindSearchSuggestionsWhenQueryMatchesWordStartReturnsAlbumAndArtist`
+- `testFindSearchSuggestionsWhenOnlySoldPostsMatchReturnsEmptyList`
+- `testFindByPublisherIdWhenPostsExistReturnsRequestedOwnersSliceWithAllStatusesNewestFirst`
+- `testFindByPublisherIdWhenUserHasNoPostsReturnsEmptyList`
+- `testCountByPublisherIdWhenUserHasPostsReturnsTotal`
+- `testCountByPublisherIdWhenUserHasNoPostsReturnsZero`
+- `testFindSearchSuggestionsWhenLimitIsBelowMatchCountReturnsBestRanked`
+- `testFindOwnImageIdWhenPostHasOwnImageReturnsImageId`
+- `testFindOwnImageIdWhenPostOnlyHasAlbumCoverReturnsEmpty`
+- `testDeleteWhenPostExistsReturnsTrueAndRemovesRow`
+- `testDeleteWhenPostDoesNotExistReturnsFalse`
 
 ## Connections
 
-Project types referenced: [[Condition]], [[DuplicatePostKeyException]], [[Genre]], [[Post]], [[PostDao]], [[PostSearchCriteria]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[TestConfiguration]].
+Project types referenced: [[Condition]], [[DuplicatePostKeyException]], [[Genre]], [[Post]], [[PostDao]], [[PostSearchCriteria]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[SearchSuggestion]], [[SearchSuggestionType]], [[TestConfiguration]].
 
 Referenced by: none.
 
 ## Exact source
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java, lines 1–548](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java>)
+[persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java, lines 1–851](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java>)
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -70,12 +91,15 @@ import ar.edu.itba.paw.models.PostSort;
 import ar.edu.itba.paw.models.PostSearchCriteria;
 import ar.edu.itba.paw.models.PostStatus;
 import ar.edu.itba.paw.models.PostSummary;
+import ar.edu.itba.paw.models.SearchSuggestion;
+import ar.edu.itba.paw.models.SearchSuggestionType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
@@ -108,6 +132,7 @@ public class PostJdbcDaoTest {
     private static final int RELEASE_YEAR = 1997;
     private static final Genre GENRE = Genre.HIP_HOP;
     private static final long COVER_IMAGE_ID = 1;
+    private static final int PRICE = 35000;
     private static final long DETAILED_POST_ID = 2;
     private static final long DETAILED_USER_ID = 2;
     private static final int DETAILED_PRICE = 45000;
@@ -140,7 +165,7 @@ public class PostJdbcDaoTest {
         final int limit = 8;
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), limit);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), limit, 0);
 
         // 3. Assert
         Assertions.assertEquals(3, result.size());
@@ -169,7 +194,7 @@ public class PostJdbcDaoTest {
         final int limit = 1;
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), limit);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), limit, 0);
 
         // 3. Assert
         Assertions.assertEquals(1, result.size());
@@ -177,11 +202,22 @@ public class PostJdbcDaoTest {
     }
 
     @Test
+    public void testSearchWhenOffsetIsGivenReturnsTheFollowingStableSlice() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), 2, 1);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(POST_ID, DETAILED_POST_ID), ids(result));
+    }
+
+    @Test
     public void testFindFeaturedWhenSortIsOldestReturnsOldestPublishDateFirst() {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.OLDEST), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.OLDEST), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(DETAILED_POST_ID, POST_ID, OTHER_POST_ID), ids(result));
@@ -194,32 +230,32 @@ public class PostJdbcDaoTest {
         // 2. Exercise
         final Post created = postDao.create(DETAILED_USER_ID, OTHER_ALBUM_ID, DETAILED_PRICE,
                 DETAILED_DESCRIPTION, DETAILED_CONDITION, DETAILED_PRESSING_YEAR, DETAILED_ZONE, null);
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(created.getId(), result.get(0).getId());
     }
 
     @Test
-    public void testFindFeaturedWhenSortIsPriceAscReturnsCheapestFirstAndUnpricedLast() {
+    public void testFindFeaturedWhenSortIsPriceAscReturnsCheapestFirst() {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.PRICE_ASC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.PRICE_ASC), LIMIT, 0);
 
         // 3. Assert
-        Assertions.assertEquals(List.of(OTHER_POST_ID, DETAILED_POST_ID, POST_ID), ids(result));
+        Assertions.assertEquals(List.of(OTHER_POST_ID, POST_ID, DETAILED_POST_ID), ids(result));
     }
 
     @Test
-    public void testFindFeaturedWhenSortIsPriceDescReturnsMostExpensiveFirstAndUnpricedLast() {
+    public void testFindFeaturedWhenSortIsPriceDescReturnsMostExpensiveFirst() {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.PRICE_DESC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.PRICE_DESC), LIMIT, 0);
 
         // 3. Assert
-        Assertions.assertEquals(List.of(DETAILED_POST_ID, OTHER_POST_ID, POST_ID), ids(result));
+        Assertions.assertEquals(List.of(DETAILED_POST_ID, POST_ID, OTHER_POST_ID), ids(result));
     }
 
     @Test
@@ -227,7 +263,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.TITLE_ASC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.TITLE_ASC), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(OTHER_POST_ID, POST_ID, DETAILED_POST_ID), ids(result));
@@ -238,7 +274,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.TITLE_DESC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.TITLE_DESC), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(POST_ID, DETAILED_POST_ID, OTHER_POST_ID), ids(result));
@@ -249,7 +285,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.ARTIST_ASC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.ARTIST_ASC), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(POST_ID, DETAILED_POST_ID, OTHER_POST_ID), ids(result));
@@ -260,7 +296,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.ARTIST_DESC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.ARTIST_DESC), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(OTHER_POST_ID, POST_ID, DETAILED_POST_ID), ids(result));
@@ -271,7 +307,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.RELEASE_YEAR_DESC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.RELEASE_YEAR_DESC), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(POST_ID, DETAILED_POST_ID, OTHER_POST_ID), ids(result));
@@ -282,14 +318,14 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.RELEASE_YEAR_ASC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.RELEASE_YEAR_ASC), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(OTHER_POST_ID, POST_ID, DETAILED_POST_ID), ids(result));
     }
 
     @Test
-    public void testFindByIdWhenPostPredatesDetailsReturnsSummaryWithNullDetails() {
+    public void testFindByIdWhenOptionalDetailsAreAbsentReturnsSummaryWithRequiredFields() {
         // 1. Arrange
 
         // 2. Exercise
@@ -308,9 +344,9 @@ public class PostJdbcDaoTest {
         Assertions.assertEquals(RELEASE_YEAR, post.getReleaseYear());
         Assertions.assertEquals(GENRE, post.getGenre());
         Assertions.assertEquals(COVER_IMAGE_ID, post.getCoverImageId());
-        Assertions.assertNull(post.getPrice());
+        Assertions.assertEquals(PRICE, post.getPrice());
         Assertions.assertNull(post.getDescription());
-        Assertions.assertNull(post.getCondition());
+        Assertions.assertEquals(Condition.USED, post.getCondition());
         Assertions.assertNull(post.getPressingYear());
         Assertions.assertNull(post.getZone());
         Assertions.assertEquals(PostStatus.AVAILABLE, post.getStatus());
@@ -344,15 +380,15 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final Executable create = () -> postDao.create(USER_ID, ALBUM_ID, DETAILED_PRICE, null, null, null, null,
-                null);
+        final Executable create = () -> postDao.create(USER_ID, ALBUM_ID, DETAILED_PRICE, null,
+                Condition.USED, null, null, null);
 
         // 3. Assert
         Assertions.assertThrows(DuplicatePostKeyException.class, create);
-        Assertions.assertEquals(4, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
         Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, USERS_TABLE));
-        Assertions.assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
-        Assertions.assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
+        Assertions.assertEquals(4, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
+        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
     }
 
     @Test
@@ -386,30 +422,141 @@ public class PostJdbcDaoTest {
                         " AND zone = '" + DETAILED_ZONE + "'" +
                         " AND stock = 1 AND image_id = " + COVER_IMAGE_ID +
                         " AND status = 'AVAILABLE'"));
-        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
-        Assertions.assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
-        Assertions.assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
+        Assertions.assertEquals(6, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+        Assertions.assertEquals(4, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
+        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
     }
 
     @Test
-    public void testCreateWhenOptionalDetailsAreNullReturnsPostWithNullColumns() {
+    public void testCreateWhenOptionalTextDetailsAreNullReturnsPostWithRequiredCondition() {
         // 1. Arrange
         final long userId = 3;
 
         // 2. Exercise
-        final Post result = postDao.create(userId, ALBUM_ID, DETAILED_PRICE, null, null, null, null, null);
+        final Post result = postDao.create(userId, ALBUM_ID, DETAILED_PRICE, null,
+                Condition.USED, null, null, null);
 
         // 3. Assert
         Assertions.assertNull(result.getDescription());
-        Assertions.assertNull(result.getCondition());
+        Assertions.assertEquals(Condition.USED, result.getCondition());
         Assertions.assertNull(result.getPressingYear());
         Assertions.assertNull(result.getZone());
         Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, POSTS_TABLE,
                 "id = " + result.getId() +
                         " AND price = " + DETAILED_PRICE +
-                        " AND description IS NULL AND item_condition IS NULL" +
+                        " AND description IS NULL AND item_condition = 'USED'" +
                         " AND pressing_year IS NULL AND zone IS NULL" +
                         " AND stock = 1 AND image_id IS NULL AND status = 'AVAILABLE'"));
+    }
+
+    @Test
+    public void testCreateWhenPriceIsNotPositiveThrowsDataIntegrityViolationWithoutPersistingPost() {
+        // 1. Arrange
+        final long userId = 3;
+        final int invalidPrice = 0;
+
+        // 2. Exercise
+        final Executable create = () -> postDao.create(userId, ALBUM_ID, invalidPrice,
+                null, Condition.USED, null, null, null);
+
+        // 3. Assert
+        Assertions.assertThrows(DataIntegrityViolationException.class, create);
+        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+    }
+
+    @Test
+    public void testCreateWhenConditionIsNullThrowsDataIntegrityViolationWithoutPersistingPost() {
+        // 1. Arrange
+        final long userId = 3;
+
+        // 2. Exercise
+        final Executable create = () -> postDao.create(userId, ALBUM_ID, DETAILED_PRICE,
+                null, null, null, null, null);
+
+        // 3. Assert
+        Assertions.assertThrows(DataIntegrityViolationException.class, create);
+        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+    }
+
+    @Test
+    public void testCreateWhenConditionIsUnknownThrowsDataIntegrityViolationWithoutPersistingPost() {
+        // 1. Arrange
+        final long userId = 3;
+
+        // 2. Exercise
+        final Executable create = () -> jdbcTemplate.update(
+                "INSERT INTO posts (user_id, album_id, price, item_condition) VALUES (?, ?, ?, ?)",
+                userId, ALBUM_ID, DETAILED_PRICE, "UNKNOWN");
+
+        // 3. Assert
+        Assertions.assertThrows(DataIntegrityViolationException.class, create);
+        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+    }
+
+    @Test
+    public void testUpdateWhenPostExistsReturnsTrueAndPersistsEditableFields() {
+        // 1. Arrange
+        final int updatedPrice = 52000;
+        final String updatedDescription = "Edicion remasterizada.";
+        final String updatedZone = "Belgrano";
+
+        // 2. Exercise
+        final boolean result = postDao.updateWithImage(DETAILED_POST_ID, OTHER_ALBUM_ID, updatedPrice,
+                updatedDescription, Condition.NEW, 2020, updatedZone, COVER_IMAGE_ID);
+
+        // 3. Assert
+        Assertions.assertTrue(result);
+        final PostSummary updated = postDao.findById(DETAILED_POST_ID).orElseThrow(AssertionError::new);
+        Assertions.assertEquals(OTHER_ALBUM_ID, updated.getAlbumId());
+        Assertions.assertEquals(updatedPrice, updated.getPrice());
+        Assertions.assertEquals(updatedDescription, updated.getDescription());
+        Assertions.assertEquals(Condition.NEW, updated.getCondition());
+        Assertions.assertEquals(2020, updated.getPressingYear());
+        Assertions.assertEquals(updatedZone, updated.getZone());
+        Assertions.assertEquals(COVER_IMAGE_ID, updated.getCoverImageId());
+        Assertions.assertEquals(PostStatus.AVAILABLE, updated.getStatus());
+    }
+
+    @Test
+    public void testUpdateWithoutImageWhenAlbumHasCoverPreservesPostImageId() {
+        // 1. Arrange
+        final int updatedPrice = 52000;
+
+        // 2. Exercise
+        final boolean result = postDao.update(DETAILED_POST_ID, ALBUM_ID, updatedPrice,
+                DETAILED_DESCRIPTION, DETAILED_CONDITION, DETAILED_PRESSING_YEAR, DETAILED_ZONE);
+
+        // 3. Assert
+        Assertions.assertTrue(result);
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, POSTS_TABLE,
+                "id = " + DETAILED_POST_ID + " AND image_id IS NULL AND price = " + updatedPrice));
+    }
+
+    @Test
+    public void testUpdateWhenPostDoesNotExistReturnsFalse() {
+        // 1. Arrange
+        final long missingPostId = 999;
+
+        // 2. Exercise
+        final boolean result = postDao.update(missingPostId, ALBUM_ID, PRICE,
+                null, Condition.USED, null, null);
+
+        // 3. Assert
+        Assertions.assertFalse(result);
+    }
+
+    @Test
+    public void testUpdateWhenConditionIsNullThrowsDataIntegrityViolationWithoutChangingPost() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final Executable update = () -> postDao.update(DETAILED_POST_ID, ALBUM_ID, DETAILED_PRICE,
+                DETAILED_DESCRIPTION, null, DETAILED_PRESSING_YEAR, DETAILED_ZONE);
+
+        // 3. Assert
+        Assertions.assertThrows(DataIntegrityViolationException.class, update);
+        final PostSummary unchanged = postDao.findById(DETAILED_POST_ID).orElseThrow(AssertionError::new);
+        Assertions.assertEquals(DETAILED_CONDITION, unchanged.getCondition());
     }
 
     @Test
@@ -443,7 +590,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(null, PostSort.NEWEST), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertFalse(ids(result).contains(SOLD_POST_ID));
@@ -467,7 +614,7 @@ public class PostJdbcDaoTest {
         final String query = "VERS";
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(POST_ID, DETAILED_POST_ID), ids(result));
@@ -480,7 +627,7 @@ public class PostJdbcDaoTest {
         final String query = "versus";
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(query, PostSort.PRICE_DESC), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(query, PostSort.PRICE_DESC), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(DETAILED_POST_ID, POST_ID), ids(result));
@@ -492,7 +639,7 @@ public class PostJdbcDaoTest {
         final String query = "kuryaki";
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(2, result.size());
@@ -505,7 +652,7 @@ public class PostJdbcDaoTest {
         final String query = "versus";
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), 1);
+        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), 1, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(POST_ID), ids(result));
@@ -517,7 +664,7 @@ public class PostJdbcDaoTest {
         final String query = "pink floyd";
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertTrue(result.isEmpty());
@@ -529,7 +676,7 @@ public class PostJdbcDaoTest {
         final String query = "%_";
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT);
+        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT, 0);
 
         // 3. Assert
         Assertions.assertTrue(result.isEmpty());
@@ -542,7 +689,7 @@ public class PostJdbcDaoTest {
                 null, PostSort.NEWEST, Genre.ROCK, null, null, null, null, null);
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria, LIMIT);
+        final List<PostSummary> result = postDao.search(criteria, LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(OTHER_POST_ID), ids(result));
@@ -555,10 +702,10 @@ public class PostJdbcDaoTest {
                 null, PostSort.NEWEST, null, Condition.USED, null, null, null, null);
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria, LIMIT);
+        final List<PostSummary> result = postDao.search(criteria, LIMIT, 0);
 
         // 3. Assert
-        Assertions.assertEquals(List.of(DETAILED_POST_ID), ids(result));
+        Assertions.assertEquals(List.of(OTHER_POST_ID, POST_ID, DETAILED_POST_ID), ids(result));
     }
 
     @Test
@@ -568,7 +715,7 @@ public class PostJdbcDaoTest {
                 null, PostSort.NEWEST, null, null, 1L, RELEASE_YEAR, null, null);
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria, LIMIT);
+        final List<PostSummary> result = postDao.search(criteria, LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(POST_ID, DETAILED_POST_ID), ids(result));
@@ -581,7 +728,7 @@ public class PostJdbcDaoTest {
                 null, PostSort.NEWEST, null, null, null, null, 40_000, 50_000);
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria, LIMIT);
+        final List<PostSummary> result = postDao.search(criteria, LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(DETAILED_POST_ID), ids(result));
@@ -595,14 +742,191 @@ public class PostJdbcDaoTest {
                 1L, RELEASE_YEAR, 40_000, 45_000);
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.search(criteria, LIMIT);
+        final List<PostSummary> result = postDao.search(criteria, LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(DETAILED_POST_ID), ids(result));
     }
 
+    @Test
+    public void testFindSearchSuggestionsWhenQueryMatchesPrefixAndContentReturnsRankedResults() {
+        // 1. Arrange
+        final String query = "s";
+
+        // 2. Exercise
+        final List<SearchSuggestion> result = postDao.findSearchSuggestions(query, 10);
+
+        // 3. Assert
+        Assertions.assertEquals(3, result.size());
+        assertSuggestion(result.get(0), SearchSuggestionType.ARTIST, "soda stereo", null);
+        assertSuggestion(result.get(1), SearchSuggestionType.ARTIST,
+                "illya kuryaki and the valderramas", null);
+        assertSuggestion(result.get(2), SearchSuggestionType.ALBUM, "versus",
+                "illya kuryaki and the valderramas");
+    }
+
+    @Test
+    public void testFindSearchSuggestionsWhenQueryOmitsSpacesReturnsExactMatch() {
+        // 1. Arrange
+        final String query = "sodastereo";
+
+        // 2. Exercise
+        final List<SearchSuggestion> result = postDao.findSearchSuggestions(query, 10);
+
+        // 3. Assert
+        Assertions.assertEquals(1, result.size());
+        assertSuggestion(result.get(0), SearchSuggestionType.ARTIST, "soda stereo", null);
+    }
+
+    @Test
+    public void testFindSearchSuggestionsWhenQueryMatchesWordStartReturnsAlbumAndArtist() {
+        // 1. Arrange
+        final String query = "an";
+
+        // 2. Exercise
+        final List<SearchSuggestion> result = postDao.findSearchSuggestions(query, 10);
+
+        // 3. Assert
+        Assertions.assertEquals(2, result.size());
+        assertSuggestion(result.get(0), SearchSuggestionType.ALBUM, "cancion animal", "soda stereo");
+        assertSuggestion(result.get(1), SearchSuggestionType.ARTIST,
+                "illya kuryaki and the valderramas", null);
+    }
+
+    @Test
+    public void testFindSearchSuggestionsWhenOnlySoldPostsMatchReturnsEmptyList() {
+        // 1. Arrange
+        final String query = "sold";
+
+        // 2. Exercise
+        final List<SearchSuggestion> result = postDao.findSearchSuggestions(query, 10);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testFindByPublisherIdWhenPostsExistReturnsRequestedOwnersSliceWithAllStatusesNewestFirst() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.findByPublisherId(USER_ID, 2, 1);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(POST_ID, 5L), ids(result));
+        Assertions.assertEquals(List.of(PostStatus.AVAILABLE, PostStatus.SOLD),
+                result.stream().map(PostSummary::getStatus).collect(Collectors.toList()));
+        Assertions.assertTrue(result.stream().allMatch(post -> post.getUserId() == USER_ID));
+    }
+
+    @Test
+    public void testFindByPublisherIdWhenUserHasNoPostsReturnsEmptyList() {
+        // 1. Arrange
+        final long userWithoutPosts = 999;
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.findByPublisherId(userWithoutPosts, 13, 0);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testCountByPublisherIdWhenUserHasPostsReturnsTotal() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final int result = postDao.countByPublisherId(USER_ID);
+
+        // 3. Assert
+        Assertions.assertEquals(3, result);
+    }
+
+    @Test
+    public void testCountByPublisherIdWhenUserHasNoPostsReturnsZero() {
+        // 1. Arrange
+        final long userWithoutPosts = 999;
+
+        // 2. Exercise
+        final int result = postDao.countByPublisherId(userWithoutPosts);
+
+        // 3. Assert
+        Assertions.assertEquals(0, result);
+    }
+
+    @Test
+    public void testFindSearchSuggestionsWhenLimitIsBelowMatchCountReturnsBestRanked() {
+        // 1. Arrange
+        final String query = "s";
+
+        // 2. Exercise
+        final List<SearchSuggestion> result = postDao.findSearchSuggestions(query, 2);
+
+        // 3. Assert
+        Assertions.assertEquals(2, result.size());
+        assertSuggestion(result.get(0), SearchSuggestionType.ARTIST, "soda stereo", null);
+        assertSuggestion(result.get(1), SearchSuggestionType.ARTIST,
+                "illya kuryaki and the valderramas", null);
+    }
+
+    private static void assertSuggestion(final SearchSuggestion suggestion, final SearchSuggestionType type,
+                                         final String value, final String artistName) {
+        Assertions.assertEquals(type, suggestion.getType());
+        Assertions.assertEquals(value, suggestion.getValue());
+        Assertions.assertEquals(artistName, suggestion.getArtistName());
+    }
+
     private static PostSearchCriteria criteria(final String query, final PostSort sort) {
         return new PostSearchCriteria(query, sort, null, null, null, null, null, null);
+    }
+
+    @Test
+    public void testFindOwnImageIdWhenPostHasOwnImageReturnsImageId() {
+        // 1. Arrange
+        final long postId = 5;
+
+        // 2. Exercise
+        final Optional<Long> result = postDao.findOwnImageId(postId);
+
+        // 3. Assert
+        Assertions.assertEquals(Optional.of(2L), result);
+    }
+
+    @Test
+    public void testFindOwnImageIdWhenPostOnlyHasAlbumCoverReturnsEmpty() {
+        // 1. Arrange
+        // Post 1 no tiene foto propia; su portada sale del album.
+
+        // 2. Exercise
+        final Optional<Long> result = postDao.findOwnImageId(POST_ID);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testDeleteWhenPostExistsReturnsTrueAndRemovesRow() {
+        // 1. Arrange
+        final long postId = 5;
+
+        // 2. Exercise
+        final boolean result = postDao.delete(postId);
+
+        // 3. Assert
+        Assertions.assertTrue(result);
+        Assertions.assertEquals(0, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, POSTS_TABLE, "id = " + postId));
+    }
+
+    @Test
+    public void testDeleteWhenPostDoesNotExistReturnsFalse() {
+        // 1. Arrange
+        final long missingPostId = 999;
+
+        // 2. Exercise
+        final boolean result = postDao.delete(missingPostId);
+
+        // 3. Assert
+        Assertions.assertFalse(result);
     }
 
     private static List<Long> ids(final List<PostSummary> posts) {

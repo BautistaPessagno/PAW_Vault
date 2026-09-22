@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java"]
 ---
 
 # PublishForm
 
-Required title/artist up to 255 characters, release year 1000–9999 and price 1–99,999,999. Optional Genre, Condition, zone up to 100, pressing year 1000–9999, description up to 1000 and MultipartFile cover. No publisher identity or stock field remains.
+Required title/artist up to 255 characters, release year 1000–9999, genre, price 1–99,999,999 and condition. Optional zone up to 100, pressing year 1000–9999, description up to 1000 and MultipartFile cover. The same bean backs publishing and editing; no publisher identity or stock field remains.
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: [[PublishController]].
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java, lines 1–128](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java, lines 1–130](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.form;
@@ -52,6 +52,7 @@ public class PublishForm {
     @Max(value = 9999, message = "{publish.releaseYear.range}")
     private Integer releaseYear;
 
+    @NotNull(message = "{publish.genre.required}")
     private Genre genre;
 
     @NotNull(message = "{publish.price.required}")
@@ -59,6 +60,7 @@ public class PublishForm {
     @Max(value = 99999999, message = "{publish.price.range}")
     private Integer price;
 
+    @NotNull(message = "{publish.condition.required}")
     private Condition condition;
 
     @Size(max = 100, message = "{publish.zone.size}")

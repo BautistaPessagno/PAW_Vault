@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-16"
-commit: "40328f0a23ce3814ab62a9f0124a6ba1e6ae71be"
+snapshot: "2026-09-22"
+commit: "f12af080cf6a27101160f005102a20f436574cf7"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java"]
 ---
 
 # SecurityConfig
 
-Configures Spring Security route access, email/password form login, logout and access-denied page. /admin/** requires ADMIN; /publish/**, /post/*/contact and /inquiries/** require authentication. Other routes are public. CSRF remains enabled. BCrypt strength is 12 and PasswordHasher adapts the encoder for services.
+Configures Spring Security route access, email/password form login, logout and the access-denied page. /admin/** requires ADMIN; /publish/**, /post/*/edit, /post/*/delete, /profile/**, /post/*/contact and /inquiries/** require authentication. Everything else, including /post/{id}, password recovery and suggestion fragments, is public. CSRF remains enabled. BCrypt strength is 12, and the PasswordHasher bean exposes both hash and matches.
 
 ## Connections
 
@@ -22,7 +22,7 @@ Referenced by: [[WebConfig]].
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java, lines 1–66](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java, lines 1–78](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.config;
@@ -58,7 +58,17 @@ public class SecurityConfig {
      */
     @Bean
     public PasswordHasher passwordHasher(final PasswordEncoder passwordEncoder) {
-        return passwordEncoder::encode;
+        return new PasswordHasher() {
+            @Override
+            public String hash(final String rawPassword) {
+                return passwordEncoder.encode(rawPassword);
+            }
+
+            @Override
+            public boolean matches(final String rawPassword, final String passwordHash) {
+                return passwordEncoder.matches(rawPassword, passwordHash);
+            }
+        };
     }
 
     @Bean
@@ -72,6 +82,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .antMatchers("/admin/**").hasRole("ADMIN")
                         .antMatchers("/publish/**").authenticated()
+                        .antMatchers("/post/*/edit", "/post/*/delete").authenticated()
+                        .antMatchers("/profile/**").authenticated()
                         .antMatchers("/post/*/contact").authenticated()
                         .antMatchers("/inquiries/**").authenticated()
                         .anyRequest().permitAll())
