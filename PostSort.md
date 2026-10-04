@@ -4,25 +4,31 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/PostSort.java"]
 ---
 
 # PostSort
 
-Ten allowed orders: newest/oldest and ascending/descending price, title, artist or release year. [[PostJdbcDao]] maps each value to fixed SQL; default normalization chooses NEWEST.
+Los diez órdenes del catálogo. [[PostJdbcDao]] traduce cada valor a un `ORDER BY` fijo, así al SQL nunca entra texto del usuario.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Sin campos ni métodos propios: el archivo completo está abajo.
 
-Referenced by: [[LandingController]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostSearchCriteria]], [[PostServiceImpl]], [[PostServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[models/src/main/java/ar/edu/itba/paw/models/PostSort.java, lines 1–15](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSort.java>)
+Referenciado por: [[CatalogFilterForm]], [[LandingController]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostSearchCriteria]], [[PostServiceImpl]], [[PostServiceImplTest]], [[SearchResult]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PostSort.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSort.java>), líneas 1–15.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -41,7 +47,3 @@ public enum PostSort {
     RELEASE_YEAR_ASC
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

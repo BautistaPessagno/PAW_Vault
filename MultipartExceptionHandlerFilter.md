@@ -4,25 +4,33 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java"]
 ---
 
 # MultipartExceptionHandlerFilter
 
-Wraps multipart processing for /publish and /post/* before Spring Security. Catches a direct or immediately wrapped MaxUploadSizeExceededException and redirects to the same /post/{id}/edit path, or otherwise to /publish, with ?coverTooLarge. Other ServletException/RuntimeException values propagate.
+Filtro que envuelve al multipart: si el request excede el tamaño máximo, redirige al formulario de origen con un aviso en lugar de un error 500.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `LOGGER`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `doFilterInternal`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java, lines 1–39](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>), líneas 1–50.
 
 ```java
 package ar.edu.itba.paw.webapp.security;
@@ -59,13 +67,20 @@ public final class MultipartExceptionHandlerFilter extends OncePerRequestFilter 
             }
             LOGGER.warn("Rejected a multipart request over the size limit uri={}", request.getRequestURI());
             final String servletPath = request.getServletPath();
+            // El comprobante vuelve a la pagina de la Venta, que muestra el aviso.
+            if (servletPath.matches("/inquiries/[0-9]+/receipt")) {
+                final String salePath = servletPath.substring(0, servletPath.length() - "/receipt".length());
+                response.sendRedirect(request.getContextPath() + salePath + "?receiptTooLarge");
+                return;
+            }
+            // La foto de perfil vuelve al perfil, que reabre el dialogo con el aviso.
+            if ("/profile/avatar".equals(servletPath)) {
+                response.sendRedirect(request.getContextPath() + "/profile?avatarTooLarge#avatar");
+                return;
+            }
             final String target = servletPath.matches("/post/[0-9]+/edit") ? servletPath : "/publish";
             response.sendRedirect(request.getContextPath() + target + "?coverTooLarge");
         }
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -4,55 +4,82 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java"]
 ---
 
 # SearchSuggestionController
 
-Public GET /search/suggestions?q= renders the search/suggestions fragment with up to five ARTIST or ALBUM suggestions drawn from available publications. The header search autocomplete requests it and submits the chosen value.
+`GET /search/suggestions`: sugerencias de álbum y artista en JSON, con la etiqueta del tipo traducida en el servidor. Ver [[Search suggestions flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[PostService]].
+Datos y dependencias declaradas: `postService`, `messageSource`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `suggestions`, `toDto`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java, lines 1–26](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java>)
+Referencias estáticas a tipos del proyecto: [[PostService]], [[SearchSuggestion]], [[SearchSuggestionDto]], [[SearchSuggestionType]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java>), líneas 1–49.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
+import ar.edu.itba.paw.models.SearchSuggestion;
+import ar.edu.itba.paw.models.SearchSuggestionType;
 import ar.edu.itba.paw.services.PostService;
+import ar.edu.itba.paw.webapp.dto.SearchSuggestionDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Controller
 public class SearchSuggestionController {
 
     private final PostService postService;
+    private final MessageSource messageSource;
 
     @Autowired
-    public SearchSuggestionController(final PostService postService) {
+    public SearchSuggestionController(final PostService postService, final MessageSource messageSource) {
         this.postService = postService;
+        this.messageSource = messageSource;
     }
 
-    @RequestMapping(value = "/search/suggestions", method = RequestMethod.GET)
-    public ModelAndView suggestions(@RequestParam(value = "q", required = false) final String query) {
-        return new ModelAndView("search/suggestions", "suggestions",
-                postService.findSearchSuggestions(query));
+    // Devuelve datos y no HTML: el componente de autocompletado arma las opciones en el navegador.
+    @RequestMapping(value = "/search/suggestions", method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<SearchSuggestionDto> suggestions(@RequestParam(value = "q", required = false) final String query,
+                                                 final Locale locale) {
+        return postService.findSearchSuggestions(query).stream()
+                .map(suggestion -> toDto(suggestion, locale))
+                .collect(Collectors.toList());
+    }
+
+    private SearchSuggestionDto toDto(final SearchSuggestion suggestion, final Locale locale) {
+        final SearchSuggestionType type = suggestion.getType();
+        final String typeLabel = messageSource.getMessage("search.suggestion." + type.name(), null, locale);
+        final String detail = type == SearchSuggestionType.ALBUM ? suggestion.getArtistName() : null;
+        return new SearchSuggestionDto(suggestion.getValue(), type.name(), typeLabel, detail);
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

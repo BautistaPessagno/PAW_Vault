@@ -1,40 +1,49 @@
 ---
 title: "AlbumJdbcDaoTest"
-categories: ["Testing"]
+categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java"]
 ---
 
 # AlbumJdbcDaoTest
 
-HSQLDB DAO tests using the Spring test context and SQL fixtures. Source evidence for [[AlbumJdbcDao]]; no new Maven execution is claimed.
+Tests de `AlbumJdbcDao` en `persistence`: 10 casos declarados. Cubre: identidad sin distinguir mayúsculas, alta y actualización de metadatos. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
-Test methods in this revision:
+## Guía de lectura
+
+Datos y dependencias declaradas: `ALBUM_ID`, `ARTIST_ID`, `ALBUM_TITLE`, `ALBUM_RELEASE_YEAR`, `ALBUM_GENRE`, `ALBUM_COVER_IMAGE_ID`, `ALBUMS_TABLE`, `albumDao`, `dataSource`, `jdbcTemplate`.
+
+Operaciones para localizar en la fuente: `setUp`, `sqlString`.
+
+Casos declarados: 10.
 
 - `testFindByArtistTitleYearWhenAlbumExistsReturnsAlbum`
 - `testFindByArtistTitleYearWhenTitleDiffersOnlyInCaseReturnsAlbum`
 - `testFindByArtistTitleYearWhenAlbumDoesNotExistReturnsEmpty`
 - `testCreateWhenAlbumAlreadyExistsReturnsDuplicateKeyExceptionWithoutChanges`
+- `testCreateWhenTitleDiffersOnlyInCaseReturnsDuplicateKeyExceptionWithoutChanges`
 - `testCreateWhenReleaseYearDiffersReturnsPersistedAlbum`
 - `testCreateWhenGenreIsNullThrowsDataIntegrityViolationWithoutPersistingAlbum`
 - `testCreateWhenGenreIsUnknownThrowsDataIntegrityViolationWithoutPersistingAlbum`
 - `testUpdateMetadataWhenAlbumExistsReturnsPersistedAlbum`
 - `testUpdateMetadataWhenAlbumDoesNotExistThrowsIllegalStateException`
 
-## Connections
+## Conexiones
 
-Project types referenced: [[Album]], [[AlbumDao]], [[Genre]], [[TestConfiguration]].
+Referencias estáticas a tipos del proyecto: [[Album]], [[AlbumDao]], [[Genre]], [[TestConfiguration]].
 
-Referenced by: none.
+Referenciado por: sin referencias léxicas desde otros archivos Java.
 
-## Exact source
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java, lines 1–194](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java>)
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java>), líneas 1–212.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -146,6 +155,21 @@ public class AlbumJdbcDaoTest {
     }
 
     @Test
+    public void testCreateWhenTitleDiffersOnlyInCaseReturnsDuplicateKeyExceptionWithoutChanges() {
+        // 1. Arrange
+        final String title = "VERSUS";
+
+        // 2. Exercise
+        final Executable create = () -> albumDao.create(title, ARTIST_ID, ALBUM_RELEASE_YEAR, ALBUM_GENRE);
+
+        // 3. Assert
+        Assertions.assertThrows(DuplicateKeyException.class, create);
+        Assertions.assertEquals(ALBUM_TITLE,
+                albumDao.findByArtistTitleYear(title, ARTIST_ID, ALBUM_RELEASE_YEAR).orElseThrow().getTitle());
+        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
+    }
+
+    @Test
     public void testCreateWhenReleaseYearDiffersReturnsPersistedAlbum() {
         // 1. Arrange
         final String title = "Versus";
@@ -190,9 +214,12 @@ public class AlbumJdbcDaoTest {
         final int releaseYear = 1999;
 
         // 2. Exercise
+        // El enum Genre impide que el DAO mande un valor desconocido: el INSERT directo prueba que
+        // el CHECK de la migracion lo rechaza igual si alguien escribe por fuera de la app.
         final Executable create = () -> jdbcTemplate.update(
-                "INSERT INTO albums (title, artist_id, release_year, genre) VALUES (?, ?, ?, ?)",
-                ALBUM_TITLE, ARTIST_ID, releaseYear, "UNKNOWN");
+                "INSERT INTO albums (title, normalized_title, artist_id, release_year, genre, search_phrase) "
+                        + "VALUES (?, ?, ?, ?, ?, ?)",
+                ALBUM_TITLE, ALBUM_TITLE, ARTIST_ID, releaseYear, "UNKNOWN", ALBUM_TITLE);
 
         // 3. Assert
         Assertions.assertThrows(DataIntegrityViolationException.class, create);
@@ -232,7 +259,3 @@ public class AlbumJdbcDaoTest {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

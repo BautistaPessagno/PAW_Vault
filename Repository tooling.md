@@ -1,40 +1,69 @@
 ---
 title: "Repository tooling"
-categories: ["Operations"]
+categories: ["Operations", "History"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-tags: ["codemap", "operations"]
-sources: [".agents/skills/README.md", ".agents/skills/bug/SKILL.md", ".agents/skills/corrector-eyes/SKILL.md", ".agents/skills/design/SKILL.md", ".agents/skills/enhancer/SKILL.md", ".agents/skills/feature-engineering/SKILL.md", ".agents/skills/feature-engineering/context.md", ".agents/skills/forensic-audit/SKILL.md", ".agents/skills/frontend-analyzer/SKILL.md", ".agents/skills/frontend-analyzer/context.md", ".agents/skills/frontend-analyzer/scripts/research.py", ".agents/skills/general-audit/SKILL.md", ".agents/skills/good-practice/SKILL.md", ".agents/skills/handoff/SKILL.md", ".agents/skills/i18n-sync/SKILL.md", ".agents/skills/implementation/SKILL.md", ".agents/skills/jdbc-to-jpa/SKILL.md", ".agents/skills/planning/SKILL.md", ".agents/skills/pre-delivery/SKILL.md", ".agents/skills/skillset-port/SKILL.md", ".agents/skills/smoke/SKILL.md", ".agents/skills/wiki-sync/SKILL.md", ".claude/hooks/commit-gate.py", ".claude/hooks/db-server-guard.py", ".claude/hooks/i18n-parity-posttool.py", ".claude/hooks/skill-autolaunch.py", ".claude/scripts/paw_checks.py", ".claude/skills/README.md", ".claude/skills/bug/SKILL.md", ".claude/skills/corrector-eyes/SKILL.md", ".claude/skills/design/SKILL.md", ".claude/skills/enhancer/SKILL.md", ".claude/skills/feature-engineering/SKILL.md", ".claude/skills/feature-engineering/context.md", ".claude/skills/forensic-audit/SKILL.md", ".claude/skills/frontend-analyzer/SKILL.md", ".claude/skills/frontend-analyzer/context.md", ".claude/skills/frontend-analyzer/scripts/research.py", ".claude/skills/general-audit/SKILL.md", ".claude/skills/good-practice/SKILL.md", ".claude/skills/handoff/SKILL.md", ".claude/skills/i18n-sync/SKILL.md", ".claude/skills/implementation/SKILL.md", ".claude/skills/jdbc-to-jpa/SKILL.md", ".claude/skills/planning/SKILL.md", ".claude/skills/pre-delivery/SKILL.md", ".claude/skills/skillset-port/SKILL.md", ".claude/skills/smoke/SKILL.md", ".claude/skills/wiki-sync/SKILL.md", ".codex/prompts/bug.md", ".codex/prompts/corrector-eyes.md", ".codex/prompts/design.md", ".codex/prompts/enhancer.md", ".codex/prompts/feature-engineering.md", ".codex/prompts/forensic-audit.md", ".codex/prompts/frontend-analyzer.md", ".codex/prompts/general-audit.md", ".codex/prompts/good-practice.md", ".codex/prompts/handoff.md", ".codex/prompts/i18n-sync.md", ".codex/prompts/implementation.md", ".codex/prompts/jdbc-to-jpa.md", ".codex/prompts/planning.md", ".codex/prompts/pre-delivery.md", ".codex/prompts/skillset-port.md", ".codex/prompts/smoke.md", ".codex/prompts/wiki-sync.md", ".gitignore", ".worktreeinclude", "AGENTS.md", "CLAUDE.md"]
+sources: ["AGENTS.md", "CLAUDE.md", ".claude/hooks/commit-gate.py", ".claude/hooks/db-server-guard.py", ".claude/hooks/i18n-parity-posttool.py", ".claude/hooks/skill-autolaunch.py", ".claude/skills/README.md", ".claude/skills/PROJECT.md", ".agents/skills/README.md", ".gitignore", ".worktreeinclude"]
 ---
 
 # Repository tooling
 
-The source repository carries agent instructions and workflow helpers alongside application code. They are not Maven modules and do not participate in request handling.
+> [!summary] En una frase
+> El repositorio incluye instrucciones y automatizaciones para agentes de código (Claude Code, Codex): no forman parte de la aplicación ni viajan en el WAR, pero explican varias reglas del proyecto y por qué existen.
 
-| Path family | Role |
+Esta nota describe esos archivos como **material de referencia**. Sus textos son instrucciones para otros agentes en otro contexto; el vault los documenta, no los ejecuta.
+
+## Qué hay
+
+| Ruta | Qué es |
 |---|---|
-| AGENTS.md and CLAUDE.md | Source-project conventions for its JDBC stage |
-| .agents/skills | Agent-neutral workflow descriptions and supporting references/scripts |
-| .claude/skills | Claude-facing copies of workflow packages |
-| .codex/prompts | Prompt entry points for corresponding workflows |
-| .claude/hooks | Commit gating, database/server guard, i18n post-tool check and skill auto-launch implementations |
-| .claude/scripts/paw_checks.py | Older agent-local checker; still includes Flyway while tools/paw_checks.py now has only i18n/JSP |
-| .gitignore | Excludes outputs, local and Pampero credentials, logs, local hook settings and local plans |
+| `CLAUDE.md`, `AGENTS.md` | Reglas del proyecto para agentes: etapa JDBC, arquitectura de capas, vistas, i18n, persistencia, configuración, tests, logging, correo y formato de entregables. Es la mejor síntesis escrita de las convenciones del equipo |
+| `.claude/skills/` | 18 procedimientos (`bug`, `planning`, `implementation`, `pre-delivery`, `smoke`, `i18n-sync`, `jdbc-to-jpa`, `general-audit`, `forensic-audit`, `good-practice`, `corrector-eyes`, `design`, `enhancer`, `feature-engineering`, `frontend-analyzer`, `handoff`, `skillset-port`, `wiki-sync`) más `README.md` y `PROJECT.md` |
+| `.agents/skills/` | La misma colección, portada para agentes genéricos |
+| `.codex/prompts/` | La misma colección como prompts de Codex |
+| `.claude/hooks/` | Cuatro hooks de Claude Code (tabla siguiente) |
+| `.gitignore` | Excluye compilados, propiedades con credenciales (locales y de Pampero), planes locales y configuración local de agentes |
+| `.worktreeinclude` | Lista las propiedades ignoradas que se copian a un worktree nuevo |
+| `*/.mvn/` | `jvm.config` y `maven.config` vacíos por módulo |
 
-The packages include bug, audits, design, feature engineering, i18n sync, implementation, JDBC-to-JPA planning, smoke and wiki sync. Their presence is tooling inventory, not evidence that a JPA migration or other feature has happened. [[Source inventory]] links every individual tracked tooling file. This map does not execute embedded task prompts or adopt their feature requests.
+## Hooks
 
-Hook activation depends on local configuration. .claude/settings.local.json is ignored, and the Git hook requires core.hooksPath activation; source presence alone does not prove either is active. [[Development tools]] explains the concrete check and wizard behavior.
+| Hook | Cuándo corre | Qué hace |
+|---|---|---|
+| `commit-gate.py` | Antes de un `git commit` hecho por el agente | Corre `tools/paw_checks.py all` y niega el commit si falla |
+| `db-server-guard.py` | Antes de un comando de shell | Impide que el agente ejecute `psql`, utilidades de PostgreSQL o Jetty: la base y el servidor los maneja la persona |
+| `i18n-parity-posttool.py` | Después de editar un bundle de mensajes | Corre el chequeo de i18n y avisa las keys faltantes |
+| `skill-autolaunch.py` | Al enviar un mensaje | Sugiere el procedimiento que corresponde a pedidos de auditoría, estilos o chequeo de errores |
 
-The vault has its own [[AGENTS]] tailored to documentation maintenance, with a single CLAUDE.md symlink. It is separate from the source repository's existing pair and does not alter them. Local secrets, .git internals, compiled targets and ignored scratch state are intentionally outside the documentation body.
+`tools/git-hooks/pre-commit` es la versión del primer hook que no depende del agente ([[Development tools]]).
 
-## Worktree and reference updates
+## Reglas que salen de acá y afectan al código
 
-.worktreeinclude lists the ignored database/mail property paths to carry into a new worktree. This documents file names only; no local values were inspected or copied into the vault. The changed .claude/skills/feature-engineering/context.md is a workflow reference, not application runtime code or authorization to execute its task instructions.
+- "Los tests pasan" no significa "la aplicación anda": los tests corren en HSQLDB; antes de dar algo por cerrado la aplicación se levanta contra PostgreSQL, y la levanta la persona.
+- Toda key de i18n nueva va en los tres bundles en el mismo cambio.
+- Todo cambio de esquema es una migración nueva.
+- Commits de una línea, sin cuerpo.
 
-## Tooling that points elsewhere
+## Límites
 
-No agent skill, hook or prompt changed between `40328f0` and `f12af08`; only .gitignore gained the two Pampero property paths. The ported skills still describe their original project. wiki-sync, planning, implementation, good-practice, audits and pre-delivery read or update a wiki at `~/Desktop/ITBA/26-1C/PAW/PAW_Obsidian/`, and wiki-sync names the project Rent The Slopes and treats JPA and Flyway as current. This vault is `PAW_Vault`, and quieroVinilos is still at the JDBC stage. Those instructions should not be followed for this vault; [[Known gaps and document drift]] records the mismatch.
+Las tres colecciones de procedimientos son copias de un mismo contenido para tres herramientas; pueden desalinearse. Nada de esto se ejecuta al construir o correr la aplicación.
+
+## Archivos para seguir el flujo
+
+- [AGENTS.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/AGENTS.md>)
+- [CLAUDE.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/CLAUDE.md>)
+- [.claude/hooks/commit-gate.py](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.claude/hooks/commit-gate.py>)
+- [.claude/hooks/db-server-guard.py](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.claude/hooks/db-server-guard.py>)
+- [.claude/hooks/i18n-parity-posttool.py](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.claude/hooks/i18n-parity-posttool.py>)
+- [.claude/hooks/skill-autolaunch.py](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.claude/hooks/skill-autolaunch.py>)
+- [.claude/skills/README.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.claude/skills/README.md>)
+- [.claude/skills/PROJECT.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.claude/skills/PROJECT.md>)
+- [.agents/skills/README.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.agents/skills/README.md>)
+- [.gitignore](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.gitignore>)
+- [.worktreeinclude](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.worktreeinclude>)
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

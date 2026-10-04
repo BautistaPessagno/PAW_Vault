@@ -4,43 +4,61 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java"]
 ---
 
 # ImageService
 
-Service contract for Optional<Image> lookup, validated creation and deletion. [[ImageServiceImpl]] validates content type and byte length for create. Deletion is used when a publication with its own photo is removed. There is no replace operation: editing a photo stores a new image ID, which fits the long-lived cache policy in [[ImageController]].
+Contrato de imágenes: lectura por pertenencia (post, avatar, álbum), alta validada, borrado condicional y galería.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Image]].
+Operaciones para localizar en la fuente: `findPostImage`, `findUserAvatar`, `findAlbumCover`, `create`, `delete`, `findGalleryImageIds`, `replaceGallery`.
 
-Referenced by: [[ImageController]], [[ImageServiceImpl]], [[PostServiceImpl]], [[PostServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[Image]].
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java, lines 1–14](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java>)
+Referenciado por: [[ImageController]], [[ImageServiceImpl]], [[ImageServiceImplTest]], [[InMemoryImageService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[UserServiceImpl]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java>), líneas 1–30.
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Image;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ImageService {
 
-    Optional<Image> findById(long id);
+    // Fotos propias de la publicacion y la portada de su album, incluida la de respaldo al editar.
+    Optional<Image> findPostImage(long postId, long imageId);
 
+    // La foto de perfil vigente de una Cuenta verificada.
+    Optional<Image> findUserAvatar(long userId, long imageId);
+
+    Optional<Image> findAlbumCover(long albumId, long imageId);
+
+    // Lanza InvalidImageException si no cumple ImageRules.
     Image create(String contentType, byte[] data);
 
+    // Borra la imagen solo si ningun album, publicacion ni Cuenta la referencia.
     boolean delete(long id);
+
+    // Las fotos adicionales de una publicacion, en el orden en que se muestran. La principal
+    // vive en el post.
+    List<Long> findGalleryImageIds(long postId);
+
+    // Reemplaza las fotos adicionales de la publicacion por estas, en este orden.
+    void replaceGallery(long postId, List<Long> imageIds);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

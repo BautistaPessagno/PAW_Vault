@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/InquiryPage.java"]
 ---
 
 # InquiryPage
 
-One page of [[InquiryGroup]] values with its page number and total pages. Inbox pagination counts publications rather than inquiries, so a group is never split across pages. hasPrevious and hasNext are derived from the known total and feed ui:pagination.
+Una página de la bandeja: grupos, número de página y total de páginas. Se pagina por publicación para que un grupo no quede partido. Ver [[Paginated listings]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[InquiryGroup]].
+Datos y dependencias declaradas: `groups`, `pageNumber`, `totalPages`.
 
-Referenced by: [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]].
+Operaciones para localizar en la fuente: `getGroups`, `getPageNumber`, `getTotalPages`, `isHasPrevious`, `isHasNext`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/InquiryPage.java, lines 1–37](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryPage.java>)
+Referencias estáticas a tipos del proyecto: [[InquiryGroup]].
+
+Referenciado por: [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/InquiryPage.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryPage.java>), líneas 1–37.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -63,7 +71,3 @@ public final class InquiryPage {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

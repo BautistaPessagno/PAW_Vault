@@ -4,25 +4,33 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/ResetPasswordForm.java"]
 ---
 
 # ResetPasswordForm
 
-Recovery form with a required token, a new password under [[ValidPassword]] and a confirmation checked by [[MatchingPasswords]]. The token arrives from the query string and is re-emitted as an escaped hidden field.
+Recuperación: token oculto obligatorio, contraseña nueva con [[ValidPassword]] y confirmación.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[MatchingPasswords]], [[PasswordsMatching]], [[ValidPassword]].
+Datos y dependencias declaradas: `token`, `password`, `passwordConfirmation`.
 
-Referenced by: [[AuthenticationController]].
+Operaciones para localizar en la fuente: `getToken`, `setToken`, `getPassword`, `setPassword`, `getPasswordConfirmation`, `setPasswordConfirmation`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/ResetPasswordForm.java, lines 1–43](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ResetPasswordForm.java>)
+Referencias estáticas a tipos del proyecto: [[MatchingPasswords]], [[PasswordsMatching]], [[ValidPassword]].
+
+Referenciado por: [[AuthenticationController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ResetPasswordForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ResetPasswordForm.java>), líneas 1–43.
 
 ```java
 package ar.edu.itba.paw.webapp.form;
@@ -69,7 +77,3 @@ public class ResetPasswordForm implements PasswordsMatching {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

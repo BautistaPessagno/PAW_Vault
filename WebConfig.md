@@ -4,29 +4,39 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
 
 # WebConfig
 
-Composes MVC, transaction and async beans and imports SecurityConfig. Optional classpath property files feed required Environment lookups. Uses DriverManagerDataSource, schema.sql initialization, a 2–5 worker mail pool with queue 50 whose rejection handler logs a warning and drops the task, a 30-second graceful shutdown, lazy 6 MiB multipart parsing, JSP views, Spanish-default AcceptHeaderLocaleResolver and shared validation/mail bundles. See [[Startup and dependency injection]].
+Configuración de Spring: escaneo de componentes, `DataSource`, transacciones, Flyway al arrancar, resolver multipart, vistas JSP, `Locale`, i18n, validador, JavaMail, Thymeleaf para correos y el pool de hilos de `@Async`. Ver [[Startup and dependency injection]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[SecurityConfig]].
+Datos y dependencias declaradas: `LOGGER`, `SMTP_PROTOCOL`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `taskExecutor`, `dataSource`, `transactionManager`, `flyway`, `multipartResolver`, `viewResolver`, `localeResolver`, `mailSender`, `mailTemplateEngine`, `messageSource`, `validator`, `getValidator`, `addResourceHandlers`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java, lines 1–207](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>)
+Referencias estáticas a tipos del proyecto: [[ImageRules]], [[SecurityConfig]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 1–204.
 
 ```java
 package ar.edu.itba.paw.webapp.config;
 
+import ar.edu.itba.paw.models.ImageRules;
+import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -37,12 +47,9 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.init.DataSourceInitializer;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -84,10 +91,6 @@ public class WebConfig implements WebMvcConfigurer {
 
   private static final String SMTP_PROTOCOL = "smtp";
 
-  // Tope del request multipart completo. ImageService rechaza portadas de mas de 5 MB con un
-  // mensaje por campo; este margen extra deja pasar el resto del form sin cortar antes.
-  private static final long MAX_UPLOAD_SIZE_BYTES = 6L * 1024 * 1024;
-
   /*
    * Pool para los metodos @Async de EmailService. Sin este bean, @EnableAsync cae al
    * SimpleAsyncTaskExecutor por defecto, que crea un hilo nuevo por cada envio y no lo
@@ -127,19 +130,21 @@ public class WebConfig implements WebMvcConfigurer {
   }
 
   /*
-   * Crea el esquema al levantar el contexto. El script vive en el modulo
-   * persistence (es un detalle del DAO) y es idempotente, asi que correrlo en
-   * cada arranque sobre una base ya poblada no rompe ni pierde datos.
+   * Aplica al levantar el contexto las migraciones de persistence que la base todavia
+   * no tiene. Si una falla, la aplicacion no arranca.
+   *
+   * Las bases anteriores a Flyway ya tienen el esquema inicial pero no la tabla de
+   * historial: el baseline las marca en esa version sin ejecutarla y sigue desde la
+   * siguiente. Una base vacia no hace baseline y corre todas.
    */
-  @Bean
-  public DataSourceInitializer dataSourceInitializer(final DataSource dataSource) {
-    final ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-    populator.addScript(new ClassPathResource("schema.sql"));
-
-    final DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();
-    dataSourceInitializer.setDataSource(dataSource);
-    dataSourceInitializer.setDatabasePopulator(populator);
-    return dataSourceInitializer;
+  @Bean(initMethod = "migrate")
+  public Flyway flyway(final DataSource dataSource) {
+    return Flyway.configure()
+        .dataSource(dataSource)
+        .locations("classpath:db/migration")
+        .baselineOnMigrate(true)
+        .baselineVersion("1")
+        .load();
   }
 
   /*
@@ -149,7 +154,7 @@ public class WebConfig implements WebMvcConfigurer {
   @Bean
   public MultipartResolver multipartResolver() {
     final CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-    multipartResolver.setMaxUploadSize(MAX_UPLOAD_SIZE_BYTES);
+    multipartResolver.setMaxUploadSize(ImageRules.MAX_MULTIPART_BYTES);
     multipartResolver.setDefaultEncoding(StandardCharsets.UTF_8.name());
     // El filtro multipart externo traduce el limite excedido antes de entrar al controller.
     multipartResolver.setResolveLazily(true);
@@ -233,7 +238,3 @@ public class WebConfig implements WebMvcConfigurer {
   }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

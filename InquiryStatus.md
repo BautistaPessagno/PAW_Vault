@@ -4,36 +4,49 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java"]
 ---
 
 # InquiryStatus
 
-Inquiry states PENDING, ACCEPTED and REJECTED. [[InquiryJdbcDao]] applies guarded transitions from PENDING, and deleting a publication also turns its pending inquiries into REJECTED.
+Estados de la Consulta: `PENDING`, `AWAITING_PAYMENT`, `PAYMENT_SUBMITTED`, `ACCEPTED` (venta confirmada), `REJECTED` y `CANCELLED`. `OPEN_STATUSES` reúne los tres primeros: un comprador tiene a lo sumo una Consulta abierta por post. Ver [[Inquiry and sale flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `OPEN_STATUSES`.
 
-Referenced by: [[Inquiry]], [[InquiryJdbcDao]], [[InquiryJdbcDaoTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[InquirySummary]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java, lines 1–7](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java>)
+Referenciado por: [[CartItemDao]], [[CartItemJdbcDao]], [[CartItemJdbcDaoTest]], [[CartServiceImplTest]], [[ContactRules]], [[Inquiry]], [[InquiryDao]], [[InquiryDetail]], [[InquiryJdbcDao]], [[InquiryJdbcDaoTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[InquirySummary]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java>), líneas 1–18.
 
 ```java
 package ar.edu.itba.paw.models;
 
+import java.util.List;
+
 public enum InquiryStatus {
     PENDING,
+    AWAITING_PAYMENT,
+    PAYMENT_SUBMITTED,
+    // ACCEPTED es la venta confirmada: el nombre se conserva para no migrar las consultas
+    // aceptadas antes de la reserva.
     ACCEPTED,
-    REJECTED
+    REJECTED,
+    CANCELLED;
+
+    // Consulta abierta: pendiente o con la Venta en curso. Un comprador tiene a lo sumo una
+    // por post.
+    public static final List<InquiryStatus> OPEN_STATUSES = List.of(PENDING, AWAITING_PAYMENT, PAYMENT_SUBMITTED);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

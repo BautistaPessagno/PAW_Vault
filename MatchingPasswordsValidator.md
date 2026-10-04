@@ -4,25 +4,31 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java"]
 ---
 
 # MatchingPasswordsValidator
 
-Returns true when the form or password is null, or when password and confirmation are equal. Otherwise it replaces the default class-level violation with one on passwordConfirmation, so ui:text-input shows it under that field.
+Compara contraseña y confirmación y cuelga el error del campo de confirmación.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[MatchingPasswords]], [[PasswordsMatching]].
+Operaciones para localizar en la fuente: `isValid`.
 
-Referenced by: [[MatchingPasswords]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[MatchingPasswords]], [[PasswordsMatching]].
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java, lines 1–20](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java>)
+Referenciado por: [[MatchingPasswords]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java>), líneas 1–20.
 
 ```java
 package ar.edu.itba.paw.webapp.validation;
@@ -46,7 +52,3 @@ public class MatchingPasswordsValidator implements ConstraintValidator<MatchingP
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

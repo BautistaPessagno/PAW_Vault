@@ -1,138 +1,207 @@
 ---
 title: "Build and dependencies"
-categories: ["Operations"]
+categories: ["Operations", "Architecture"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: ["models/pom.xml", "persistence-contracts/pom.xml", "persistence/pom.xml", "pom.xml", "services-contracts/pom.xml", "services/pom.xml", "webapp/pom.xml", "models/.mvn/jvm.config", "models/.mvn/maven.config", "persistence-contracts/.mvn/jvm.config", "persistence-contracts/.mvn/maven.config", "persistence/.mvn/jvm.config", "persistence/.mvn/maven.config", "services-contracts/.mvn/jvm.config", "services-contracts/.mvn/maven.config", "services/.mvn/jvm.config", "services/.mvn/maven.config", "webapp/.mvn/jvm.config", "webapp/.mvn/maven.config"]
+sources: ["pom.xml", "models/pom.xml", "persistence-contracts/pom.xml", "persistence/pom.xml", "services-contracts/pom.xml", "services/pom.xml", "webapp/pom.xml"]
 ---
 
 # Build and dependencies
 
-The root POM aggregates six modules under ar.edu.itba.paw:paw2026b:1.0-SNAPSHOT. Java source/target is 21. Spring Framework versions now come from spring-framework-bom. Spring Security web/config/taglibs are explicitly managed and consumed in webapp. The servlet API is javax.servlet-api 4.0.1 with provided scope.
+> [!summary] En una frase
+> Un POM raíz fija todas las versiones y seis módulos hijos declaran solo qué usan; el resultado es un único `app.war` para Tomcat, y en desarrollo se corre con el plugin de Jetty.
 
-The five non-web modules are JARs; webapp produces app.war. Sibling dependencies still declare versions/scopes in child POMs. Runtime dependencies package implementations without exposing them to the consumer compiler. Hibernate Validator is Bean Validation, not an ORM.
+## Herramientas y versiones
 
-## Pinned properties
+| Área | Dependencia | Versión | Para qué |
+|---|---|---|---|
+| Lenguaje | Java | 21 | `maven.compiler.source/target`, con `parameters=true` para que Spring lea los nombres de los parámetros |
+| Web | Spring MVC (`spring-webmvc`) | 5.3.33 | Controllers, binding, vistas |
+| Seguridad | Spring Security (`web`, `config`, `taglibs`) | 5.8.16 | Autenticación y autorización ([[Security and authorization]]) |
+| Persistencia | Spring JDBC | 5.3.33 | `JdbcTemplate`, `SimpleJdbcInsert` |
+| Base | PostgreSQL driver | 42.2.5 | Producción y desarrollo |
+| Esquema | Flyway | 9.22.3 | Migraciones ([[Database schema]]) |
+| Validación | `validation-api` 2.0.1 + Hibernate Validator 6.2.4 | | Bean Validation ([[Validation and errors]]) |
+| Vistas | Servlet API 4.0.1, JSTL 1.2 | | JSP |
+| Correo | `spring-context-support`, JavaMail 1.6.2, Thymeleaf 3.0.15 | | Envío y plantillas HTML de correo ([[Mail delivery]]) |
+| Archivos | Commons FileUpload | 1.5 | Multipart ([[Cover image flow]]) |
+| JSON | Jackson Databind | 2.15.2 | Respuestas de sugerencias ([[Search suggestions flow]]) |
+| Logs | SLF4J 1.7.36 + Logback 1.2.13 | | [[Logging]] |
+| Tests | JUnit Jupiter 5.10.2, Mockito 5.12.0, HSQLDB 2.7.3, `spring-test` | | [[Testing and evidence]] |
+| Servidor local | Jetty Maven Plugin | 9.4.58 | `mvn jetty:run` en el puerto 8080 |
 
-| Property | Value |
+No hay Spring Boot ni JPA/Hibernate ORM: la cátedra los prohíbe en esta etapa. Thymeleaf se usa **solo** para el HTML de los correos; las páginas son JSP.
+
+## Cómo se organiza
+
+- El POM raíz es `packaging=pom`, lista los seis módulos y declara cada dependencia en `<dependencyManagement>` con su versión tomada de una `<property>`.
+- Cada módulo hijo declara `groupId` y `artifactId`, sin versión. Así no puede haber dos versiones de lo mismo.
+- Los módulos hermanos también están en `<dependencyManagement>`. El scope `runtime` de las implementaciones se declara en el hijo que las consume ([[Architecture]]).
+- `webapp` es `packaging=war` con `finalName=app`: el artefacto es `webapp/target/app.war`.
+
+## Qué depende de qué
+
+| Módulo | Depende de |
 |---|---|
-| `project.build.sourceEncoding` | `UTF-8` |
-| `maven.compiler.source` | `21` |
-| `maven.compiler.target` | `21` |
-| `org.springframework.version` | `5.3.33` |
-| `org.springframework.security.version` | `5.8.16` |
-| `servlet-api.version` | `4.0.1` |
-| `jstl.version` | `1.2` |
-| `postgresql.version` | `42.2.5` |
-| `javax.validation-api.version` | `2.0.1.Final` |
-| `org.hibernate.validator` | `6.2.4.Final` |
-| `junit-jupiter.version` | `5.10.2` |
-| `mockito.version` | `5.12.0` |
-| `hsqldb.version` | `2.7.3` |
-| `slf4j.version` | `1.7.36` |
-| `logback.version` | `1.2.13` |
-| `javax.mail.version` | `1.6.2` |
-| `thymeleaf.version` | `3.0.15.RELEASE` |
-| `commons-fileupload.version` | `1.5` |
-| `maven-antrun-plugin.version` | `3.1.0` |
+| `models` | Nada |
+| `persistence-contracts` | `models` |
+| `persistence` | `persistence-contracts`, Spring JDBC, driver PostgreSQL; en test: HSQLDB, Flyway, `spring-test`, JUnit |
+| `services-contracts` | `models` |
+| `services` | `services-contracts`, `persistence-contracts`, `persistence` (runtime), `spring-tx`, correo, Thymeleaf; en test: JUnit, Mockito |
+| `webapp` | `services-contracts`, `services` (runtime), `persistence` (runtime), Spring MVC, Security, Flyway, validación, JSTL, Jackson, FileUpload, Logback |
 
-## models
+`webapp` depende de `flyway-core` y `spring-jdbc` porque la configuración (`WebConfig`) crea el `DataSource` y el bean de Flyway.
 
-| Dependency | Declared scope |
+## Comandos
+
+Todos desde la raíz del repositorio.
+
+| Comando | Qué hace |
 |---|---|
+| `mvn clean package` | Compila, corre tests y arma el WAR con la configuración local |
+| `mvn clean package -Ppampero` | Arma el WAR para el servidor de la cátedra ([[Configuration and running]]) |
+| `mvn clean install` | Instala los módulos en el repositorio local; hace falta antes de correr `webapp` solo |
+| `cd webapp && mvn jetty:run` | Levanta la aplicación en `http://localhost:8080` |
+| `mvn test` | Todos los tests |
+| `mvn test -pl persistence` / `-pl services` | Tests de un módulo |
+| `mvn test -pl persistence -Dtest=UserJdbcDaoTest` | Una clase de test |
+| `python3 tools/paw_checks.py all` | Chequeos propios: paridad de i18n, versiones Flyway, balance de tags JSTL ([[Development tools]]) |
 
+## El perfil `pampero`
 
-[Exact POM](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/pom.xml>)
+El servidor de la cátedra recibe solo el WAR por SFTP: no se le pueden pasar variables de entorno. El perfil resuelve la configuración en tiempo de build:
 
-## persistence-contracts
+1. Excluye `database.properties` y `mail.properties` de `src/main/resources`.
+2. Incluye los de `src/pampero/resources`.
+3. En la fase `validate`, una tarea `antrun` **falla el build** si esos dos archivos no existen, con un mensaje que dice cuál falta.
 
-| Dependency | Declared scope |
-|---|---|
-| `models` | default / inherited |
+Los cuatro archivos reales están en `.gitignore`; solo se versionan los `.example`.
 
-[Exact POM](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/pom.xml>)
+## Decisiones y por qué
 
-## persistence
+| Decisión | Motivo | Fuente |
+|---|---|---|
+| Versiones solo en el POM raíz, vía propiedades | Un solo lugar para actualizar; ningún hijo puede desalinearse | `docs/setup.md` |
+| Spring 5 clásico con WAR | Requisito de la cátedra; Spring Boot está penalizado | `docs/setup.md` |
+| Perfil Maven para producción | El despliegue no admite configuración externa al WAR | `docs/setup.md` |
+| El build falla si faltan las propiedades de Pampero | Evitar subir un WAR sin configuración, que fallaría al arrancar | `webapp/pom.xml` |
+| `useTestScope` en Jetty | Que el plugin vea las dependencias de scope test al correr en desarrollo | `pom.xml` (el motivo es inferencia) |
 
-| Dependency | Declared scope |
-|---|---|
-| `spring-context` | default / inherited |
-| `spring-jdbc` | default / inherited |
-| `postgresql` | default / inherited |
-| `persistence-contracts` | default / inherited |
-| `spring-test` | test |
-| `junit-jupiter` | default / inherited |
-| `hsqldb` | default / inherited |
+## Preguntas de defensa
 
-[Exact POM](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/pom.xml>)
+**¿Cómo se construye y se despliega?**
+`mvn clean package -Ppampero` genera `app.war` con las propiedades del servidor adentro; ese archivo se sube por SFTP.
 
-## services-contracts
+**¿Por qué las versiones están en el POM raíz?**
+Para que todos los módulos usen la misma. Los hijos no declaran versión.
 
-| Dependency | Declared scope |
-|---|---|
-| `models` | default / inherited |
+**¿Usan Thymeleaf para las vistas?**
+No. Las páginas son JSP con JSTL; Thymeleaf procesa únicamente las plantillas HTML de los correos.
 
-[Exact POM](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/pom.xml>)
+**¿Por qué `services` tiene `persistence` como dependencia runtime?**
+Para que esté en el classpath al ejecutar y en los tests, pero el código de `services` solo pueda compilar contra las interfaces.
 
-## services
+## Evidencia de código
 
-| Dependency | Declared scope |
-|---|---|
-| `spring-context` | default / inherited |
-| `spring-tx` | default / inherited |
-| `services-contracts` | default / inherited |
-| `persistence-contracts` | default / inherited |
-| `persistence` | runtime |
-| `slf4j-api` | default / inherited |
-| `spring-context-support` | default / inherited |
-| `javax.mail` | default / inherited |
-| `thymeleaf-spring5` | default / inherited |
-| `junit-jupiter` | default / inherited |
-| `mockito-core` | default / inherited |
-| `mockito-junit-jupiter` | default / inherited |
+### Versiones
 
-[Exact POM](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/pom.xml>)
+Fuente exacta en `8929aea`: [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>), líneas 16–39.
 
-## webapp
+```xml
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
+    <org.springframework.version>5.3.33</org.springframework.version>
+    <org.springframework.security.version>5.8.16</org.springframework.security.version>
+    <servlet-api.version>4.0.1</servlet-api.version>
+    <jstl.version>1.2</jstl.version>
+    <postgresql.version>42.2.5</postgresql.version>
+    <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+    <org.hibernate.validator>6.2.4.Final</org.hibernate.validator>
+    <junit-jupiter.version>5.10.2</junit-jupiter.version>
+    <mockito.version>5.12.0</mockito.version>
+    <hsqldb.version>2.7.3</hsqldb.version>
+    <flyway.version>9.22.3</flyway.version>
+    <slf4j.version>1.7.36</slf4j.version>
+    <logback.version>1.2.13</logback.version>
+    <javax.mail.version>1.6.2</javax.mail.version>
+    <thymeleaf.version>3.0.15.RELEASE</thymeleaf.version>
+    <commons-fileupload.version>1.5</commons-fileupload.version>
+    <jackson.version>2.15.2</jackson.version>
+    <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+  </properties>
+```
 
-| Dependency | Declared scope |
-|---|---|
-| `spring-webmvc` | default / inherited |
-| `spring-jdbc` | default / inherited |
-| `spring-security-web` | default / inherited |
-| `spring-security-config` | default / inherited |
-| `spring-security-taglibs` | default / inherited |
-| `postgresql` | default / inherited |
-| `validation-api` | default / inherited |
-| `hibernate-validator` | default / inherited |
-| `services` | runtime |
-| `persistence` | runtime |
-| `services-contracts` | default / inherited |
-| `javax.servlet-api` | default / inherited |
-| `jstl` | default / inherited |
-| `slf4j-api` | default / inherited |
-| `logback-classic` | default / inherited |
-| `spring-context-support` | default / inherited |
-| `javax.mail` | default / inherited |
-| `thymeleaf-spring5` | default / inherited |
-| `commons-fileupload` | default / inherited |
+### Perfil `pampero`
 
-[Exact POM](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/pom.xml>)
+Fuente exacta en `8929aea`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>), líneas 173–221.
 
-## Build lifecycle
+```xml
+    <profile>
+      <id>pampero</id>
+      <build>
+        <resources>
+          <resource>
+            <directory>src/main/resources</directory>
+            <excludes>
+              <exclude>database.properties</exclude>
+              <exclude>mail.properties</exclude>
+            </excludes>
+          </resource>
+          <resource>
+            <directory>src/pampero/resources</directory>
+            <includes>
+              <include>database.properties</include>
+              <include>mail.properties</include>
+            </includes>
+          </resource>
+        </resources>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>require-pampero-properties</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <available file="${project.basedir}/src/pampero/resources/database.properties"
+                               property="pampero.database.properties.present"/>
+                    <available file="${project.basedir}/src/pampero/resources/mail.properties"
+                               property="pampero.mail.properties.present"/>
+                    <fail unless="pampero.database.properties.present">
+                      Missing webapp/src/pampero/resources/database.properties. Copy the .example and fill the Pampero database configuration.
+                    </fail>
+                    <fail unless="pampero.mail.properties.present">
+                      Missing webapp/src/pampero/resources/mail.properties. Copy the .example and fill the Pampero mail configuration.
+                    </fail>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+```
 
-The only POM changes since `40328f0` are build-side: the root POM manages maven-antrun-plugin 3.1.0, and webapp/pom.xml adds the `pampero` profile plus `overwrite=true` for the resources plugin. Module dependencies and scopes are unchanged.
+## Archivos para seguir el flujo
 
-`mvn clean install` builds/tests the reactor and installs sibling SNAPSHOTs. `mvn clean package` produces webapp/target/app.war. Jetty remains 9.4.58.v20250814 with scan interval 10, port 8080 and useTestScope=true in the parent configuration. Child pluginManagement pins compiler 3.13.0 and Surefire 3.3.0; WAR plugin 3.4.0 excludes logback-test.xml.
+- [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>)
+- [models/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/pom.xml>)
+- [persistence-contracts/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/pom.xml>)
+- [persistence/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/pom.xml>)
+- [services-contracts/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/pom.xml>)
+- [services/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/pom.xml>)
+- [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>)
 
-The per-module .mvn/jvm.config and maven.config files are empty. No Maven wrapper, Spring Boot starter, Flyway dependency, JPA persistence unit or frontend package manager is defined. No Maven command ran for this refresh.
-
-## Pampero profile
-
-`mvn clean package -Ppampero` swaps the resource set of the webapp module: src/main/resources is copied without database.properties and mail.properties, and src/pampero/resources contributes only those two files. In the validate phase an antrun target checks that both Pampero files exist and fails with a message naming the missing one. The result is still webapp/target/app.war. See [[Configuration and running]].
-
-[[Architecture]] · [[Configuration and running]] · [[Testing and evidence]]
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

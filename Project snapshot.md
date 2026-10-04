@@ -4,20 +4,88 @@ categories: ["Navigation"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: []
+tags: ["codemap", "navigation"]
+sources: ["README.md", "CONTEXT.md", "pom.xml", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java"]
 ---
 
 # Project snapshot
 
-quieroVinilos is the ITBA PAW 2026B group 14 project. This vault describes `f12af080cf6a27101160f005102a20f436574cf7`, the merge of PR #33 on 2026-09-22 and the head of the local main branch, which matches the local origin/main ref; no fetch was performed. The working tree was clean. The diff from `40328f0` contains 101 commits and 168 changed, added or deleted paths.
+> [!summary] En una frase
+> quieroVinilos es un marketplace de vinilos usados entre particulares, hecho por el grupo 14 de PAW (ITBA, 2026B); este vault lo describe en el commit `8929aea` del 4 de octubre de 2026, en la etapa JDBC de la cursada.
 
-Visitors browse available exemplars 15 per page using a header search with autocomplete, sorting, and combined genre/condition/year/price filters, and open a public detail page for any publication. Accounts register by email and choose credentials after following a verification link; they can later change username and password from their profile or recover a forgotten password through a one-hour emailed link. Authenticated users publish with a live preview, edit or delete their AVAILABLE publications, and send persistent inquiries. The inbox is split into received and sent views grouped by publication. Sellers accept an inquiry after a confirmation dialog, which sells the exemplar, rejects the remaining pending inquiries and emails the buyer. ADMIN adds access to an informational administration page.
+## Qué versión describe el vault
 
-Each publication owns its commercial details and optional image; genre, condition and a positive price are now required. Artist identity ignores case and punctuation while keeping the typed display name, and album identity compares titles case-insensitively. Mail is sent only after the originating transaction commits. The six-module application uses Java 21, Spring MVC/JDBC 5.3.33, Spring Security 5.8.16, PostgreSQL, JSP/JSTL and Thymeleaf email. The WAR is webapp/target/app.war, and a `pampero` Maven profile packages course-server configuration.
+| | |
+|---|---|
+| Commit | `8929aeaa59b250e6c7119212f96437e153e815ac` |
+| Qué es | Merge del PR #48 sobre `main` |
+| Fecha | 4 de octubre de 2026 |
+| Mapa anterior | `f12af08`, 22 de septiembre: 112 commits atrás ([[Recent changes 2026-10-04]]) |
+| Archivos versionados | 460, de ellos 232 Java |
+| Evidencia | Lectura estática del código. No se ejecutó la aplicación ni los tests |
 
-There is no payment processing, multi-unit stock, reply thread, durable mail queue, verification-token expiry or logout of other sessions after a password change. The persisted inquiry is an initial message and status. The user/album uniqueness rule remains even after a sale, and editing a post can rewrite shared artist and album display data.
+Durante la actualización `main` avanzó dos veces en el clon local (de `ca88067` a `41c32af` y luego a `8929aea`). Todas las notas se regeneraron contra el último. El único cambio local sin commitear era `.gitignore`, que queda fuera.
 
-[[Source inventory]] maps every tracked path. Exact excerpts and flow descriptions establish source behavior only. No application deployment, live PostgreSQL migration, HTTP smoke test, Maven run or SMTP delivery was performed for this refresh. See [[Testing and evidence]], [[Known gaps and document drift]] and [[Verification record]].
+## Qué hace hoy
+
+**Sin cuenta.** Ver el catálogo de publicaciones disponibles, buscar con sugerencias, filtrar por género, estado, precio y año, ordenar, abrir la ficha de una publicación con sus fotos y ver perfiles públicos con reseñas.
+
+**Con cuenta sin verificar.** Lo mismo, con sesión iniciada. Para operar hay que abrir el enlace de verificación que llega por correo.
+
+**Con cuenta verificada.**
+
+- Publicar un vinilo con hasta cinco fotos, editarlo y eliminarlo.
+- Consultar por un vinilo eligiendo dirección de envío, o juntar varios en el carrito y enviar todas las consultas juntas.
+- Conversar con la otra parte dentro de la consulta.
+- Como vendedor: aceptar (reserva el vinilo), rechazar, pedir otro comprobante, confirmar el pago (lo marca vendido) o cancelar.
+- Como comprador: subir el comprobante de la transferencia o cancelar antes de subirlo.
+- Calificar a la otra parte después de una venta confirmada.
+- Administrar su perfil: nombre, foto, contraseña, datos de cobro y hasta tres direcciones.
+
+**Administrador.** Editar y eliminar publicaciones disponibles de cualquier cuenta.
+
+Cada cambio de estado y cada mensaje avisan por correo a la otra parte.
+
+## Con qué está hecho
+
+| Capa | Tecnología |
+|---|---|
+| Lenguaje y build | Java 21, Maven, seis módulos |
+| Web | Spring MVC 5.3, JSP con JSTL, Spring Security 5.8 |
+| Persistencia | Spring JDBC sobre PostgreSQL, migraciones Flyway V1–V11 |
+| Correo | JavaMail con plantillas Thymeleaf, envío asíncrono |
+| Tests | JUnit 5, Mockito, HSQLDB en memoria |
+| Despliegue | Un WAR en Tomcat, en el servidor de la cátedra |
+
+Sin Spring Boot y sin JPA: están prohibidos en esta etapa. Detalle en [[Build and dependencies]] y [[Architecture]].
+
+## Qué no tiene
+
+- Pasarela de pago: la transferencia se hace por fuera y el comprobante se revisa a mano.
+- Stock: cada publicación es un ejemplar único.
+- Mensajería en tiempo real: la conversación se recarga con la página.
+- Panel de administración.
+- Cola persistente de correo.
+
+La lista completa de límites y de posibles defectos está en [[Known gaps and document drift]].
+
+## Por dónde seguir
+
+- Para entender el producto: [[Domain and identity]].
+- Para ubicar una funcionalidad: [[Feature map]].
+- Para leer el código en orden: [[Roadmap de lectura]].
+- Para preparar una defensa: [[Defense guide]].
+
+## Archivos para seguir el flujo
+
+- [README.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/README.md>)
+- [CONTEXT.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/CONTEXT.md>)
+- [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>)
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>) · [[SecurityConfig]]
+- [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>) · [[InquiryServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>) · [[CartServiceImpl]]
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

@@ -4,23 +4,108 @@ categories: ["Web"]
 type: "guide"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: ["webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/back-link.tag", "webapp/src/main/webapp/WEB-INF/tags/brand.tag", "webapp/src/main/webapp/WEB-INF/tags/button.tag", "webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag", "webapp/src/main/webapp/WEB-INF/tags/h1.tag", "webapp/src/main/webapp/WEB-INF/tags/h3.tag", "webapp/src/main/webapp/WEB-INF/tags/head.tag", "webapp/src/main/webapp/WEB-INF/tags/icon.tag", "webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag", "webapp/src/main/webapp/WEB-INF/tags/input-control.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag", "webapp/src/main/webapp/WEB-INF/tags/p.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag", "webapp/src/main/webapp/WEB-INF/tags/post-badge.tag", "webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag", "webapp/src/main/webapp/WEB-INF/tags/select.tag", "webapp/src/main/webapp/WEB-INF/tags/select-control.tag", "webapp/src/main/webapp/WEB-INF/tags/site-header.tag", "webapp/src/main/webapp/WEB-INF/tags/span.tag", "webapp/src/main/webapp/WEB-INF/tags/text-input.tag", "webapp/src/main/webapp/WEB-INF/tags/textarea.tag", "webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag"]
+sources: ["webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/address-fields.tag", "webapp/src/main/webapp/WEB-INF/tags/address.tag", "webapp/src/main/webapp/WEB-INF/tags/avatar.tag", "webapp/src/main/webapp/WEB-INF/tags/back-link.tag", "webapp/src/main/webapp/WEB-INF/tags/brand.tag", "webapp/src/main/webapp/WEB-INF/tags/button.tag", "webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag", "webapp/src/main/webapp/WEB-INF/tags/h1.tag", "webapp/src/main/webapp/WEB-INF/tags/h3.tag", "webapp/src/main/webapp/WEB-INF/tags/head.tag", "webapp/src/main/webapp/WEB-INF/tags/icon.tag", "webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag", "webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag", "webapp/src/main/webapp/WEB-INF/tags/input-control.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag", "webapp/src/main/webapp/WEB-INF/tags/p.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination.tag", "webapp/src/main/webapp/WEB-INF/tags/post-badge.tag", "webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag", "webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag", "webapp/src/main/webapp/WEB-INF/tags/select-control.tag", "webapp/src/main/webapp/WEB-INF/tags/select.tag", "webapp/src/main/webapp/WEB-INF/tags/site-header.tag", "webapp/src/main/webapp/WEB-INF/tags/span.tag", "webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag", "webapp/src/main/webapp/WEB-INF/tags/text-input.tag", "webapp/src/main/webapp/WEB-INF/tags/textarea.tag", "webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag"]
 ---
 
 # UI components
 
-There are 25 shared JSP tags under webapp/src/main/webapp/WEB-INF/tags, fourteen more than at `40328f0`. Pages declare the ui tag directory. head, site-header and account-nav centralize page resources, navigation and account actions. Bound form tags (text-input, select, textarea) wrap spring:bind, while unbound controls (input-control, select-control, segmented-control) serve GET filters and are reused internally.
+> [!summary] En una frase
+> Las páginas no repiten HTML: se arman con 31 componentes propios (tag files de JSP) que encapsulan el marcado, el escape de datos, las URL y los textos traducidos.
 
-Spring form:form provides the binding context and integrates CSRF with Spring Security. Plain POST forms for logout, inquiry actions and deletion emit sec:csrfInput explicitly. User values use escaped outputs, and password and file inputs never repopulate values. State is always shown with an icon plus text (post-badge, inquiry-status), not by color alone.
+## Herramientas
 
-## account-nav
+| Herramienta | Para qué |
+|---|---|
+| Tag files (`WEB-INF/tags/*.tag`) | Componentes reutilizables escritos en JSP, sin clases Java |
+| `<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>` | Importarlos en una vista: `<ui:button .../>` |
+| `<%@ attribute %>` | Declarar los parámetros de un componente, con tipo y obligatoriedad |
+| `<jsp:doBody/>` | Insertar el contenido que la vista puso dentro del tag |
+| JSTL `c:` | Condicionales, bucles, `c:out` y `c:url` |
+| `spring:message` | Textos traducidos |
+| `form:` de Spring | Campos ligados al formulario y sus errores |
+| `sec:` de Spring Security | Mostrar u ocultar según la sesión y agregar el token CSRF |
 
-Anonymous visitors see login and register buttons. Authenticated users see an inbox link, an admin link for ADMIN, and, last, an identity link with the user icon and escaped display name that leads to /profile. Logout moved to the profile page.
+## Reglas que cumplen todos
 
-[webapp/src/main/webapp/WEB-INF/tags/account-nav.tag, lines 1–29](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/account-nav.tag>)
+- **Sin scriptlets.** Solo tags y expresiones EL.
+- **Todo dato se escapa** con `<c:out>` (o con los tags `form:`, que escapan solos). Es la defensa contra XSS: un nombre o una descripción con HTML se muestra como texto.
+- **Toda URL pasa por `<c:url>`**, que antepone el context path. En el servidor de la cátedra la aplicación no cuelga de la raíz.
+- **Ningún texto literal**: todo sale de `spring:message`.
+- **Accesibilidad**: etiquetas asociadas a sus campos, `aria-describedby` para pistas y errores, `aria-current` en la navegación, iconos decorativos ocultos a lectores de pantalla.
+
+## Catálogo
+
+| Componente | Qué es | Atributos | Lo usan |
+|---|---|---|---|
+| `account-nav` | Menú de la cuenta en la cabecera | — | site-header |
+| `address-fields` | Campos de una dirección | — | cart/index, post/contact, profile/index |
+| `address` | Muestra una dirección, completa o recortada | `address` | cart/index, inquiry/detail, inquiry/received, post/contact, profile/index |
+| `avatar` | Foto o inicial | `imageId`, `userId`, `name`, `size`, `alt`, `preview` | post/detail, profile/index, profile/public |
+| `back-link` | Enlace de volver | `href`, `label`, `page`, `fragment` | inquiry/detail, post/detail |
+| `brand` | Marca | `size` | site-header, auth/forgot-password, auth/login, auth/register, auth/reset-password, auth/verify-required y 1 más |
+| `button` | Botón o enlace con variantes | `label`, `variant`, `size`, `type`, `href`, `url`, `id`, `icon`, `data`, `name`, `value` | account-nav, confirm-dialog, resend-verification, site-header, auth/forgot-password, auth/login y 18 más |
+| `confirm-dialog` | Diálogo de confirmación | `title`, `confirmLabel`, `confirmVariant` | inquiry/detail, post/detail, profile/index |
+| `h1` | Título | `text`, `tone` | cart/index, error/400, error/403, error/404, error/409, inquiry/detail y 8 más |
+| `h3` | Subtítulo con nivel configurable | `text`, `level` | inbox-group-header, vinyl-card, cart/index |
+| `head` | Cabecera HTML común: estilos y scripts | `titleCode`, `pageScript` | auth/forgot-password, auth/login, auth/register, auth/reset-password, auth/verify-required, auth/verify y 14 más |
+| `icon` | Iconos SVG de una lista cerrada | `name` | account-nav, button, inquiry-status, pagination, post-badge, cart/index y 1 más |
+| `inbox-group-header` | Cabecera de un grupo de la bandeja: miniatura, título y estado. Elige la URL de la tapa según exista o no el post | `group` | inquiry/detail, inquiry/received, inquiry/sent |
+| `inbox-last-message` | Último mensaje de la conversación | `inquiry`, `viewerId` | inquiry/received, inquiry/sent |
+| `input-control` | Input sin ligar, con soporte de sugerencias | `id`, `name`, `type`, `value`, `maxLength`, `min`, `max`, `placeholder`, `ariaLabel`, `describedBy`, `suggestionsId`, `sourceUrl`, `submitOnSelect`, `accept`, `multiple`, `form`, `cssClass`, `hasError`, `autofocus` | site-header, text-input, inquiry/detail, profile/index, publish/index |
+| `inquiry-nav` | Pestañas recibidas y enviadas | `active`, `receivedCount`, `sentCount` | inquiry/received, inquiry/sent |
+| `inquiry-status` | Estado de la consulta como texto | `status` | inquiry/detail, inquiry/received, inquiry/sent |
+| `p` | Párrafo | `text`, `variant` | inbox-group-header, vinyl-card, auth/verify-required, cart/index, error/400, error/403 y 4 más |
+| `pagination-link` | Un enlace de página | `baseUrl`, `extraParams`, `page`, `fragment`, `label`, `rel` | pagination |
+| `pagination` | Flechas que conservan parámetros y ancla | `currentPage`, `hasPrevious`, `hasNext`, `baseUrl`, `extraParams`, `fragment`, `ariaLabel` | inquiry/received, inquiry/sent, landing/index, profile/index, profile/public |
+| `post-badge` | Estado de una publicación | `deleted`, `status`, `showAvailable`, `variant` | inbox-group-header, vinyl-card, post/detail |
+| `resend-verification` | Botón de reenvío: POST con CSRF | `variant` | site-header, auth/verify-required, auth/verify |
+| `segmented-control` | Grupo de radios | `name`, `legend`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required` | landing/index, publish/index |
+| `select-control` | Select sin ligar | `id`, `name`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `labelledBy`, `describedBy`, `cssClass`, `hasError`, `placeholderOnly` | select, landing/index |
+| `select` | Select ligado | `path`, `label`, `items`, `messagePrefix`, `emptyLabel`, `placeholderOnly` | address-fields, landing/index, publish/index |
+| `site-header` | Barra superior: marca, buscador, acciones, aviso de verificación | `query`, `formId` | cart/index, inquiry/detail, inquiry/received, inquiry/sent, landing/index, post/contact y 4 más |
+| `span` | Texto en línea | `text`, `variant` | vinyl-card, post/detail |
+| `star-rating-input` | Estrellas como radios accesibles | `path`, `legend`, `max`, `valueCode` | inquiry/detail |
+| `text-input` | Campo ligado a un form con etiqueta, pista y error | `path`, `label`, `type`, `maxLength`, `min`, `max`, `suggestionsId`, `sourceUrl`, `hint`, `autofocus`, `placeholder`, `hideLabel`, `describedBy`, `externalErrorsId` | address-fields, auth/forgot-password, auth/login, auth/register, auth/reset-password, landing/index y 2 más |
+| `textarea` | Área de texto ligada | `path`, `label`, `maxLength`, `id` | inquiry/detail, post/contact, publish/index |
+| `vinyl-card` | La tarjeta de un vinilo; el componente más reutilizado | `item`, `variant`, `href`, `hrefParams`, `title`, `artistName`, `price`, `coverUrl`, `preview`, `showStatus` | landing/index, post/contact, profile/index, profile/public, publish/index |
+
+"Lo usan" se calculó buscando `<ui:nombre` en las vistas y en los demás tags de `8929aea`.
+
+## Decisiones y por qué
+
+| Decisión | Motivo | Fuente |
+|---|---|---|
+| Tag files en vez de `include` | Parámetros con nombre y tipo; el componente no depende de variables sueltas de la página | Estructura del código; inferencia |
+| El escape vive dentro del componente | Una vista no puede olvidarse del `c:out` si usa el tag | `CLAUDE.md` del repo |
+| `button` acepta `href` (ruta) o `url` (ya resuelta) | Poder agregar parámetros o un ancla con `c:url` antes de pasarla | Comentario en `button.tag` |
+| Lista cerrada de iconos | Un nombre desconocido no dibuja nada en vez de romper la página | Comentario en `icon.tag` |
+| Controles ligados (`text-input`, `select`, `textarea`) y sin ligar (`input-control`, `select-control`) | Los ligados usan `form:` y muestran errores; los otros sirven fuera de un `form:form`, como el buscador | Atributos de cada tag |
+| El estado se muestra con texto, no solo con color | Accesibilidad | Comentarios en `inquiry-status.tag` e `inquiry-nav.tag` |
+
+## Preguntas de defensa
+
+**¿Cómo evitan XSS en las vistas?**
+Todo dato que viene de la base o de quien usa el sitio se imprime con `c:out` o con los tags `form:`, que escapan HTML. Los componentes lo hacen adentro.
+
+**¿Por qué usan `c:url`?**
+Porque antepone el context path. Con una URL escrita a mano la aplicación funcionaría en local y fallaría en el servidor.
+
+**¿Qué es un tag file?**
+Un fragmento JSP con atributos declarados que se usa como una etiqueta propia. Es la forma de tener componentes sin scriptlets ni clases Java.
+
+**¿Dónde va el token CSRF?**
+`form:form` lo agrega solo. Los formularios escritos con `<form>` lo agregan con `sec:csrfInput`.
+
+## Código de cada componente
+
+### account-nav
+
+Menú de la cuenta en la cabecera.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/account-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/account-nav.tag>), líneas 1–30.
 
 ```jsp
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
@@ -31,7 +116,6 @@ Anonymous visitors see login and register buttons. Authenticated users see an in
 <spring:message code="auth.navigation.label" var="navigationLabel"/>
 <spring:message code="auth.login.action" var="loginLabel"/>
 <spring:message code="auth.register.action" var="registerLabel"/>
-<spring:message code="auth.admin.action" var="adminLabel"/>
 <spring:message code="inquiry.navigation" var="inquiryLabel"/>
 <c:url value="/profile" var="profileUrl"/>
 <nav class="account-nav" aria-label="${navigationLabel}">
@@ -44,8 +128,10 @@ Anonymous visitors see login and register buttons. Authenticated users see an in
              cabecera va el nombre que la persona eligio al verificar la cuenta. --%>
         <sec:authentication property="principal.displayName" var="displayName" scope="page"/>
         <ui:button label="${inquiryLabel}" variant="ghost" size="sm" href="/inquiries" icon="inbox"/>
-        <sec:authorize access="hasRole('ADMIN')">
-            <ui:button label="${adminLabel}" variant="ghost" size="sm" href="/admin" icon="shield"/>
+        <%-- El carrito es de cuentas verificadas: cartCount lo deja CartCountAdvice solo para ellas. --%>
+        <sec:authorize access="principal.verified">
+            <spring:message code="cart.navigation" var="cartLabel" arguments="${empty cartCount ? 0 : cartCount.value}"/>
+            <ui:button label="${cartLabel}" variant="ghost" size="sm" href="/cart" icon="cart"/>
         </sec:authorize>
         <%-- La identidad va al final: es el ancla de la cuenta y lleva al perfil. --%>
         <a class="button button--ghost button--sm account-nav__identity" href="<c:out value="${profileUrl}"/>"
@@ -54,38 +140,153 @@ Anonymous visitors see login and register buttons. Authenticated users see an in
 </nav>
 ```
 
-## back-link
+### address-fields
 
-Text link with a decorative left arrow, defaulting to the nav.back label and the catalog. Wrapped in a div so the page grid does not stretch it.
+Campos de una dirección.
 
-[webapp/src/main/webapp/WEB-INF/tags/back-link.tag, lines 1–18](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/back-link.tag>)
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/address-fields.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address-fields.tag>), líneas 1–24.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
+
+<%-- Los campos de una direccion, para usar dentro de un form:form cuyo modelo tenga street,
+     streetNumber, apartment, city, province, postalCode y notes. Necesita ${provinces}. --%>
+<spring:message code="address.street.label" var="streetLabel"/>
+<spring:message code="address.streetNumber.label" var="streetNumberLabel"/>
+<spring:message code="address.apartment.label" var="apartmentLabel"/>
+<spring:message code="address.city.label" var="cityLabel"/>
+<spring:message code="address.province.label" var="provinceLabel"/>
+<spring:message code="address.province.placeholder" var="provincePlaceholder"/>
+<spring:message code="address.postalCode.label" var="postalCodeLabel"/>
+<spring:message code="address.notes.label" var="notesLabel"/>
+<div class="address-fields">
+    <ui:text-input path="street" label="${streetLabel}" maxLength="100"/>
+    <ui:text-input path="streetNumber" label="${streetNumberLabel}" maxLength="10"/>
+    <ui:text-input path="apartment" label="${apartmentLabel}" maxLength="20"/>
+    <ui:text-input path="city" label="${cityLabel}" maxLength="100"/>
+    <ui:select path="province" label="${provinceLabel}" items="${provinces}" messagePrefix="province"
+               emptyLabel="${provincePlaceholder}" placeholderOnly="${true}"/>
+    <ui:text-input path="postalCode" label="${postalCodeLabel}" maxLength="10"/>
+    <ui:text-input path="notes" label="${notesLabel}" maxLength="200"/>
+</div>
+```
+
+### address
+
+Muestra una dirección, completa o recortada.
+
+Atributos: `address` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/address.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address.tag>), líneas 1–20.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="address" required="true" type="ar.edu.itba.paw.models.Address" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<%-- Una direccion de envio: calle y altura con piso, y debajo ciudad, CP y provincia. Si el
+     service la recorto a ciudad y provincia, se muestra solo eso. --%>
+<spring:message code="province.${address.province}" var="provinceName"/>
+<span class="address">
+    <c:choose>
+        <c:when test="${address.cityAndProvinceOnly}">
+            <span class="address__line"><c:out value="${address.city}"/>, <c:out value="${provinceName}"/></span>
+        </c:when>
+        <c:otherwise>
+            <span class="address__line"><c:out value="${address.street}"/> <c:out value="${address.streetNumber}"/><c:if test="${not empty address.apartment}">, <c:out value="${address.apartment}"/></c:if></span>
+            <span class="address__line address__line--muted"><c:out value="${address.city}"/> (<c:out value="${address.postalCode}"/>), <c:out value="${provinceName}"/></span>
+            <c:if test="${not empty address.notes}"><span class="address__line address__line--muted"><c:out value="${address.notes}"/></span></c:if>
+        </c:otherwise>
+    </c:choose>
+</span>
+```
+
+### avatar
+
+Foto o inicial.
+
+Atributos: `imageId`, `userId` (obligatorio), `name` (obligatorio), `size`, `alt`, `preview`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/avatar.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/avatar.tag>), líneas 1–32.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="imageId" required="false" type="java.lang.Long" %>
+<%@ attribute name="userId" required="true" type="java.lang.Long" %>
+<%-- name: el nombre de la Cuenta; sin foto se muestra su inicial. --%>
+<%@ attribute name="name" required="true" %>
+<%@ attribute name="size" required="false" %>
+<%-- alt vacio cuando el nombre ya se lee al lado: la foto es decorativa. --%>
+<%@ attribute name="alt" required="false" %>
+<%-- preview: emite la imagen y la inicial a la vez (una oculta), con los data-* que usa
+     account-edit.js para mostrar la foto elegida antes de guardarla. --%>
+<%@ attribute name="preview" required="false" type="java.lang.Boolean" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<c:set var="safeSize" value="${size eq 'sm' or size eq 'lg' or size eq 'xl' ? size : 'md'}" />
+<%-- Primer code point, no primer char: un username que arranca con un emoji (fuera del BMP)
+     no puede quedar partido en medio surrogate. --%>
+<c:set var="initial" value="${empty name ? '' : fn:toUpperCase(name.substring(0, name.offsetByCodePoints(0, 1)))}" />
+<span class="avatar avatar--${safeSize}">
+    <c:choose>
+        <c:when test="${preview}">
+            <c:if test="${not empty imageId}"><c:url value="/users/${userId}/avatar/${imageId}" var="avatarSrc" /></c:if>
+            <img class="avatar__image"<c:if test="${not empty imageId}"> src="<c:out value="${avatarSrc}" />"</c:if> alt="<c:out value="${alt}" />"
+                 data-avatar-preview<c:if test="${empty imageId}"> hidden</c:if> />
+            <span class="avatar__initial" aria-hidden="true" data-avatar-placeholder<c:if test="${not empty imageId}"> hidden</c:if>><c:out value="${initial}" /></span>
+        </c:when>
+        <c:when test="${not empty imageId}">
+            <c:url value="/users/${userId}/avatar/${imageId}" var="avatarSrc" />
+            <img class="avatar__image" src="<c:out value="${avatarSrc}" />" alt="<c:out value="${alt}" />" />
+        </c:when>
+        <c:otherwise><span class="avatar__initial" aria-hidden="true"><c:out value="${initial}" /></span></c:otherwise>
+    </c:choose>
+</span>
+```
+
+### back-link
+
+Enlace de volver.
+
+Atributos: `href`, `label`, `page`, `fragment`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/back-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/back-link.tag>), líneas 1–22.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
 <%@ attribute name="href" required="false" %>
 <%@ attribute name="label" required="false" %>
+<%@ attribute name="page" required="false" type="java.lang.Integer" %>
+<%@ attribute name="fragment" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <spring:message code="nav.back" var="defaultLabel" />
 <c:set var="backLabel" value="${empty label ? defaultLabel : label}" />
-<c:url value="${empty href ? '/' : href}" var="backHref" />
+<c:url value="${empty href ? '/' : href}" var="backHref">
+    <c:if test="${not empty page}"><c:param name="page" value="${page}" /></c:if>
+</c:url>
 
 <%-- El link va envuelto: page-shell es un grid y un ancla suelta se estira a todo el ancho. --%>
 <div class="back-link">
     <%-- La flecha es decorativa: el texto visible ya dice a donde vuelve el link. --%>
-    <a class="back-link__anchor" href="<c:out value="${backHref}" />">
+    <a class="back-link__anchor" href="<c:out value="${backHref}${empty fragment ? '' : '#'.concat(fragment)}" />">
         <span class="back-link__arrow" aria-hidden="true">&#8592;</span>
         <c:out value="${backLabel}" />
     </a>
 </div>
 ```
 
-## brand
+### brand
 
-Logo mark plus the application name linking home. The lg size is used on auth pages.
+Marca.
 
-[webapp/src/main/webapp/WEB-INF/tags/brand.tag, lines 1–14](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/brand.tag>)
+Atributos: `size`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/brand.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/brand.tag>), líneas 1–14.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -104,11 +305,13 @@ Logo mark plus the application name linking home. The lg size is used on auth pa
 </a>
 ```
 
-## button
+### button
 
-Renders an anchor for href (passed through c:url) or url (already resolved), or a button otherwise. Variants primary, ghost, danger and danger-outline; sizes sm and md; submit must be explicit. Optional icon and a valueless data-* attribute. Escapes labels.
+Botón o enlace con variantes.
 
-[webapp/src/main/webapp/WEB-INF/tags/button.tag, lines 1–30](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>)
+Atributos: `label` (obligatorio), `variant`, `size`, `type`, `href`, `url`, `id`, `icon`, `data`, `name`, `value`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/button.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>), líneas 1–33.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -124,6 +327,9 @@ Renders an anchor for href (passed through c:url) or url (already resolved), or 
 <%@ attribute name="icon" required="false" %>
 <%-- Atributo de datos para el JS de la pagina, sin valor: data="cancel-edit" emite data-cancel-edit. --%>
 <%@ attribute name="data" required="false" %>
+<%-- name y value: para que un form con varios submit sepa cual se apreto. Solo en <button>. --%>
+<%@ attribute name="name" required="false" %>
+<%@ attribute name="value" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 
@@ -138,16 +344,18 @@ Renders an anchor for href (passed through c:url) or url (already resolved), or 
         <a class="${classes}" href="<c:out value="${buttonHref}" />"<c:if test="${not empty id}"> id="<c:out value="${id}" />"</c:if><c:if test="${not empty data}"> data-<c:out value="${data}" /></c:if>><c:if test="${not empty icon}"><ui:icon name="${icon}"/></c:if><c:out value="${label}" /></a>
     </c:when>
     <c:otherwise>
-        <button class="${classes}" type="${type eq 'submit' ? 'submit' : 'button'}"<c:if test="${not empty id}"> id="<c:out value="${id}" />"</c:if><c:if test="${not empty data}"> data-<c:out value="${data}" /></c:if>><c:if test="${not empty icon}"><ui:icon name="${icon}"/></c:if><c:out value="${label}" /></button>
+        <button class="${classes}" type="${type eq 'submit' ? 'submit' : 'button'}"<c:if test="${not empty name}"> name="<c:out value="${name}" />" value="<c:out value="${value}" />"</c:if><c:if test="${not empty id}"> id="<c:out value="${id}" />"</c:if><c:if test="${not empty data}"> data-<c:out value="${data}" /></c:if>><c:if test="${not empty icon}"><ui:icon name="${icon}"/></c:if><c:out value="${label}" /></button>
     </c:otherwise>
 </c:choose>
 ```
 
-## confirm-dialog
+### confirm-dialog
 
-Native dialog opened by confirm-action.js for forms with data-confirm-message. It fixes the element IDs the script looks for, so one dialog is allowed per page. Cancel closes through a method=dialog form.
+Diálogo de confirmación.
 
-[webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag, lines 1–23](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>)
+Atributos: `title` (obligatorio), `confirmLabel` (obligatorio), `confirmVariant`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>), líneas 1–23.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -175,11 +383,13 @@ Native dialog opened by confirm-action.js for forms with data-confirm-message. I
 </dialog>
 ```
 
-## h1
+### h1
 
-Escaped heading with optional accent tone.
+Título.
 
-[webapp/src/main/webapp/WEB-INF/tags/h1.tag, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>)
+Atributos: `text` (obligatorio), `tone`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/h1.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>), líneas 1–6.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -190,11 +400,13 @@ Escaped heading with optional accent tone.
 <h1 class="text text-h1 ${tone eq 'accent' ? 'text--accent' : ''}"><c:out value="${text}" /></h1>
 ```
 
-## h3
+### h3
 
-Escaped card heading. level=2 renders an h2 with the same style, and an optional body follows the text, used to attach a state marker.
+Subtítulo con nivel configurable.
 
-[webapp/src/main/webapp/WEB-INF/tags/h3.tag, lines 1–12](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>)
+Atributos: `text` (obligatorio), `level`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/h3.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>), líneas 1–12.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -211,11 +423,13 @@ Escaped card heading. level=2 renders an h2 with the same style, and an optional
 </c:choose>
 ```
 
-## head
+### head
 
-Emits charset, viewport, localized title, logo favicon, tokens/components/style CSS and the four shared deferred scripts. The optional pageScript attribute adds one page-specific script.
+Cabecera HTML común: estilos y scripts.
 
-[webapp/src/main/webapp/WEB-INF/tags/head.tag, lines 1–31](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>)
+Atributos: `titleCode` (obligatorio), `pageScript`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>), líneas 1–31.
 
 ```jsp
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
@@ -251,11 +465,13 @@ Emits charset, viewport, localized title, logo favicon, tokens/components/style 
 </head>
 ```
 
-## icon
+### icon
 
-Closed set of fourteen 24-unit stroke icons drawn with currentColor and hidden from assistive technology. An unknown name renders nothing.
+Iconos SVG de una lista cerrada.
 
-[webapp/src/main/webapp/WEB-INF/tags/icon.tag, lines 1–32](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/icon.tag>)
+Atributos: `name` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/icon.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/icon.tag>), líneas 1–34.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -268,12 +484,14 @@ Closed set of fourteen 24-unit stroke icons drawn with currentColor and hidden f
 <c:set var="path">
     <c:choose>
         <c:when test="${name eq 'plus'}">M12 5v14M5 12h14</c:when>
+        <c:when test="${name eq 'cart'}">M8 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM19 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12</c:when>
         <c:when test="${name eq 'inbox'}">M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z</c:when>
         <c:when test="${name eq 'user'}">M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z</c:when>
         <c:when test="${name eq 'shield'}">M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z</c:when>
         <c:when test="${name eq 'log-out'}">M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9</c:when>
         <c:when test="${name eq 'pencil'}">M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z</c:when>
         <c:when test="${name eq 'trash'}">M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6</c:when>
+        <c:when test="${name eq 'mail'}">M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6</c:when>
         <c:when test="${name eq 'check'}">M20 6 9 17l-5-5</c:when>
         <c:when test="${name eq 'x'}">M18 6 6 18M6 6l12 12</c:when>
         <c:when test="${name eq 'arrow-up-right'}">M7 17 17 7M7 7h10v10</c:when>
@@ -292,15 +510,19 @@ Closed set of fourteen 24-unit stroke icons drawn with currentColor and hidden f
 </c:if>
 ```
 
-## inbox-group-header
+### inbox-group-header
 
-Header of an inbox group: cover or placeholder, title with ui:post-badge and artist. A stretched link opens the detail page unless the publication was deleted.
+Cabecera de un grupo de la bandeja: miniatura, título y estado. Elige la URL de la tapa según exista o no el post.
 
-[webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag, lines 1–26](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag>)
+Atributos: `group` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag>), líneas 1–31.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
-<%@ attribute name="group" required="true" type="ar.edu.itba.paw.models.InquiryGroup" %>
+<%-- Un InquiryGroup de la bandeja o el InquirySummary de la Venta: los dos exponen coverImageId,
+     postId, albumId, postDeleted, title, postStatus y artistName. --%>
+<%@ attribute name="group" required="true" type="java.lang.Object" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
@@ -310,7 +532,10 @@ Header of an inbox group: cover or placeholder, title with ui:post-badge and art
      estirado, como la card; una publicacion eliminada no tiene adonde ir y no lo dibuja. --%>
 <c:choose>
     <c:when test="${empty group.coverImageId}"><c:url value="/images/covers/placeholder.svg" var="coverUrl"/></c:when>
-    <c:otherwise><c:url value="/covers/${group.coverImageId}" var="coverUrl"/></c:otherwise>
+    <c:when test="${group.postDeleted}">
+        <c:url value="/albums/${group.albumId}/cover/${group.coverImageId}" var="coverUrl"/>
+    </c:when>
+    <c:otherwise><c:url value="/post/${group.postId}/images/${group.coverImageId}" var="coverUrl"/></c:otherwise>
 </c:choose>
 <spring:message code="vinylCard.cover.alt" var="coverAlt"><spring:argument value="${group.title}"/></spring:message>
 <div class="inbox-group__post${group.postDeleted ? '' : ' inbox-group__post--linked'}">
@@ -327,11 +552,49 @@ Header of an inbox group: cover or placeholder, title with ui:post-badge and art
 </div>
 ```
 
-## input-control
+### inbox-last-message
 
-Unbound input used for filters, search and file upload, and internally by text-input. Whitelists the type, omits values for password and file, and adds combobox attributes when a suggestion source is given. The body holds the listbox.
+Último mensaje de la conversación.
 
-[webapp/src/main/webapp/WEB-INF/tags/input-control.tag, lines 1–45](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/input-control.tag>)
+Atributos: `inquiry` (obligatorio), `viewerId` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag>), líneas 1–25.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="inquiry" required="true" type="ar.edu.itba.paw.models.InquirySummary" %>
+<%@ attribute name="viewerId" required="true" type="java.lang.Long" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<%-- Ultimo Mensaje de la Conversacion en una fila de la bandeja, recortado a dos lineas y con
+     su autor: "Vos" si lo escribio quien mira, o el nombre de la otra parte. --%>
+<c:set var="lastMessage" value="${inquiry.lastMessage}"/>
+<c:choose>
+    <c:when test="${empty lastMessage}">
+        <p class="inbox-row__msg inbox-row__msg--empty"><spring:message code="inquiry.conversation.empty.short"/></p>
+    </c:when>
+    <c:otherwise>
+        <c:choose>
+            <c:when test="${lastMessage.senderId eq viewerId}"><spring:message code="inquiry.conversation.you" var="author"/></c:when>
+            <c:when test="${lastMessage.senderId eq inquiry.buyerId}"><c:set var="author" value="${inquiry.buyerUsername}"/></c:when>
+            <c:otherwise><c:set var="author" value="${inquiry.sellerUsername}"/></c:otherwise>
+        </c:choose>
+        <spring:message code="inquiry.conversation.authorPrefix" var="authorPrefix">
+            <spring:argument value="${author}"/>
+        </spring:message>
+        <p class="inbox-row__msg inbox-row__msg--clamp"><span class="inbox-row__author"><c:out value="${authorPrefix}"/></span> <c:out value="${lastMessage.body}"/></p>
+    </c:otherwise>
+</c:choose>
+```
+
+### input-control
+
+Input sin ligar, con soporte de sugerencias.
+
+Atributos: `id` (obligatorio), `name` (obligatorio), `type`, `value`, `maxLength`, `min`, `max`, `placeholder`, `ariaLabel`, `describedBy`, `suggestionsId`, `sourceUrl`, `submitOnSelect`, `accept`, `multiple`, `form`, `cssClass`, `hasError`, `autofocus`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/input-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/input-control.tag>), líneas 1–49.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -349,6 +612,8 @@ Unbound input used for filters, search and file upload, and internally by text-i
 <%@ attribute name="sourceUrl" required="false" %>
 <%@ attribute name="submitOnSelect" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="accept" required="false" %>
+<%@ attribute name="multiple" required="false" type="java.lang.Boolean" %>
+<%@ attribute name="form" required="false" %>
 <%@ attribute name="cssClass" required="false" %>
 <%@ attribute name="hasError" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="autofocus" required="false" type="java.lang.Boolean" %>
@@ -372,20 +637,24 @@ Unbound input used for filters, search and file upload, and internally by text-i
            <c:if test="${max ne null}">max="${max}"</c:if>
            <c:if test="${not empty placeholder}">placeholder="<c:out value="${placeholder}" />"</c:if>
            <c:if test="${not empty ariaLabel}">aria-label="<c:out value="${ariaLabel}" />"</c:if>
+           <c:if test="${not empty form}">form="<c:out value="${form}" />"</c:if>
            <c:if test="${not empty describedBy}">aria-describedby="<c:out value="${describedBy}" />"</c:if>
            <c:if test="${not empty suggestionsId or not empty sourceUrl}">autocomplete="off" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="<c:out value="${suggestionsId}" />" aria-expanded="false"</c:if>
            <c:if test="${not empty accept}">accept="<c:out value="${accept}" />"</c:if>
+           <c:if test="${multiple}">multiple</c:if>
            <c:if test="${hasError}">aria-invalid="true"</c:if>
            <c:if test="${autofocus}">autofocus</c:if> />
     <jsp:doBody />
 </div>
 ```
 
-## inquiry-nav
+### inquiry-nav
 
-Two tabs for received and sent inquiries with their counts; aria-current marks the open view.
+Pestañas recibidas y enviadas.
 
-[webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag, lines 1–32](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag>)
+Atributos: `active` (obligatorio), `receivedCount` (obligatorio), `sentCount` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag>), líneas 1–32.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -422,11 +691,13 @@ Two tabs for received and sent inquiries with their counts; aria-current marks t
 </nav>
 ```
 
-## inquiry-status
+### inquiry-status
 
-Inquiry state as icon plus localized text: clock for PENDING, check for ACCEPTED, x for REJECTED. No color modifier.
+Estado de la consulta como texto.
 
-[webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag, lines 1–15](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag>)
+Atributos: `status` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag>), líneas 1–18.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -441,16 +712,21 @@ Inquiry state as icon plus localized text: clock for PENDING, check for ACCEPTED
 <c:choose>
     <c:when test="${statusName eq 'ACCEPTED'}"><c:set var="statusCode" value="ACCEPTED"/><c:set var="icon" value="check"/></c:when>
     <c:when test="${statusName eq 'REJECTED'}"><c:set var="statusCode" value="REJECTED"/><c:set var="icon" value="x"/></c:when>
+    <c:when test="${statusName eq 'AWAITING_PAYMENT'}"><c:set var="statusCode" value="AWAITING_PAYMENT"/><c:set var="icon" value="clock"/></c:when>
+    <c:when test="${statusName eq 'PAYMENT_SUBMITTED'}"><c:set var="statusCode" value="PAYMENT_SUBMITTED"/><c:set var="icon" value="inbox"/></c:when>
+    <c:when test="${statusName eq 'CANCELLED'}"><c:set var="statusCode" value="CANCELLED"/><c:set var="icon" value="x"/></c:when>
     <c:otherwise><c:set var="statusCode" value="PENDING"/><c:set var="icon" value="clock"/></c:otherwise>
 </c:choose>
 <span class="inquiry-status"><ui:icon name="${icon}"/><spring:message code="inquiry.status.${statusCode}"/></span>
 ```
 
-## p
+### p
 
-Escaped paragraph; variant selects the text class suffix.
+Párrafo.
 
-[webapp/src/main/webapp/WEB-INF/tags/p.tag, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/p.tag>)
+Atributos: `text` (obligatorio), `variant`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/p.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/p.tag>), líneas 1–6.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -461,143 +737,13 @@ Escaped paragraph; variant selects the text class suffix.
 <p class="text text-${empty variant ? 'body' : variant}"><c:out value="${text}" /></p>
 ```
 
-## pagination
+### pagination-link
 
-Draws nothing without a previous or next page. With a known total it renders chevrons and numbered links with ellipses around a five-page window; otherwise only chevrons. See [[Paginated listings]].
+Un enlace de página.
 
-[webapp/src/main/webapp/WEB-INF/tags/pagination.tag, lines 1–123](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination.tag>)
+Atributos: `baseUrl` (obligatorio), `extraParams`, `page` (obligatorio), `fragment`, `label` (obligatorio), `rel`.
 
-```jsp
-<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
-<%@ attribute name="currentPage" required="true" type="java.lang.Integer" %>
-<%@ attribute name="hasPrevious" required="true" type="java.lang.Boolean" %>
-<%@ attribute name="hasNext" required="true" type="java.lang.Boolean" %>
-<%@ attribute name="totalPages" required="false" type="java.lang.Integer" %>
-<%@ attribute name="baseUrl" required="true" type="java.lang.String" %>
-<%@ attribute name="extraParams" required="false" type="java.util.Map" %>
-<%@ attribute name="fragment" required="false" type="java.lang.String" %>
-<%@ attribute name="ariaLabel" required="true" type="java.lang.String" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
-
-<%-- Con total conocido dibuja numeros y flechas; sin total, anterior/siguiente. Hasta
-     siete paginas se listan todas; con mas, la primera, la ultima, la actual y dos a cada
-     lado, con puntos suspensivos en los huecos. El recorrido es solo de la ventana: no
-     itera las paginas que no dibuja. --%>
-<c:if test="${hasPrevious or hasNext}">
-    <spring:message code="pagination.previous" var="previousLabel"/>
-    <spring:message code="pagination.next" var="nextLabel"/>
-    <nav class="pagination" aria-label="<c:out value="${ariaLabel}"/>">
-        <ul class="pagination__list">
-            <li>
-                <c:choose>
-                    <c:when test="${hasPrevious}">
-                        <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                            page="${currentPage - 1}" label="${previousLabel}" rel="prev"><ui:icon name="chevron-left"/></ui:pagination-link>
-                    </c:when>
-                    <c:otherwise>
-                        <span class="pagination__link pagination__link--disabled" aria-disabled="true"><ui:icon name="chevron-left"/></span>
-                    </c:otherwise>
-                </c:choose>
-            </li>
-            <c:if test="${not empty totalPages and totalPages gt 0}">
-                <%-- La ventana son las paginas intermedias que se dibujan; la primera y la
-                     ultima van siempre aparte. Con siete o menos la ventana es todo el rango. --%>
-                <c:set var="windowStart" value="${totalPages le 7 or currentPage - 2 lt 2 ? 2 : currentPage - 2}"/>
-                <c:set var="windowEnd" value="${totalPages le 7 or currentPage + 2 gt totalPages - 1 ? totalPages - 1 : currentPage + 2}"/>
-                <spring:message code="pagination.page" var="firstLabel"><spring:argument value="1"/></spring:message>
-                <li>
-                    <c:choose>
-                        <c:when test="${currentPage eq 1}">
-                            <span class="pagination__link pagination__link--current" aria-current="page" aria-label="<c:out value="${firstLabel}"/>">1</span>
-                        </c:when>
-                        <c:otherwise>
-                            <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                                page="${1}" label="${firstLabel}">1</ui:pagination-link>
-                        </c:otherwise>
-                    </c:choose>
-                </li>
-                <%-- Un hueco de una sola pagina se dibuja entero: los puntos suspensivos
-                     ocuparian el mismo lugar que el numero que esconden. --%>
-                <c:if test="${windowStart gt 2}">
-                    <c:choose>
-                        <c:when test="${windowStart eq 3}">
-                            <spring:message code="pagination.page" var="secondLabel"><spring:argument value="2"/></spring:message>
-                            <li>
-                                <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                                    page="${2}" label="${secondLabel}">2</ui:pagination-link>
-                            </li>
-                        </c:when>
-                        <c:otherwise>
-                            <li aria-hidden="true"><span class="pagination__ellipsis">&#8230;</span></li>
-                        </c:otherwise>
-                    </c:choose>
-                </c:if>
-                <c:forEach begin="${windowStart}" end="${windowEnd}" var="page">
-                    <spring:message code="pagination.page" var="pageLabel"><spring:argument value="${page}"/></spring:message>
-                    <li>
-                        <c:choose>
-                            <c:when test="${page eq currentPage}">
-                                <span class="pagination__link pagination__link--current" aria-current="page" aria-label="<c:out value="${pageLabel}"/>"><c:out value="${page}"/></span>
-                            </c:when>
-                            <c:otherwise>
-                                <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                                    page="${page}" label="${pageLabel}"><c:out value="${page}"/></ui:pagination-link>
-                            </c:otherwise>
-                        </c:choose>
-                    </li>
-                </c:forEach>
-                <c:if test="${windowEnd lt totalPages - 1}">
-                    <c:choose>
-                        <c:when test="${windowEnd eq totalPages - 2}">
-                            <spring:message code="pagination.page" var="secondLastLabel"><spring:argument value="${totalPages - 1}"/></spring:message>
-                            <li>
-                                <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                                    page="${totalPages - 1}" label="${secondLastLabel}"><c:out value="${totalPages - 1}"/></ui:pagination-link>
-                            </li>
-                        </c:when>
-                        <c:otherwise>
-                            <li aria-hidden="true"><span class="pagination__ellipsis">&#8230;</span></li>
-                        </c:otherwise>
-                    </c:choose>
-                </c:if>
-                <c:if test="${totalPages gt 1}">
-                    <spring:message code="pagination.page" var="lastLabel"><spring:argument value="${totalPages}"/></spring:message>
-                    <li>
-                        <c:choose>
-                            <c:when test="${currentPage eq totalPages}">
-                                <span class="pagination__link pagination__link--current" aria-current="page" aria-label="<c:out value="${lastLabel}"/>"><c:out value="${totalPages}"/></span>
-                            </c:when>
-                            <c:otherwise>
-                                <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                                    page="${totalPages}" label="${lastLabel}"><c:out value="${totalPages}"/></ui:pagination-link>
-                            </c:otherwise>
-                        </c:choose>
-                    </li>
-                </c:if>
-            </c:if>
-            <li>
-                <c:choose>
-                    <c:when test="${hasNext}">
-                        <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                            page="${currentPage + 1}" label="${nextLabel}" rel="next"><ui:icon name="chevron-right"/></ui:pagination-link>
-                    </c:when>
-                    <c:otherwise>
-                        <span class="pagination__link pagination__link--disabled" aria-disabled="true"><ui:icon name="chevron-right"/></span>
-                    </c:otherwise>
-                </c:choose>
-            </li>
-        </ul>
-    </nav>
-</c:if>
-```
-
-## pagination-link
-
-Builds one pagination URL from the base path, current parameters, target page and optional fragment, with accessible label and rel.
-
-[webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag, lines 1–21](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag>)
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag>), líneas 1–21.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -611,7 +757,7 @@ Builds one pagination URL from the base path, current parameters, target page an
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%-- Unico armado de URL de la paginacion: los parametros vigentes de la vista, la pagina
-     destino y el ancla de la seccion. Lo usan las flechas y cada numero. --%>
+     destino y el ancla de la seccion. Lo usan ambas flechas. --%>
 <c:url value="${baseUrl}" var="pageUrl">
     <c:forEach items="${extraParams}" var="parameter">
         <c:if test="${not empty parameter.value}"><c:param name="${parameter.key}" value="${parameter.value}"/></c:if>
@@ -623,11 +769,76 @@ Builds one pagination URL from the base path, current parameters, target page an
    aria-label="<c:out value="${label}"/>" title="<c:out value="${label}"/>"><jsp:doBody/></a>
 ```
 
-## post-badge
+### pagination
 
-Publication state marker: deleted outranks sold; available appears only when requested (profile). inline or chip variant.
+Flechas que conservan parámetros y ancla.
 
-[webapp/src/main/webapp/WEB-INF/tags/post-badge.tag, lines 1–20](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/post-badge.tag>)
+Atributos: `currentPage` (obligatorio), `hasPrevious` (obligatorio), `hasNext` (obligatorio), `baseUrl` (obligatorio), `extraParams`, `fragment`, `ariaLabel` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination.tag>), líneas 1–52.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="currentPage" required="true" type="java.lang.Integer" %>
+<%@ attribute name="hasPrevious" required="true" type="java.lang.Boolean" %>
+<%@ attribute name="hasNext" required="true" type="java.lang.Boolean" %>
+<%@ attribute name="baseUrl" required="true" type="java.lang.String" %>
+<%@ attribute name="extraParams" required="false" type="java.util.Map" %>
+<%@ attribute name="fragment" required="false" type="java.lang.String" %>
+<%@ attribute name="ariaLabel" required="true" type="java.lang.String" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
+
+<%-- Solo se muestra la pagina actual; las flechas conservan los parametros y el ancla. --%>
+<c:if test="${hasPrevious or hasNext}">
+    <spring:message code="pagination.previous" var="previousLabel"/>
+    <spring:message code="pagination.next" var="nextLabel"/>
+    <nav class="pagination" aria-label="<c:out value="${ariaLabel}"/>">
+        <ul class="pagination__list">
+            <li>
+                <c:choose>
+                    <c:when test="${hasPrevious}">
+                        <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
+                                            page="${currentPage - 1}" label="${previousLabel}" rel="prev"><ui:icon name="chevron-left"/></ui:pagination-link>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="pagination__link pagination__link--disabled" aria-disabled="true">
+                            <span class="visually-hidden"><c:out value="${previousLabel}"/></span><ui:icon name="chevron-left"/>
+                        </span>
+                    </c:otherwise>
+                </c:choose>
+            </li>
+            <spring:message code="pagination.page" var="pageLabel"><spring:argument value="${currentPage}"/></spring:message>
+            <li>
+                <span class="pagination__link pagination__link--current" aria-current="page"
+                      aria-label="<c:out value="${pageLabel}"/>"><c:out value="${currentPage}"/></span>
+            </li>
+            <li>
+                <c:choose>
+                    <c:when test="${hasNext}">
+                        <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
+                                            page="${currentPage + 1}" label="${nextLabel}" rel="next"><ui:icon name="chevron-right"/></ui:pagination-link>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="pagination__link pagination__link--disabled" aria-disabled="true">
+                            <span class="visually-hidden"><c:out value="${nextLabel}"/></span><ui:icon name="chevron-right"/>
+                        </span>
+                    </c:otherwise>
+                </c:choose>
+            </li>
+        </ul>
+    </nav>
+</c:if>
+```
+
+### post-badge
+
+Estado de una publicación.
+
+Atributos: `deleted`, `status`, `showAvailable`, `variant`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/post-badge.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/post-badge.tag>), líneas 1–21.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -639,12 +850,13 @@ Publication state marker: deleted outranks sold; available appears only when req
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 
-<%-- Estado de una publicacion, siempre con el mismo marcador. Eliminada pesa mas que vendida.
+<%-- Estado de una publicacion, siempre con el mismo marcador. Eliminada pesa mas que vendida o reservada.
      Disponible solo se marca donde el listado lo pide (perfil): en el resto se sobreentiende.
      inline: texto atenuado junto al titulo. chip: pastilla sobre la portada de la card. --%>
 <c:choose>
     <c:when test="${deleted}"><c:set var="stateCode" value="post.detail.deleted"/><c:set var="icon" value="x"/><c:set var="tone" value="muted"/></c:when>
     <c:when test="${status eq 'SOLD'}"><c:set var="stateCode" value="post.detail.sold"/><c:set var="icon" value="tag"/><c:set var="tone" value="muted"/></c:when>
+    <c:when test="${status eq 'RESERVED'}"><c:set var="stateCode" value="post.detail.reserved"/><c:set var="icon" value="clock"/><c:set var="tone" value="muted"/></c:when>
     <c:when test="${showAvailable}"><c:set var="stateCode" value="profile.post.available"/><c:set var="icon" value="check"/><c:set var="tone" value="available"/></c:when>
 </c:choose>
 <c:if test="${not empty stateCode}">
@@ -652,11 +864,37 @@ Publication state marker: deleted outranks sold; available appears only when req
 </c:if>
 ```
 
-## segmented-control
+### resend-verification
 
-Radio-group fieldset built from enum values with localized labels, an optional empty choice, and required/error ARIA attributes. Used for condition in filters and in the publish form.
+Botón de reenvío: POST con CSRF.
 
-[webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag, lines 1–37](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag>)
+Atributos: `variant`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag>), líneas 1–13.
+
+```jsp
+<%@ tag body-content="empty" pageEncoding="UTF-8" %>
+<%@ attribute name="variant" required="false" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
+<%-- Pide un enlace de verificacion nuevo. Es un POST con CSRF: invalida los enlaces anteriores. --%>
+<c:url value="/verify/resend" var="resendUrl"/>
+<spring:message code="auth.verification.resend" var="resendLabel"/>
+<form class="resend-verification" action="<c:out value="${resendUrl}"/>" method="post">
+    <sec:csrfInput/>
+    <ui:button label="${resendLabel}" variant="${empty variant ? 'primary' : variant}" size="sm" type="submit" icon="mail"/>
+</form>
+```
+
+### segmented-control
+
+Grupo de radios.
+
+Atributos: `name` (obligatorio), `legend` (obligatorio), `items` (obligatorio), `messagePrefix` (obligatorio), `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag>), líneas 1–37.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -698,11 +936,57 @@ Radio-group fieldset built from enum values with localized labels, an optional e
 </fieldset>
 ```
 
-## select
+### select-control
 
-Bound select for form fields: label, ui:select-control with the bound value, placeholder-only empty option and field errors.
+Select sin ligar.
 
-[webapp/src/main/webapp/WEB-INF/tags/select.tag, lines 1–35](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>)
+Atributos: `id` (obligatorio), `name` (obligatorio), `items` (obligatorio), `messagePrefix` (obligatorio), `selectedValue`, `emptyLabel`, `labelledBy`, `describedBy`, `cssClass`, `hasError`, `placeholderOnly`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/select-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select-control.tag>), líneas 1–33.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="id" required="true" %>
+<%@ attribute name="name" required="true" %>
+<%@ attribute name="items" required="true" type="java.lang.Object[]" %>
+<%@ attribute name="messagePrefix" required="true" %>
+<%@ attribute name="selectedValue" required="false" %>
+<%@ attribute name="emptyLabel" required="false" %>
+<%@ attribute name="labelledBy" required="false" %>
+<%@ attribute name="describedBy" required="false" %>
+<%@ attribute name="cssClass" required="false" %>
+<%@ attribute name="hasError" required="false" type="java.lang.Boolean" %>
+<%@ attribute name="placeholderOnly" required="false" type="java.lang.Boolean" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<select class="input-field__control${empty cssClass ? '' : ' '}${cssClass}"
+        id="<c:out value="${id}" />"
+        name="<c:out value="${name}" />"
+        data-select-picker
+        <c:if test="${not empty labelledBy}">aria-labelledby="<c:out value="${labelledBy}" />"</c:if>
+        <c:if test="${not empty describedBy}">aria-describedby="<c:out value="${describedBy}" />"</c:if>
+        <c:if test="${placeholderOnly}">aria-required="true"</c:if>
+        <c:if test="${hasError}">aria-invalid="true"</c:if>>
+    <c:if test="${not empty emptyLabel}">
+        <option value="" <c:if test="${empty selectedValue}">selected</c:if>
+                <c:if test="${placeholderOnly}">disabled hidden</c:if>><c:out value="${emptyLabel}" /></option>
+    </c:if>
+    <c:forEach items="${items}" var="item">
+        <c:set var="itemName">${item}</c:set>
+        <spring:message code="${messagePrefix}.${itemName}" var="itemLabel" />
+        <option value="<c:out value="${itemName}" />" <c:if test="${selectedValue eq itemName}">selected</c:if>><c:out value="${itemLabel}" /></option>
+    </c:forEach>
+</select>
+```
+
+### select
+
+Select ligado.
+
+Atributos: `path` (obligatorio), `label` (obligatorio), `items` (obligatorio), `messagePrefix` (obligatorio), `emptyLabel` (obligatorio), `placeholderOnly`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/select.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>), líneas 1–35.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -742,59 +1026,23 @@ Bound select for form fields: label, ui:select-control with the bound value, pla
 </spring:bind>
 ```
 
-## select-control
+### site-header
 
-Unbound select with localized enum options, optional empty or placeholder-only option and ARIA wiring. Marked data-select-picker for the JavaScript picker.
+Barra superior: marca, buscador, acciones, aviso de verificación.
 
-[webapp/src/main/webapp/WEB-INF/tags/select-control.tag, lines 1–33](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select-control.tag>)
+Atributos: `query`, `formId`.
 
-```jsp
-<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
-<%@ attribute name="id" required="true" %>
-<%@ attribute name="name" required="true" %>
-<%@ attribute name="items" required="true" type="java.lang.Object[]" %>
-<%@ attribute name="messagePrefix" required="true" %>
-<%@ attribute name="selectedValue" required="false" %>
-<%@ attribute name="emptyLabel" required="false" %>
-<%@ attribute name="labelledBy" required="false" %>
-<%@ attribute name="describedBy" required="false" %>
-<%@ attribute name="cssClass" required="false" %>
-<%@ attribute name="hasError" required="false" type="java.lang.Boolean" %>
-<%@ attribute name="placeholderOnly" required="false" type="java.lang.Boolean" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-
-<select class="input-field__control${empty cssClass ? '' : ' '}${cssClass}"
-        id="<c:out value="${id}" />"
-        name="<c:out value="${name}" />"
-        data-select-picker
-        <c:if test="${not empty labelledBy}">aria-labelledby="<c:out value="${labelledBy}" />"</c:if>
-        <c:if test="${not empty describedBy}">aria-describedby="<c:out value="${describedBy}" />"</c:if>
-        <c:if test="${placeholderOnly}">aria-required="true"</c:if>
-        <c:if test="${hasError}">aria-invalid="true"</c:if>>
-    <c:if test="${not empty emptyLabel}">
-        <option value="" <c:if test="${empty selectedValue}">selected</c:if>
-                <c:if test="${placeholderOnly}">disabled hidden</c:if>><c:out value="${emptyLabel}" /></option>
-    </c:if>
-    <c:forEach items="${items}" var="item">
-        <c:set var="itemName">${item}</c:set>
-        <spring:message code="${messagePrefix}.${itemName}" var="itemLabel" />
-        <option value="<c:out value="${itemName}" />" <c:if test="${selectedValue eq itemName}">selected</c:if>><c:out value="${itemLabel}" /></option>
-    </c:forEach>
-</select>
-```
-
-## site-header
-
-Compact header with ui:brand, the global search form with autocomplete that submits on selection, an icon-only submit button, the publish button and ui:account-nav.
-
-[webapp/src/main/webapp/WEB-INF/tags/site-header.tag, lines 1–37](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/site-header.tag>)
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/site-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/site-header.tag>), líneas 1–56.
 
 ```jsp
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
 <%@ attribute name="query" required="false" %>
+<%-- En el catalogo, el campo y la lupa pertenecen al formulario de filtros: buscar manda
+     los filtros tal como estan en pantalla, aunque se hayan editado sin aplicar. --%>
+<%@ attribute name="formId" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 <spring:message code="landing.search.label" var="searchLabel"/>
 <spring:message code="landing.search.placeholder" var="searchPlaceholder"/>
@@ -809,11 +1057,11 @@ Compact header with ui:brand, the global search form with autocomplete that subm
             <ui:input-control id="q" name="q" type="search" value="${query}"
                               ariaLabel="${searchLabel}" placeholder="${searchPlaceholder}" maxLength="255"
                               suggestionsId="site-search-suggestions" sourceUrl="${searchSuggestionsUrl}"
-                              submitOnSelect="${true}" cssClass="site-search__field">
+                              submitOnSelect="${true}" form="${formId}" cssClass="site-search__field">
                 <ul class="autocomplete__list" id="site-search-suggestions" role="listbox" hidden></ul>
             </ui:input-control>
             <%-- Boton solo icono: el texto de landing.search.submit queda como aria-label y tooltip. --%>
-            <button class="button button--primary button--sm site-search__submit" type="submit"
+            <button class="button button--primary button--sm site-search__submit" type="submit"<c:if test="${not empty formId}"> form="<c:out value="${formId}"/>"</c:if>
                     aria-label="<c:out value="${searchSubmitLabel}"/>" title="<c:out value="${searchSubmitLabel}"/>">
                 <svg class="site-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -827,14 +1075,31 @@ Compact header with ui:brand, the global search form with autocomplete that subm
             <ui:account-nav/>
         </div>
     </div>
+    <%-- Mientras la cuenta no abra el enlace, cada pagina le recuerda que le falta verificar. --%>
+    <sec:authorize access="isAuthenticated() and !principal.verified">
+        <div class="verification-banner" role="status">
+            <div class="verification-banner__inner">
+                <p class="verification-banner__text">
+                    <c:choose>
+                        <c:when test="${verificationResent}"><spring:message code="auth.verification.resent"/></c:when>
+                        <c:when test="${verificationThrottled}"><spring:message code="auth.verification.throttled"/></c:when>
+                        <c:otherwise><spring:message code="auth.verification.banner"/></c:otherwise>
+                    </c:choose>
+                </p>
+                <ui:resend-verification variant="ghost"/>
+            </div>
+        </div>
+    </sec:authorize>
 </header>
 ```
 
-## span
+### span
 
-Escaped inline text; muted variant selects the muted class.
+Texto en línea.
 
-[webapp/src/main/webapp/WEB-INF/tags/span.tag, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/span.tag>)
+Atributos: `text` (obligatorio), `variant`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/span.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/span.tag>), líneas 1–6.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -845,11 +1110,61 @@ Escaped inline text; muted variant selects the muted class.
 <span class="text text-inline ${variant eq 'muted' ? 'text--muted' : ''}"><c:out value="${text}" /></span>
 ```
 
-## text-input
+### star-rating-input
 
-Uses spring:bind for value, errors and accessibility attributes, then delegates to ui:input-control. Adds hint, placeholder, hidden label, autofocus, extra describedBy IDs and an autocomplete source. Password values are omitted on redisplay.
+Estrellas como radios accesibles.
 
-[webapp/src/main/webapp/WEB-INF/tags/text-input.tag, lines 1–48](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>)
+Atributos: `path` (obligatorio), `legend` (obligatorio), `max` (obligatorio), `valueCode` (obligatorio).
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag>), líneas 1–37.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="path" required="true" %>
+<%@ attribute name="legend" required="true" %>
+<%@ attribute name="max" required="true" type="java.lang.Integer" %>
+<%@ attribute name="valueCode" required="true" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<spring:bind path="${path}">
+    <c:set var="fieldName" value="${status.expression}" />
+    <c:set var="currentValue">${status.value}</c:set>
+    <c:set var="errorId" value="${fieldName}-error" />
+    <fieldset class="star-rating input-field${status.error ? ' input-field--error' : ''}"
+              <c:if test="${status.error}">aria-invalid="true" aria-describedby="<c:out value="${errorId}" />"</c:if>>
+        <legend class="visually-hidden"><c:out value="${legend}" /></legend>
+        <div class="star-rating__stars">
+            <c:forEach begin="1" end="${max}" var="star">
+                <c:set var="starValue">${star}</c:set>
+                <spring:message code="${valueCode}" var="starLabel"><spring:argument value="${star}" /></spring:message>
+                <input class="star-rating__input visually-hidden" type="radio" id="<c:out value="${fieldName}-${star}" />"
+                       name="<c:out value="${fieldName}" />" value="<c:out value="${starValue}" />"
+                       <c:if test="${currentValue eq starValue}">checked</c:if> />
+                <label class="star-rating__star" for="<c:out value="${fieldName}-${star}" />">
+                    <span aria-hidden="true">&#9733;</span>
+                    <span class="visually-hidden"><c:out value="${starLabel}" /></span>
+                </label>
+            </c:forEach>
+        </div>
+        <c:if test="${status.error}">
+            <div class="input-field__errors" id="<c:out value="${errorId}" />" role="alert">
+                <c:forEach items="${status.errorMessages}" var="errorMessage">
+                    <p class="input-field__error"><c:out value="${errorMessage}" /></p>
+                </c:forEach>
+            </div>
+        </c:if>
+    </fieldset>
+</spring:bind>
+```
+
+### text-input
+
+Campo ligado a un form con etiqueta, pista y error.
+
+Atributos: `path` (obligatorio), `label` (obligatorio), `type`, `maxLength`, `min`, `max`, `suggestionsId`, `sourceUrl`, `hint`, `autofocus`, `placeholder`, `hideLabel`, `describedBy`, `externalErrorsId`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/text-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>), líneas 1–51.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -867,6 +1182,8 @@ Uses spring:bind for value, errors and accessibility attributes, then delegates 
 <%@ attribute name="hideLabel" required="false" type="java.lang.Boolean" %>
 <%-- Ids extra para aria-describedby: se suman a la pista y al error que calcula el tag. --%>
 <%@ attribute name="describedBy" required="false" %>
+<%-- Cuando el error se muestra fuera del campo, conserva su referencia accesible. --%>
+<%@ attribute name="externalErrorsId" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
@@ -876,6 +1193,7 @@ Uses spring:bind for value, errors and accessibility attributes, then delegates 
     <c:set var="fieldName" value="${status.expression}" />
     <c:set var="hasError" value="${status.error}" />
     <c:set var="errorId" value="${fieldName}-error" />
+    <c:if test="${not empty externalErrorsId}"><c:set var="errorId" value="${externalErrorsId}" /></c:if>
     <c:set var="hintId" value="${fieldName}-hint" />
 
     <div class="input-field ${hasError ? 'input-field--error' : ''}">
@@ -891,7 +1209,7 @@ Uses spring:bind for value, errors and accessibility attributes, then delegates 
         <c:if test="${not empty hint}">
             <p class="hint" id="<c:out value="${hintId}" />"><c:out value="${hint}" /></p>
         </c:if>
-        <c:if test="${hasError}">
+        <c:if test="${hasError and empty externalErrorsId}">
             <div class="input-field__errors" id="<c:out value="${errorId}" />" role="alert">
                 <c:forEach items="${status.errorMessages}" var="errorMessage">
                     <p class="input-field__error"><c:out value="${errorMessage}" /></p>
@@ -902,29 +1220,35 @@ Uses spring:bind for value, errors and accessibility attributes, then delegates 
 </spring:bind>
 ```
 
-## textarea
+### textarea
 
-Binds escaped multiline text, optional maxlength and field errors; used for publication descriptions and inquiry messages.
+Área de texto ligada.
 
-[webapp/src/main/webapp/WEB-INF/tags/textarea.tag, lines 1–29](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>)
+Atributos: `path` (obligatorio), `label` (obligatorio), `maxLength`, `id`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>), líneas 1–33.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
 <%@ attribute name="path" required="true" %>
 <%@ attribute name="label" required="true" %>
 <%@ attribute name="maxLength" required="false" type="java.lang.Integer" %>
+<%-- Id del textarea, para cuando dos formularios de la misma pagina ligan un campo con el mismo nombre.
+     Sin id, se usa el nombre del campo. --%>
+<%@ attribute name="id" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <spring:bind path="${path}">
     <c:set var="fieldName" value="${status.expression}" />
+    <c:set var="controlId" value="${empty id ? fieldName : id}" />
     <c:set var="hasError" value="${status.error}" />
-    <c:set var="errorId" value="${fieldName}-error" />
+    <c:set var="errorId" value="${controlId}-error" />
 
     <div class="input-field ${hasError ? 'input-field--error' : ''}">
-        <label class="input-field__label" for="<c:out value="${fieldName}" />"><c:out value="${label}" /></label>
+        <label class="input-field__label" for="<c:out value="${controlId}" />"><c:out value="${label}" /></label>
         <textarea class="input-field__control"
-                  id="<c:out value="${fieldName}" />"
+                  id="<c:out value="${controlId}" />"
                   name="<c:out value="${fieldName}" />"
                   rows="4"
                   <c:if test="${maxLength ne null}">maxlength="${maxLength}"</c:if>
@@ -940,17 +1264,20 @@ Binds escaped multiline text, optional maxlength and field errors; used for publ
 </spring:bind>
 ```
 
-## vinyl-card
+### vinyl-card
 
-Card for a PostSummary or explicit preview values. The editorial variant shows cover, title, artist and price; compact adds year, condition, zone, genre, pressing year and description. Optional stretched link, status chip and preview data attributes. It no longer accepts a body and never shows seller identity.
+La tarjeta de un vinilo; el componente más reutilizado.
 
-[webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag, lines 1–113](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>)
+Atributos: `item`, `variant`, `href`, `hrefParams`, `title`, `artistName`, `price`, `coverUrl`, `preview`, `showStatus`.
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>), líneas 1–118.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
 <%@ attribute name="item" required="false" type="ar.edu.itba.paw.models.PostSummary" %>
 <%@ attribute name="variant" required="false" %>
 <%@ attribute name="href" required="false" %>
+<%@ attribute name="hrefParams" required="false" type="java.util.Map" %>
 <%@ attribute name="title" required="false" %>
 <%@ attribute name="artistName" required="false" %>
 <%@ attribute name="price" required="false" type="java.lang.Integer" %>
@@ -973,7 +1300,7 @@ Card for a PostSummary or explicit preview values. The editorial variant shows c
         <c:set var="resolvedCoverUrl" value="${coverUrl}" />
     </c:when>
     <c:otherwise>
-        <c:url value="/covers/${item.coverImageId}" var="coverUrl" />
+        <c:url value="/post/${item.id}/images/${item.coverImageId}" var="coverUrl" />
         <c:set var="resolvedCoverUrl" value="${coverUrl}" />
     </c:otherwise>
 </c:choose>
@@ -987,7 +1314,11 @@ Card for a PostSummary or explicit preview values. The editorial variant shows c
 <spring:message code="vinylCard.pressingYear" var="pressingYearLabel" />
 <c:set var="resolvedVariant" value="${empty variant ? 'editorial' : variant}" />
 <c:if test="${not empty href}">
-    <c:url value="${href}" var="cardHref" />
+    <c:url value="${href}" var="cardHref">
+        <c:forEach items="${hrefParams}" var="parameter">
+            <c:param name="${parameter.key}" value="${parameter.value}" />
+        </c:forEach>
+    </c:url>
     <spring:message code="vinylCard.open" var="openLabel">
         <spring:argument value="${resolvedTitle}" />
     </spring:message>
@@ -1062,4 +1393,38 @@ Card for a PostSummary or explicit preview values. The editorial variant shows c
 </article>
 ```
 
-[[Views and assets]] · [[UI styles and tokens]] · [[Authentication flow]]
+## Archivos para seguir el flujo
+
+- [webapp/src/main/webapp/WEB-INF/tags/account-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/account-nav.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/address-fields.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address-fields.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/address.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/avatar.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/avatar.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/back-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/back-link.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/brand.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/brand.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/button.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/h1.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/h3.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/icon.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/icon.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/input-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/input-control.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/p.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/p.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/pagination.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/post-badge.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/post-badge.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/select-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select-control.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/select.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/site-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/site-header.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/span.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/span.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/text-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>)
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

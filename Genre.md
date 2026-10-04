@@ -4,25 +4,31 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Genre.java"]
 ---
 
 # Genre
 
-Fifteen catalog genre values, including OTHER. Stored on [[Album]] and now required: PublishForm rejects a missing genre, and schema.sql backfills legacy nulls to OTHER before adding NOT NULL and a CHECK listing the fifteen names. Localized labels live in [[Localization]]. It does not participate in album identity, and an owner's edit can change the shared album's genre.
+Quince géneros del catálogo, incluido `OTHER`. Se guarda en el álbum, es obligatorio al publicar y la base lo refuerza con un `CHECK`. El nombre visible sale de i18n.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Sin campos ni métodos propios: el archivo completo está abajo.
 
-Referenced by: [[Album]], [[AlbumDao]], [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumService]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]], [[LandingController]], [[PostJdbcDaoTest]], [[PostSearchCriteria]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PostSummary]], [[PublishController]], [[PublishForm]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[models/src/main/java/ar/edu/itba/paw/models/Genre.java, lines 1–19](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Genre.java>)
+Referenciado por: [[Album]], [[AlbumDao]], [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumService]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]], [[CatalogFilterForm]], [[LandingController]], [[PostJdbcDaoTest]], [[PostSearchCriteria]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PostSummary]], [[PublishController]], [[PublishForm]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Genre.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Genre.java>), líneas 1–19.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -45,7 +51,3 @@ public enum Genre {
     OTHER
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

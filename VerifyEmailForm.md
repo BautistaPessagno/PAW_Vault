@@ -1,16 +1,18 @@
 ---
 title: "VerifyEmailForm"
-categories: ["Web"]
+categories: ["History"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
 snapshot: "2026-09-22"
 commit: "f12af080cf6a27101160f005102a20f436574cf7"
-status: "documented"
+status: "historical"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java"]
 ---
 
 # VerifyEmailForm
+
+> Histórico. Este archivo ya no existe con ese nombre en `41c32af`. El código inferior conserva su revisión original. La verificación actual usa GET /verify; ver [[Authentication flow]].
 
 Requires token and a username up to 100 characters. The password uses the shared [[ValidPassword]] constraint (12–72 characters with an ASCII letter and a digit), and [[MatchingPasswords]] reports a mismatch on passwordConfirmation. @Size counts characters, not UTF-8 bytes, and passwords are not trimmed.
 
@@ -22,7 +24,7 @@ Referenced by: [[AuthenticationController]].
 
 ## Exact source
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java, lines 1–56](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java>)
+[webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java, lines 1–56](<file:///Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/VerifyEmailForm.java>)
 
 ```java
 package ar.edu.itba.paw.webapp.form;

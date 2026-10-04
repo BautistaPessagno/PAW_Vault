@@ -4,25 +4,31 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/ArtistService.java"]
 ---
 
 # ArtistService
 
-findOrCreate resolves an artist through its normalized identity while keeping the typed display name. resolveForEdit also rewrites the shared display name when it differs. findSuggestions returns up to five ranked names for the publish-form autocomplete.
+Contrato del catálogo de artistas: buscar o crear por identidad normalizada, resolver al editar y sugerencias para el autocompletado.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Artist]].
+Operaciones para localizar en la fuente: `findOrCreate`, `resolveForEdit`, `findSuggestions`.
 
-Referenced by: [[ArtistServiceImpl]], [[ArtistSuggestionController]], [[PostServiceImpl]], [[PostServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[Artist]].
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/ArtistService.java, lines 1–13](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/ArtistService.java>)
+Referenciado por: [[ArtistServiceImpl]], [[ArtistSuggestionController]], [[PostServiceImpl]], [[PostServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/ArtistService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/ArtistService.java>), líneas 1–13.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -39,7 +45,3 @@ public interface ArtistService {
     List<Artist> findSuggestions(String query);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

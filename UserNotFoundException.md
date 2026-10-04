@@ -4,25 +4,31 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java"]
 ---
 
 # UserNotFoundException
 
-Service-contract exception for a missing account in publish, inquiry notifications, username/password updates and password reset. [[ProfileController]] maps it to HTTP 404; other callers let it propagate. The deleted web exception remains at [[Legacy UserNotFoundException]].
+La Cuenta no existe, o no tiene perfil público. [[ErrorResponseAdvice]] responde 404.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[User]].
+Sin campos ni métodos propios: el archivo completo está abajo.
 
-Referenced by: [[InquiryServiceImpl]], [[PostServiceImpl]], [[ProfileController]], [[UserServiceImpl]], [[UserServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java, lines 1–7](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java>)
+Referenciado por: [[AuthenticationController]], [[ErrorResponseAdvice]], [[InquiryServiceImpl]], [[PostServiceImpl]], [[ProfileController]], [[PublicProfileServiceImpl]], [[PublicProfileServiceImplTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/UserNotFoundException.java>), líneas 1–7.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -33,7 +39,3 @@ public class UserNotFoundException extends RuntimeException {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

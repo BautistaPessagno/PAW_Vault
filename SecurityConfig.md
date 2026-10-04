@@ -4,43 +4,66 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java"]
 ---
 
 # SecurityConfig
 
-Configures Spring Security route access, email/password form login, logout and the access-denied page. /admin/** requires ADMIN; /publish/**, /post/*/edit, /post/*/delete, /profile/**, /post/*/contact and /inquiries/** require authentication. Everything else, including /post/{id}, password recovery and suggestion fragments, is public. CSRF remains enabled. BCrypt strength is 12, and the PasswordHasher bean exposes both hash and matches.
+Configuración de Spring Security: BCrypt 12 y su adaptador `PasswordHasher`, beans de pertenencia para `@PreAuthorize`, la lista única de rutas de Cuenta verificada, form login por correo, logout, registro de sesiones y el handler que distingue "verificá tu correo" de 403. Ver [[Security and authorization]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[AuthenticatedUserDetailsService]], [[PasswordHasher]], [[UserService]].
+Datos y dependencias declaradas: `BCRYPT_STRENGTH`, `VERIFIED_PATHS`.
 
-Referenced by: [[WebConfig]].
+Operaciones para localizar en la fuente: `passwordEncoder`, `passwordHasher`, `hash`, `matches`, `userDetailsService`, `addressAccess`, `inquiryAccess`, `postAccess`, `sessionRegistry`, `securityFilterChain`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java, lines 1–78](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>)
+Referencias estáticas a tipos del proyecto: [[AddressAccessHandler]], [[AddressService]], [[AuthenticatedUser]], [[AuthenticatedUserDetailsService]], [[InquiryAccessHandler]], [[InquiryService]], [[PasswordHasher]], [[PostAccessHandler]], [[PostService]], [[UserService]], [[VerificationAccessDeniedHandler]].
+
+Referenciado por: [[WebConfig]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>), líneas 1–153.
 
 ```java
 package ar.edu.itba.paw.webapp.config;
 
+import ar.edu.itba.paw.services.AddressService;
+import ar.edu.itba.paw.services.InquiryService;
 import ar.edu.itba.paw.services.PasswordHasher;
+import ar.edu.itba.paw.services.PostService;
 import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.webapp.security.AddressAccessHandler;
+import ar.edu.itba.paw.webapp.security.AuthenticatedUser;
 import ar.edu.itba.paw.webapp.security.AuthenticatedUserDetailsService;
+import ar.edu.itba.paw.webapp.security.InquiryAccessHandler;
+import ar.edu.itba.paw.webapp.security.PostAccessHandler;
+import ar.edu.itba.paw.webapp.security.VerificationAccessDeniedHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     // Costo 12: es el que ya tienen los hashes guardados, subirlo los invalidaria.
@@ -52,7 +75,7 @@ public class SecurityConfig {
     }
 
     /*
-     * Los services hashean la clave elegida al verificar el correo, pero no pueden
+     * Los services hashean la clave elegida al registrarse, pero no pueden
      * depender de spring-security: el modulo services no la tiene en su classpath. Este
      * bean adapta el encoder a la interfaz PasswordHasher de services-contracts.
      */
@@ -76,16 +99,70 @@ public class SecurityConfig {
         return new AuthenticatedUserDetailsService(userService);
     }
 
+    // El nombre del bean es el que usan las expresiones: @addressAccess.isOwner(...).
     @Bean
-    public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
+    public AddressAccessHandler addressAccess(final AddressService addressService) {
+        return new AddressAccessHandler(addressService);
+    }
+
+    // @inquiryAccess.isBuyer / isSeller / isParty: la pertenencia de cada endpoint de la Venta.
+    @Bean
+    public InquiryAccessHandler inquiryAccess(final InquiryService inquiryService) {
+        return new InquiryAccessHandler(inquiryService);
+    }
+
+    // @postAccess.isPublisher: junto con hasRole('ADMIN'), quien edita o elimina una publicacion.
+    @Bean
+    public PostAccessHandler postAccess(final PostService postService) {
+        return new PostAccessHandler(postService);
+    }
+
+    /*
+     * Regla por capa: aca se decide quien puede entrar a cada URL (anonimo, cuenta con sesion o
+     * cuenta verificada). Quien puede operar sobre un recurso ajeno lo decide un @PreAuthorize en
+     * el controller: @postAccess (Publicante o administrador) para editar y eliminar un Post, y
+     * @inquiryAccess y @addressAccess para la Venta y la libreta. Los services vuelven a chequear la
+     * pertenencia de la Venta y de la libreta antes de escribir, y responden 403 o 404.
+     *
+     * Las rutas de cuenta verificada se definen una sola vez: las usan la regla de acceso y el
+     * AccessDeniedHandler que manda a la pagina de "verifica tu correo".
+     *
+     * El perfil y las bandejas de consultas tambien piden la cuenta verificada: cualquiera puede
+     * registrar un correo ajeno, y esa sesion no tiene que ver los datos de cobro, las
+     * direcciones ni las consultas que el dueno real del correo cargue despues.
+     */
+    private static final RequestMatcher VERIFIED_PATHS = new OrRequestMatcher(
+            new AntPathRequestMatcher("/publish/**"),
+            new AntPathRequestMatcher("/post/*/edit"),
+            new AntPathRequestMatcher("/post/*/delete"),
+            new AntPathRequestMatcher("/post/*/contact"),
+            new AntPathRequestMatcher("/cart"),
+            new AntPathRequestMatcher("/cart/**"),
+            new AntPathRequestMatcher("/profile/**"),
+            new AntPathRequestMatcher("/inquiries"),
+            new AntPathRequestMatcher("/inquiries/sent"),
+            // Toda accion sobre una consulta: aceptar, rechazar y las que se sumen despues.
+            new AntPathRequestMatcher("/inquiries/{inquiryId:[0-9]+}/**"));
+
+    private static final String FORBIDDEN_PAGE = "/error/403";
+
+    /*
+     * Lleva la cuenta de las sesiones abiertas de cada usuario para poder cerrarlas cuando
+     * cambia la clave. HttpSessionEventPublisher (web.xml) le avisa cuando una sesion muere o
+     * cambia de id.
+     */
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(final HttpSecurity http, final SessionRegistry sessionRegistry)
+            throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .antMatchers("/admin/**").hasRole("ADMIN")
-                        .antMatchers("/publish/**").authenticated()
-                        .antMatchers("/post/*/edit", "/post/*/delete").authenticated()
-                        .antMatchers("/profile/**").authenticated()
-                        .antMatchers("/post/*/contact").authenticated()
-                        .antMatchers("/inquiries/**").authenticated()
+                        .requestMatchers(VERIFIED_PATHS).hasAuthority(AuthenticatedUser.VERIFIED)
+                        .antMatchers("/verify/resend", "/verify/required").authenticated()
                         .anyRequest().permitAll())
                 .formLogin(login -> login
                         .loginPage("/login")
@@ -99,12 +176,14 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID"))
-                .exceptionHandling(exceptions -> exceptions.accessDeniedPage("/error/403"));
+                // Sin limite de sesiones por cuenta: el registro solo sirve para expirarlas.
+                .sessionManagement(session -> session
+                        .maximumSessions(-1)
+                        .sessionRegistry(sessionRegistry)
+                        .expiredUrl("/login?sessionExpired"))
+                .exceptionHandling(exceptions -> exceptions.accessDeniedHandler(
+                        new VerificationAccessDeniedHandler(VERIFIED_PATHS, FORBIDDEN_PAGE)));
         return http.build();
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

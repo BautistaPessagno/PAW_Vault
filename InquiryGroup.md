@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/InquiryGroup.java"]
 ---
 
 # InquiryGroup
 
-Read projection for one inbox group: post ID (null when the publication was deleted), title, artist, seller display name, cover image ID, post status and an immutable list of its [[InquirySummary]] rows. [[InquiryServiceImpl]] builds groups from DAO rows ordered newest first; both inbox views render one group per publication through ui:inbox-group-header. It adds no table or commercial state.
+Una publicación y las consultas que la tocaron: la unidad por la que agrupan y paginan las dos bandejas. Es una proyección de lectura, no una tabla.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[InquirySummary]], [[PostStatus]].
+Datos y dependencias declaradas: `postId`, `albumId`, `title`, `artistName`, `sellerUsername`, `coverImageId`, `postStatus`, `inquiries`.
 
-Referenced by: [[InquiryPage]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]].
+Operaciones para localizar en la fuente: `getPostId`, `getAlbumId`, `isPostDeleted`, `getTitle`, `getArtistName`, `getSellerUsername`, `getCoverImageId`, `getPostStatus`, `getInquiries`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/InquiryGroup.java, lines 1–41](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryGroup.java>)
+Referencias estáticas a tipos del proyecto: [[InquirySummary]], [[PostStatus]].
+
+Referenciado por: [[InquiryPage]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/InquiryGroup.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryGroup.java>), líneas 1–44.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -36,6 +44,7 @@ import java.util.List;
  */
 public final class InquiryGroup {
     private final Long postId;
+    private final long albumId;
     private final String title;
     private final String artistName;
     private final String sellerUsername;
@@ -43,10 +52,11 @@ public final class InquiryGroup {
     private final PostStatus postStatus;
     private final List<InquirySummary> inquiries;
 
-    public InquiryGroup(final Long postId, final String title, final String artistName,
+    public InquiryGroup(final Long postId, final long albumId, final String title, final String artistName,
                         final String sellerUsername, final Long coverImageId,
                         final PostStatus postStatus, final List<InquirySummary> inquiries) {
         this.postId = postId;
+        this.albumId = albumId;
         this.title = title;
         this.artistName = artistName;
         this.sellerUsername = sellerUsername;
@@ -56,6 +66,7 @@ public final class InquiryGroup {
     }
 
     public Long getPostId() { return postId; }
+    public long getAlbumId() { return albumId; }
     public boolean isPostDeleted() { return postId == null; }
     public String getTitle() { return title; }
     public String getArtistName() { return artistName; }
@@ -67,7 +78,3 @@ public final class InquiryGroup {
     public List<InquirySummary> getInquiries() { return inquiries; }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

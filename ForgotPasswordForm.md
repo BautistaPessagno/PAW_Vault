@@ -4,25 +4,33 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/ForgotPasswordForm.java"]
 ---
 
 # ForgotPasswordForm
 
-Email-only recovery request with required, email-format and 100-character rules that reuse the registration messages. A controller binder trims the value before validation.
+Pedido de recuperación: solo el correo, obligatorio, con formato y hasta 100 caracteres.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `email`.
 
-Referenced by: [[AuthenticationController]].
+Operaciones para localizar en la fuente: `getEmail`, `setEmail`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/ForgotPasswordForm.java, lines 1–22](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ForgotPasswordForm.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[AuthenticationController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ForgotPasswordForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ForgotPasswordForm.java>), líneas 1–22.
 
 ```java
 package ar.edu.itba.paw.webapp.form;
@@ -48,7 +56,3 @@ public class ForgotPasswordForm {
 
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

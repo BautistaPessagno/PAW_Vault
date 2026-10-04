@@ -1,20 +1,26 @@
 ---
 title: "PasswordResetTokenJdbcDaoTest"
-categories: ["Testing"]
+categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java"]
 ---
 
 # PasswordResetTokenJdbcDaoTest
 
-HSQLDB DAO tests using the Spring test context and SQL fixtures. Source evidence for [[PasswordResetTokenJdbcDao]]; no new Maven execution is claimed.
+Tests de `PasswordResetTokenJdbcDao` en `persistence`: 9 casos declarados. Cubre: crear, unicidad por Cuenta, borrado por token y por Cuenta y purga de vencidos. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
-Test methods in this revision:
+## Guía de lectura
+
+Datos y dependencias declaradas: `TABLE`, `TOKEN_OWNER_ID`, `EXPIRED_TOKEN_OWNER_ID`, `USER_WITHOUT_TOKEN_ID`, `LIVE_TOKEN_ID`, `LIVE_TOKEN`, `EXPIRED_TOKEN`, `NEW_TOKEN`, `LIVE_EXPIRES_AT`, `EXPIRED_EXPIRES_AT`, `tokenDao`, `dataSource`, `jdbcTemplate`.
+
+Operaciones para localizar en la fuente: `setUp`, `sqlString`.
+
+Casos declarados: 9.
 
 - `testFindByTokenWhenTokenExistsReturnsAllPersistedFields`
 - `testFindByTokenWhenTokenIsExpiredReturnsTokenWithPastExpiration`
@@ -26,15 +32,17 @@ Test methods in this revision:
 - `testDeleteByTokenWhenTokenExistsReturnsOneAndRemovesIt`
 - `testDeleteByUserIdWhenUserHasNoTokensReturnsZeroAndLeavesOtherTokensUntouched`
 
-## Connections
+## Conexiones
 
-Project types referenced: [[PasswordResetToken]], [[PasswordResetTokenDao]], [[TestConfiguration]].
+Referencias estáticas a tipos del proyecto: [[PasswordResetToken]], [[PasswordResetTokenDao]], [[TestConfiguration]].
 
-Referenced by: none.
+Referenciado por: sin referencias léxicas desde otros archivos Java.
 
-## Exact source
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java, lines 1–189](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java>)
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java>), líneas 1–189.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -227,7 +235,3 @@ public class PasswordResetTokenJdbcDaoTest {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

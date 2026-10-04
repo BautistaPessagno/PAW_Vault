@@ -1,91 +1,163 @@
 ---
 title: "Search suggestions flow"
-categories: ["Flows", "Web", "Services"]
+categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java", "models/src/main/java/ar/edu/itba/paw/models/SearchText.java", "webapp/src/main/webapp/js/autocomplete.js"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/dto/SearchSuggestionDto.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/dto/ArtistSuggestionDto.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java", "models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java", "models/src/main/java/ar/edu/itba/paw/models/SearchSuggestionType.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java", "webapp/src/main/webapp/js/autocomplete.js", "webapp/src/main/webapp/WEB-INF/tags/input-control.tag", "pom.xml"]
 ---
 
 # Search suggestions flow
 
-Two text fields offer server-rendered suggestions while the user types. The global search in the site header asks /search/suggestions for artists and albums of available publications, and selecting one submits the catalog search. The artist field of the publish/edit form asks /artists/suggestions for existing catalog artists and only fills the field. Both endpoints are public GET routes that return an HTML fragment of listbox options, not JSON.
+> [!summary] En una frase
+> Dos endpoints devuelven JSON con hasta cinco sugerencias ordenadas por relevancia, y el navegador arma la lista con `textContent`, sin interpretar HTML.
 
-## Flow diagram
+## Qué resuelve
 
-The sequence follows the header search at `f12af08`. The artist field uses the same script with ArtistSuggestionController, ArtistServiceImpl and ArtistJdbcDao. This is a source trace, not a runtime test.
+El autocompletado del buscador (álbumes y artistas) y el del campo "artista" al publicar. Es la observación 3 del sprint 2: antes el servidor devolvía HTML armado y el cliente lo inyectaba con `innerHTML`.
 
-```mermaid
-sequenceDiagram
-    participant B as autocomplete.js
-    participant C as SearchSuggestionController
-    participant S as PostServiceImpl
-    participant T as SearchText
-    participant D as PostJdbcDao
-    B->>B: Input changes, wait 150 ms
-    B->>C: GET /search/suggestions?q=text
-    C->>S: findSearchSuggestions(text)
-    S->>T: compact(text)
-    alt Blank, over 255 characters or no letters/digits
-        S-->>C: Empty list
-    else Usable query
-        S->>D: findSearchSuggestions(compact, 5)
-        D-->>S: Ranked ARTIST and ALBUM rows
-    end
-    C-->>B: search/suggestions.jsp fragment
-    B->>B: Replace listbox options, ignore stale responses
-    B->>B: On selection, set value and submit the form
+## Herramientas
+
+| Herramienta | Para qué se usa acá |
+|---|---|
+| `@ResponseBody` + `produces = application/json` | El método devuelve datos, no una vista |
+| Jackson (`jackson-databind` 2.15.2) | Con Jackson en el classpath, Spring MVC registra solo el conversor a JSON |
+| DTOs en `webapp` | Los modelos de dominio no se serializan directo |
+| `MessageSource` | La etiqueta "Álbum" o "Artista" traducida en el servidor |
+| SQL con `UNION` y `CASE` | Ranking en la base |
+| `fetch` + `createElement` + `textContent` | Cliente sin `innerHTML` |
+| Atributos ARIA (`listbox`, `aria-activedescendant`) | Navegación con teclado y lector de pantalla |
+
+## Contrato
+
+```
+GET /search/suggestions?q=...
+[ { "value": "Kind of Blue", "type": "ALBUM",  "typeLabel": "Álbum",   "detail": "Miles Davis" },
+  { "value": "Miles Davis",  "type": "ARTIST", "typeLabel": "Artista", "detail": null } ]
+
+GET /artists/suggestions?q=...
+[ { "value": "Miles Davis" } ]
 ```
 
-## Normalization and ranking
+Siempre `200 application/json`. Sin `q`, con `q` vacío o de más de 255 caracteres: `[]`. El ejemplo sale del issue del sprint 2; los campos coinciden con [[SearchSuggestionDto]] y [[ArtistSuggestionDto]].
 
-[[SearchText]] defines the shared rule: lowercase, strip diacritics, collapse runs of non-alphanumeric characters into one space (phrase), then remove the spaces (compact). Writes store phrase() in artists.search_phrase and albums.search_phrase; schema.sql backfills older rows with an SQL approximation using TRANSLATE over common Spanish and French accented letters.
+## Recorrido paso a paso
 
-Queries are compared against REPLACE(search_phrase, ' ', ''), so `sodastereo`, `Soda-Stereo` and `soda stereo` search the same text, and a query without accents matches an accented name. The WHERE clause keeps any substring match; the ORDER BY ranks exact match first, then prefix of the whole text, then prefix of any word, then any other substring, with alphabetical tie-breakers and LIMIT 5. The ranking runs in SQL instead of loading every artist into memory.
+1. La persona escribe. `autocomplete.js` espera un instante (`SEARCH_DELAY_MS`) antes de pedir y numera cada pedido: si llega la respuesta de uno viejo, la descarta.
+2. `fetch(sourceUrl + '?q=' + encodeURIComponent(texto))`.
+3. Controller → `PostService.findSearchSuggestions` o `ArtistService.findSuggestions`: normalizan con `SearchText.compact` y devuelven vacío si no queda nada.
+4. DAO, una sola sentencia:
+   - Buscador: `UNION` de artistas y álbumes que tengan al menos una publicación `AVAILABLE`.
+   - Campo artista: todos los artistas del catálogo.
+   - Filtro: `REPLACE(search_phrase, ' ', '') LIKE '%texto%'`.
+   - Orden: 0 coincidencia exacta, 1 prefijo del texto completo, 2 prefijo de alguna palabra, 3 aparición en cualquier parte; después alfabético. `LIMIT 5`.
+5. El controller convierte a DTO. `typeLabel` se resuelve con el `Locale` del request; `detail` es el artista cuando la sugerencia es un álbum.
+6. El cliente lee `response.json()` y crea cada `<li>` con `createElement`, `textContent` y `setAttribute`. Un título con `<` o `&` se ve tal cual.
+7. En el buscador, elegir una sugerencia envía el formulario (`submitOnSelect`).
 
-[[PostJdbcDao]] unions distinct artist names and album titles (with their artist) from AVAILABLE posts only, so suggestions never point to sold or unpublished catalog entries. [[ArtistJdbcDao]] ranks all catalog artists, because the publish form should reuse an existing artist even if nothing by them is currently for sale.
+## Decisiones y por qué
 
-Selecting a header suggestion submits the plain catalog search with the chosen display value. That search still uses case-insensitive LIKE over title and artist, not search_phrase, so accent-insensitive matching applies to suggestions but not to a typed query submitted without choosing one. [[Known gaps and document drift]] records this difference.
+| Decisión | Alternativa | Motivo | Fuente |
+|---|---|---|---|
+| JSON y no fragmentos HTML | JSP parcial + `innerHTML` (versión anterior) | Observación de la cátedra: el servidor devuelve datos y la interfaz los presenta | Issue del sprint 2 |
+| DTO separado del modelo | Serializar `SearchSuggestion` | El contrato JSON no queda atado al dominio | Issue del sprint 2 |
+| `typeLabel` en el servidor | Traducir en JavaScript | La traducción sigue en los bundles | Issue del sprint 2 |
+| Ranking en SQL | Traer todo y ordenar en memoria (versión anterior) | No cargar la tabla entera por cada tecla | Comentario en [[PostJdbcDao]] |
+| El `WHERE` es el caso más amplio del ranking | Un filtro por nivel | No descarta ninguna fila que el ranking pudiera puntuar | Comentario en [[PostJdbcDao]] |
+| Buscador solo sugiere lo que tiene publicaciones disponibles | Todo el catálogo | Que la sugerencia lleve a resultados | SQL de [[PostJdbcDao]] |
+| Límite de 255 en la query | Sin límite | Nada más largo puede coincidir | Comentario en [[PostServiceImpl]] |
+| Jackson agregado solo en `webapp` | En todos los módulos | Es un detalle de presentación | `webapp/pom.xml` |
 
-## Browser behavior
+## Límites conocidos
 
-autocomplete.js enhances every element marked `data-autocomplete`. It debounces input by 150 ms, requests the source URL with `X-Requested-With`, discards responses that arrive after a newer request, and supports ArrowUp/ArrowDown, Enter and Escape, marking the active option with aria-selected and aria-activedescendant. The fragment's values were escaped by c:out on the server before being inserted. Without JavaScript both fields are ordinary inputs and the search still submits normally. The same script turns `select[data-select-picker]` elements into custom listbox pickers.
+- Las rutas son públicas y sin límite de frecuencia.
+- El `LIKE` con comodín inicial no usa índice.
+- `autocomplete.js` no tiene tests automáticos.
 
-[[Landing flow]] · [[Publish flow]] · [[Views and assets]]
+## Preguntas de defensa
 
-## Code snippets
+**¿Qué devuelve el endpoint y por qué JSON?**
+Una lista de objetos. Se cambió desde HTML porque así el servidor entrega datos reutilizables y el cliente no interpreta markup ajeno.
 
-### Service guard
+**¿Cómo se convierte la lista de Java a JSON?**
+Con `@ResponseBody`, Spring busca un conversor para `application/json`; al estar Jackson en el classpath, lo registra automáticamente.
 
-Oversized or empty normalized queries never reach SQL. See [[PostServiceImpl]] for the complete class.
+**¿Cómo evitan XSS en el desplegable?**
+El cliente nunca usa `innerHTML`: todo texto entra por `textContent`.
 
-[services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, lines 94–105](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>)
+**¿Cómo ordenan las sugerencias?**
+Con un `CASE` en SQL: exacta, prefijo, prefijo de palabra, contiene.
+
+## Evidencia de código
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java>), líneas 20–49.
 
 ```java
-    @Override
-    @Transactional(readOnly = true)
-    public List<SearchSuggestion> findSearchSuggestions(final String query) {
-        if (query != null && query.length() > MAX_QUERY_LENGTH) {
-            return List.of();
-        }
-        final String normalizedQuery = SearchText.compact(query);
-        if (normalizedQuery.isEmpty()) {
-            return List.of();
-        }
-        return postDao.findSearchSuggestions(normalizedQuery, SUGGESTION_LIMIT);
+@Controller
+public class SearchSuggestionController {
+
+    private final PostService postService;
+    private final MessageSource messageSource;
+
+    @Autowired
+    public SearchSuggestionController(final PostService postService, final MessageSource messageSource) {
+        this.postService = postService;
+        this.messageSource = messageSource;
     }
+
+    // Devuelve datos y no HTML: el componente de autocompletado arma las opciones en el navegador.
+    @RequestMapping(value = "/search/suggestions", method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<SearchSuggestionDto> suggestions(@RequestParam(value = "q", required = false) final String query,
+                                                 final Locale locale) {
+        return postService.findSearchSuggestions(query).stream()
+                .map(suggestion -> toDto(suggestion, locale))
+                .collect(Collectors.toList());
+    }
+
+    private SearchSuggestionDto toDto(final SearchSuggestion suggestion, final Locale locale) {
+        final SearchSuggestionType type = suggestion.getType();
+        final String typeLabel = messageSource.getMessage("search.suggestion." + type.name(), null, locale);
+        final String detail = type == SearchSuggestionType.ALBUM ? suggestion.getArtistName() : null;
+        return new SearchSuggestionDto(suggestion.getValue(), type.name(), typeLabel, detail);
+    }
+}
 ```
 
-### Ranked suggestion query
-
-The outer WHERE is the broadest of the four ranking cases, so it never drops a row the ranking could score. See [[PostJdbcDao]] for the complete class.
-
-[persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java, lines 60–81](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>)
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java>), líneas 16–34.
 
 ```java
+@Controller
+public class ArtistSuggestionController {
+
+    private final ArtistService artistService;
+
+    @Autowired
+    public ArtistSuggestionController(final ArtistService artistService) {
+        this.artistService = artistService;
+    }
+
+    @RequestMapping(value = "/artists/suggestions", method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<ArtistSuggestionDto> suggestions(@RequestParam(value = "q", required = false) final String query) {
+        return artistService.findSuggestions(query).stream()
+                .map(artist -> new ArtistSuggestionDto(artist.getName()))
+                .collect(Collectors.toList());
+    }
+}
+```
+
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 58–82.
+
+```java
+    // Reproduce en SQL el ranking que antes se calculaba en memoria sobre la tabla
+    // entera: coincidencia exacta, prefijo del texto completo, prefijo de alguna
+    // palabra y, por ultimo, aparicion en cualquier posicion.
     private static final String SUGGESTION_RANK =
             "CASE WHEN REPLACE(search_phrase, ' ', '') = ? THEN 0 "
                     + "WHEN REPLACE(search_phrase, ' ', '') LIKE ? THEN 1 "
@@ -110,19 +182,49 @@ The outer WHERE is the broadest of the four ranking cases, so it never drops a r
                     + "LIMIT ?";
 ```
 
-### Shared normalizer
-
-The same rule serves persisted columns and incoming queries. See [[SearchText]] for the complete class.
-
-[models/src/main/java/ar/edu/itba/paw/models/SearchText.java, lines 22–29](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchText.java>)
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 197–203.
 
 ```java
-    public static String phrase(final String value) {
-        if (value == null) {
-            return "";
-        }
-        final String withoutDiacritics = DIACRITICS.matcher(
-                Normalizer.normalize(value, Normalizer.Form.NFD)).replaceAll("");
-        return SEPARATORS.matcher(withoutDiacritics.toLowerCase(Locale.ROOT)).replaceAll(" ").trim();
+    @Override
+    public List<SearchSuggestion> findSearchSuggestions(final String normalizedQuery, final int limit) {
+        return List.copyOf(jdbcTemplate.query(FIND_SUGGESTIONS_QUERY, SEARCH_SUGGESTION_ROW_MAPPER,
+                PostStatus.AVAILABLE.name(), PostStatus.AVAILABLE.name(),
+                "%" + normalizedQuery + "%", normalizedQuery, normalizedQuery + "%",
+                "% " + normalizedQuery + "%", limit));
     }
 ```
+
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 177–188.
+
+```java
+    @Override
+    @Transactional(readOnly = true)
+    public List<SearchSuggestion> findSearchSuggestions(final String query) {
+        if (query != null && query.length() > MAX_QUERY_LENGTH) {
+            return List.of();
+        }
+        final String normalizedQuery = SearchText.compact(query);
+        if (normalizedQuery.isEmpty()) {
+            return List.of();
+        }
+        return postDao.findSearchSuggestions(normalizedQuery, SUGGESTION_LIMIT);
+    }
+```
+
+## Archivos para seguir el flujo
+
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java>) · [[SearchSuggestionController]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java>) · [[ArtistSuggestionController]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/dto/SearchSuggestionDto.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/dto/SearchSuggestionDto.java>) · [[SearchSuggestionDto]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/dto/ArtistSuggestionDto.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/dto/ArtistSuggestionDto.java>) · [[ArtistSuggestionDto]]
+- [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>) · [[PostServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>) · [[ArtistServiceImpl]]
+- [models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java>) · [[SearchSuggestion]]
+- [models/src/main/java/ar/edu/itba/paw/models/SearchSuggestionType.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchSuggestionType.java>) · [[SearchSuggestionType]]
+- [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>) · [[PostJdbcDao]]
+- [persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>) · [[ArtistJdbcDao]]
+- [webapp/src/main/webapp/js/autocomplete.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/autocomplete.js>)
+- [webapp/src/main/webapp/WEB-INF/tags/input-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/input-control.tag>)
+- [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>)
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

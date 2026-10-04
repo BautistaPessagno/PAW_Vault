@@ -1,35 +1,45 @@
 ---
 title: "TestConfiguration"
-categories: ["Testing"]
-type: "code"
+categories: ["Persistence", "Testing"]
+type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java"]
 ---
 
 # TestConfiguration
 
-Builds the persistence test Spring context. HSQLDB is an in-memory database named paw with PostgreSQL syntax mode. It initializes test schema.sql followed by populator.sql, scans persistence beans, and supplies a DataSourceTransactionManager. This does not load [[WebConfig]], production PostgreSQL or SMTP.
+Contexto de los tests de persistencia: HSQLDB en memoria con sintaxis PostgreSQL, las mismas migraciones Flyway que producción y después los fixtures de `populator.sql`.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Operaciones para localizar en la fuente: `dataSource`, `flyway`, `dataSourceInitializer`, `transactionManager`.
 
-Referenced by: [[AlbumJdbcDaoTest]], [[ArtistJdbcDaoTest]], [[EmailVerificationTokenJdbcDaoTest]], [[ImageJdbcDaoTest]], [[InquiryJdbcDaoTest]], [[PasswordResetTokenJdbcDaoTest]], [[PostJdbcDaoTest]], [[UserJdbcDaoTest]].
+Casos declarados: 0.
 
-## Exact source
+## Conexiones
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java, lines 1–47](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[AddressJdbcDaoTest]], [[AlbumJdbcDaoTest]], [[ArtistJdbcDaoTest]], [[CartItemJdbcDaoTest]], [[EmailVerificationTokenJdbcDaoTest]], [[ImageJdbcDaoTest]], [[InquiryJdbcDaoTest]], [[MessageJdbcDaoTest]], [[PasswordResetTokenJdbcDaoTest]], [[PostImageJdbcDaoTest]], [[PostJdbcDaoTest]], [[ReviewJdbcDaoTest]], [[UserJdbcDaoTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java>), líneas 1–59.
 
 ```java
 package ar.edu.itba.paw.persistence;
 
+import org.flywaydb.core.Flyway;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
@@ -55,10 +65,20 @@ public class TestConfiguration {
         return dataSource;
     }
 
+    // Las mismas migraciones que corre WebConfig en produccion, sobre la base vacia.
+    @Bean(initMethod = "migrate")
+    public Flyway flyway(final DataSource dataSource) {
+        return Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration")
+                .load();
+    }
+
+    // Los fixtures se cargan recien con el esquema migrado.
     @Bean
+    @DependsOn("flyway")
     public DataSourceInitializer dataSourceInitializer(final DataSource dataSource) {
         final ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-        populator.addScript(new ClassPathResource("schema.sql"));
         populator.addScript(new ClassPathResource("populator.sql"));
 
         final DataSourceInitializer initializer = new DataSourceInitializer();
@@ -73,7 +93,3 @@ public class TestConfiguration {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

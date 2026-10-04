@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/User.java"]
 ---
 
 # User
 
-Account row with display username, normalized email, nullable password hash, USER/ADMIN role, enabled flag and preferred locale. Registration creates a disabled account; email verification chooses credentials and enables it. The username can later be edited from the profile, and the hash replaced by a password change or recovery. [[AuthenticatedUser]] adapts this value for Spring Security.
+La Cuenta: nombre visible, correo, hash de la contraseña, [[UserRole]], si está verificada, idioma preferido y [[PaymentInfo]]. Inmutable. `verified` no impide iniciar sesión; habilita la authority `VERIFIED`. Ver [[Authentication flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[UserRole]].
+Datos y dependencias declaradas: `id`, `username`, `email`, `passwordHash`, `role`, `verified`, `preferredLocale`, `paymentInfo`.
 
-Referenced by: [[AuthenticatedUser]], [[AuthenticatedUserDetailsService]], [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]], [[ProfileController]], [[UserDao]], [[UserJdbcDao]], [[UserJdbcDaoTest]], [[UserNotFoundException]], [[UserService]], [[UserServiceImpl]], [[UserServiceImplTest]].
+Operaciones para localizar en la fuente: `getId`, `getUsername`, `getEmail`, `getPasswordHash`, `getRole`, `isVerified`, `getPreferredLocale`, `getPaymentInfo`, `hasPaymentInfo`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/User.java, lines 1–51](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/User.java>)
+Referencias estáticas a tipos del proyecto: [[PaymentInfo]], [[UserRole]].
+
+Referenciado por: [[AuthenticatedUser]], [[AuthenticatedUserDetailsService]], [[AuthenticationController]], [[AuthenticationSessions]], [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]], [[ProfileController]], [[UserDao]], [[UserJdbcDao]], [[UserJdbcDaoTest]], [[UserService]], [[UserServiceImpl]], [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/User.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/User.java>), líneas 1–69.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -33,19 +41,28 @@ public class User {
     private final String email;
     private final String passwordHash;
     private final UserRole role;
-    private final boolean enabled;
+    private final boolean verified;
     private final String preferredLocale;
+    private final PaymentInfo paymentInfo;
+
+    // Las cuentas que todavia no cargaron datos de cobro.
+    public User(final long id, final String username, final String email,
+                final String passwordHash, final UserRole role, final boolean verified,
+                final String preferredLocale) {
+        this(id, username, email, passwordHash, role, verified, preferredLocale, PaymentInfo.NONE);
+    }
 
     public User(final long id, final String username, final String email,
-                final String passwordHash, final UserRole role, final boolean enabled,
-                final String preferredLocale) {
+                final String passwordHash, final UserRole role, final boolean verified,
+                final String preferredLocale, final PaymentInfo paymentInfo) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
-        this.enabled = enabled;
+        this.verified = verified;
         this.preferredLocale = preferredLocale;
+        this.paymentInfo = paymentInfo;
     }
 
     public long getId() {
@@ -68,16 +85,21 @@ public class User {
         return role;
     }
 
-    public boolean isEnabled() {
-        return enabled;
+    public boolean isVerified() {
+        return verified;
     }
 
     public String getPreferredLocale() {
         return preferredLocale;
     }
+
+    // Nunca null: sin datos de cobro es PaymentInfo.NONE.
+    public PaymentInfo getPaymentInfo() {
+        return paymentInfo;
+    }
+
+    public boolean hasPaymentInfo() {
+        return paymentInfo.isPresent();
+    }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

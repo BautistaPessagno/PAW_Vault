@@ -4,25 +4,31 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostUnavailableException.java"]
 ---
 
 # PostUnavailableException
 
-The publication is no longer AVAILABLE. Raised for contact attempts and for edit or delete of a sold post. [[PostContactController]] and [[PublishController]] map it to HTTP 409.
+La publicación ya no está disponible para consultar, editar o eliminar. Los controllers responden 409.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Sin campos ni métodos propios: el archivo completo está abajo.
 
-Referenced by: [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/PostUnavailableException.java, lines 1–4](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostUnavailableException.java>)
+Referenciado por: [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/PostUnavailableException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostUnavailableException.java>), líneas 1–4.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -30,7 +36,3 @@ package ar.edu.itba.paw.services;
 public class PostUnavailableException extends RuntimeException {
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

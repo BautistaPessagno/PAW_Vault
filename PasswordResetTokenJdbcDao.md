@@ -4,25 +4,33 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java"]
 ---
 
 # PasswordResetTokenJdbcDao
 
-Stores token rows through SimpleJdbcInsert and maps them with a static RowMapper. findByToken returns a row even when expired; deleteByToken reports whether this request claimed the link; deleteByUserId and deleteExpired(now) clean up. The unique user_id constraint makes a concurrent second insert for the same account fail with DuplicateKeyException.
+Tokens de recuperación con Spring JDBC. El vencimiento llega calculado desde el service. `findByToken` devuelve el token aunque esté vencido: quién decide si sirve es el service.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[PasswordResetToken]], [[PasswordResetTokenDao]].
+Datos y dependencias declaradas: `ROW_MAPPER`, `SELECT`, `jdbcTemplate`, `jdbcInsert`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `create`, `findByToken`, `deleteByToken`, `deleteByUserId`, `deleteExpired`.
 
-## Exact source
+## Conexiones
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java, lines 1–85](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java>)
+Referencias estáticas a tipos del proyecto: [[PasswordResetToken]], [[PasswordResetTokenDao]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java>), líneas 1–85.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -111,7 +119,3 @@ public class PasswordResetTokenJdbcDao implements PasswordResetTokenDao {
 
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

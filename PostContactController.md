@@ -4,35 +4,48 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java"]
 ---
 
 # PostContactController
 
-Authenticated GET loads a contactable post; POST submits the principal ID and the optional message through InquiryService. Normalizes CRLF to LF and trims before size validation. Success redirects to /inquiries/sent with the inquirySubmitted flash; missing, sold or self-owned posts produce 404, 409 or 403.
+Formulario de contacto de una publicación: carga el post contactable y las opciones de envío, y envía la consulta con dirección guardada o nueva. Ver [[Contact flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[AuthenticatedUser]], [[ContactForm]], [[ForbiddenOperationException]], [[InquiryService]], [[PostNotFoundException]], [[PostSummary]], [[PostUnavailableException]].
+Datos y dependencias declaradas: `inquiryService`, `addressService`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `initBinder`, `contactForm`, `contact`, `buildContactView`, `postUnavailable`, `openInquiryExists`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java, lines 1–105](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java>)
+Referencias estáticas a tipos del proyecto: [[AddressLimitExceededException]], [[AddressNotFoundException]], [[AddressService]], [[AuthenticatedUser]], [[ContactForm]], [[InquiryService]], [[LineBreakNormalizingEditor]], [[OpenInquiryExistsException]], [[PostSummary]], [[PostUnavailableException]], [[Province]], [[ShippingOptions]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java>), líneas 1–126.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.models.PostSummary;
-import ar.edu.itba.paw.services.ForbiddenOperationException;
+import ar.edu.itba.paw.models.Province;
+import ar.edu.itba.paw.models.ShippingOptions;
+import ar.edu.itba.paw.services.AddressLimitExceededException;
+import ar.edu.itba.paw.services.AddressNotFoundException;
+import ar.edu.itba.paw.services.AddressService;
 import ar.edu.itba.paw.services.InquiryService;
-import ar.edu.itba.paw.services.PostNotFoundException;
+import ar.edu.itba.paw.services.OpenInquiryExistsException;
 import ar.edu.itba.paw.services.PostUnavailableException;
 import ar.edu.itba.paw.webapp.form.ContactForm;
+import ar.edu.itba.paw.webapp.form.LineBreakNormalizingEditor;
 import ar.edu.itba.paw.webapp.security.AuthenticatedUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -52,16 +65,17 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
-import java.beans.PropertyEditorSupport;
 
 @Controller
 public class PostContactController {
 
     private final InquiryService inquiryService;
+    private final AddressService addressService;
 
     @Autowired
-    public PostContactController(final InquiryService inquiryService) {
+    public PostContactController(final InquiryService inquiryService, final AddressService addressService) {
         this.inquiryService = inquiryService;
+        this.addressService = addressService;
     }
 
     // Recorta antes de validar, para que @Size mida el valor real y no los espacios de mas.
@@ -75,10 +89,10 @@ public class PostContactController {
     public ModelAndView contactForm(@PathVariable("postId") final long postId,
                                     @ModelAttribute("contactForm") final ContactForm form,
                                     @AuthenticationPrincipal final AuthenticatedUser currentUser) {
-        final PostSummary post = inquiryService.findContactablePost(postId, currentUser.getId());
-        final ModelAndView modelAndView = new ModelAndView("post/contact");
-        modelAndView.addObject("post", post);
-        return modelAndView;
+        final ShippingOptions shipping = addressService.findShippingOptions(currentUser.getId());
+        // Solo en el GET inicial: al volver a mostrar un error se respeta lo que eligio.
+        shipping.getDefaultAddress().ifPresent(address -> form.setAddressId(address.getId()));
+        return buildContactView(postId, currentUser, shipping);
     }
 
     @RequestMapping(value = "/post/{postId:[0-9]+}/contact", method = RequestMethod.POST)
@@ -88,25 +102,46 @@ public class PostContactController {
                                 @AuthenticationPrincipal final AuthenticatedUser currentUser,
                                 final RedirectAttributes redirectAttributes) {
         if (errors.hasErrors()) {
-            return contactForm(postId, form, currentUser);
+            return buildContactView(postId, currentUser);
         }
-        inquiryService.submit(postId, currentUser.getId(), form.getContactMessage());
+        try {
+            if (form.isNewAddress()) {
+                inquiryService.submitWithNewAddress(postId, currentUser.getId(), form.getContactMessage(),
+                        form.getStreet(), form.getStreetNumber(), form.getApartment(), form.getCity(),
+                        form.getProvince(), form.getPostalCode(), form.getNotes());
+            } else {
+                inquiryService.submit(postId, currentUser.getId(), form.getContactMessage(), form.getAddressId());
+            }
+        } catch (final AddressNotFoundException e) {
+            // La eligio y despues la archivo en otra pestania: se vuelve a elegir sin perder el mensaje.
+            errors.rejectValue("addressId", "post.contact.address.unavailable");
+            return buildContactView(postId, currentUser);
+        } catch (final AddressLimitExceededException e) {
+            // Llego al tope desde otra pestania: se vuelve a mostrar el form sin perder el mensaje.
+            final ModelAndView modelAndView = buildContactView(postId, currentUser);
+            modelAndView.addObject("addressLimitReached", true);
+            return modelAndView;
+        }
 
         // El aviso es para el comprador: vuelve a su propia bandeja, la de enviadas.
         redirectAttributes.addFlashAttribute("inquirySubmitted", true);
         return new ModelAndView("redirect:/inquiries/sent");
     }
 
-    @ExceptionHandler(PostNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ModelAndView postNotFound() {
-        return new ModelAndView("error/404");
+    private ModelAndView buildContactView(final long postId, final AuthenticatedUser currentUser) {
+        return buildContactView(postId, currentUser, addressService.findShippingOptions(currentUser.getId()));
     }
 
-    @ExceptionHandler(ForbiddenOperationException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ModelAndView forbidden() {
-        return new ModelAndView("error/403");
+    private ModelAndView buildContactView(final long postId, final AuthenticatedUser currentUser,
+                                          final ShippingOptions shipping) {
+        final PostSummary post = inquiryService.findContactablePost(postId, currentUser.getId());
+        final ModelAndView modelAndView = new ModelAndView("post/contact");
+        modelAndView.addObject("post", post);
+        modelAndView.addObject("addresses", shipping.getAddresses());
+        modelAndView.addObject("provinces", Province.values());
+        modelAndView.addObject("canAddAddress", shipping.isNewAddressAllowed());
+        modelAndView.addObject("maxAddresses", AddressService.MAX_ACTIVE_ADDRESSES);
+        return modelAndView;
     }
 
     @ExceptionHandler(PostUnavailableException.class)
@@ -115,23 +150,13 @@ public class PostContactController {
         return new ModelAndView("error/409");
     }
 
-    /*
-     * El browser mide el maxlength del textarea contando los saltos como LF, pero manda el
-     * contenido con CRLF: sin normalizar, un mensaje que la UI dio por bueno llega con un
-     * caracter de mas por salto de linea y @Size lo rechaza. Tambien recorta, porque el editor
-     * por campo reemplaza al StringTrimmerEditor registrado para todos los String.
-     */
-    private static final class LineBreakNormalizingEditor extends PropertyEditorSupport {
-
-        @Override
-        public void setAsText(final String text) {
-            final String normalized = text == null ? "" : text.replace("\r\n", "\n").trim();
-            setValue(normalized.isEmpty() ? null : normalized);
-        }
+    // Ya tiene una Consulta abierta por este vinilo: sigue en esa Conversacion, tanto al abrir
+    // el formulario como al enviarlo.
+    @ExceptionHandler(OpenInquiryExistsException.class)
+    public ModelAndView openInquiryExists(final OpenInquiryExistsException exception,
+                                          final RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("saleNotice", "inquiry.alreadyOpen");
+        return new ModelAndView("redirect:/inquiries/" + exception.getInquiryId() + "#conversation");
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -4,25 +4,33 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java"]
 ---
 
 # PostJdbcDao
 
-Paged search builds parameterized AND filters over AVAILABLE posts, case-insensitive LIKE over title and artist with escaped wildcards, a fixed ORDER BY per [[PostSort]] and LIMIT/OFFSET. findSearchSuggestions unions distinct artist and album names of available posts and ranks them over search_phrase. The class also lists and counts a publisher's posts newest first, locks with FOR UPDATE before the joined read, creates AVAILABLE posts with stock 1, updates details with or without a new image (translating duplicate keys), marks sold conditionally, finds the post's own image and deletes the row. Images use COALESCE(post image, album cover).
+Publicaciones con Spring JDBC. Arma el `WHERE` de búsqueda agregando cláusulas fijas con parámetros, comparte ese `WHERE` entre listar y contar, ordena desde un `switch` sobre [[PostSort]], escapa los comodines de `LIKE`, bloquea filas con `FOR UPDATE` (una o varias en orden de id) y cambia estado con guarda.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[AlbumJdbcDao]], [[Condition]], [[DuplicatePostKeyException]], [[Post]], [[PostDao]], [[PostSearchCriteria]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[SearchSuggestion]], [[SearchSuggestionType]].
+Datos y dependencias declaradas: `ROW_MAPPER`, `SEARCH_SUGGESTION_ROW_MAPPER`, `SUGGESTION_RANK`, `FIND_SUGGESTIONS_QUERY`, `SUMMARY_SELECT`, `COUNT_SELECT`, `LIKE_ESCAPE`, `LIKE_ESCAPE_CLAUSE`, `NEWEST_FIRST`, `UPDATE_POST`, `jdbcTemplate`, `jdbcInsert`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `readNullableInt`, `readNullableLong`, `readCondition`, `search`, `countSearch`, `searchWhere`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `countAvailableByPublisherId`, `countByPublisherId`, `orderBy`, `escapeLike`, `findById`, `findByIdForUpdate`, `findByIdsForUpdate`, `existsByUserIdAndAlbumId`, `create`, `update`, `updateWithImage`, `updateStatus`, `findOwnImageId`, `findAlbumCoverImageId`, `delete`.
 
-## Exact source
+## Conexiones
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java, lines 1–317](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>)
+Referencias estáticas a tipos del proyecto: [[AlbumJdbcDao]], [[Condition]], [[DuplicatePostKeyException]], [[Post]], [[PostDao]], [[PostSearchCriteria]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[SearchSuggestion]], [[SearchSuggestionType]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 1–373.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -46,10 +54,11 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Locale;
 import java.util.Optional;
 
 @Repository
@@ -119,6 +128,10 @@ public class PostJdbcDao implements PostDao {
                     "FROM posts p JOIN users u ON u.id = p.user_id " +
                     "JOIN albums a ON a.id = p.album_id JOIN artists ar ON ar.id = a.artist_id ";
 
+    private static final String COUNT_SELECT =
+            "SELECT COUNT(*) FROM posts p JOIN albums a ON a.id = p.album_id "
+                    + "JOIN artists ar ON ar.id = a.artist_id ";
+
     private static final String LIKE_ESCAPE = "\\";
     // El SQL y escapeLike() salen del mismo caracter: si cambia uno, cambia el otro.
     private static final String LIKE_ESCAPE_CLAUSE = "ESCAPE '" + LIKE_ESCAPE + "'";
@@ -159,15 +172,33 @@ public class PostJdbcDao implements PostDao {
 
     @Override
     public List<PostSummary> search(final PostSearchCriteria criteria, final int limit, final int offset) {
-        final List<String> clauses = new ArrayList<>();
         final List<Object> parameters = new ArrayList<>();
+        final String where = searchWhere(criteria, parameters);
+        parameters.add(limit);
+        parameters.add(offset);
+        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT + where + "ORDER BY "
+                + orderBy(criteria.getSort()) + " LIMIT ? OFFSET ?", ROW_MAPPER, parameters.toArray()));
+    }
+
+    @Override
+    public int countSearch(final PostSearchCriteria criteria) {
+        final List<Object> parameters = new ArrayList<>();
+        final String where = searchWhere(criteria, parameters);
+        return jdbcTemplate.queryForObject(COUNT_SELECT + where, Integer.class, parameters.toArray());
+    }
+
+    // Un solo WHERE para listar y contar: si divergen, la paginacion promete paginas que no existen.
+    private static String searchWhere(final PostSearchCriteria criteria, final List<Object> parameters) {
+        final List<String> clauses = new ArrayList<>();
         // Los vendidos no se ofrecen: la landing solo lista lo que todavia se puede comprar.
         clauses.add("p.status = ?");
         parameters.add(PostStatus.AVAILABLE.name());
+        // La query llega normalizada con SearchText.compact, igual que en las sugerencias:
+        // compara contra la misma columna para que las dos encuentren los mismos discos.
         if (criteria.getQuery() != null) {
-            final String pattern = "%" + escapeLike(criteria.getQuery().toLowerCase(Locale.ROOT)) + "%";
-            clauses.add("(LOWER(a.title) LIKE ? " + LIKE_ESCAPE_CLAUSE
-                    + " OR LOWER(ar.name) LIKE ? " + LIKE_ESCAPE_CLAUSE + ")");
+            final String pattern = "%" + escapeLike(criteria.getQuery()) + "%";
+            clauses.add("(REPLACE(a.search_phrase, ' ', '') LIKE ? " + LIKE_ESCAPE_CLAUSE
+                    + " OR REPLACE(ar.search_phrase, ' ', '') LIKE ? " + LIKE_ESCAPE_CLAUSE + ")");
             parameters.add(pattern);
             parameters.add(pattern);
         }
@@ -195,11 +226,7 @@ public class PostJdbcDao implements PostDao {
             clauses.add("p.price <= ?");
             parameters.add(criteria.getMaxPrice());
         }
-        final String where = "WHERE " + String.join(" AND ", clauses) + " ";
-        parameters.add(limit);
-        parameters.add(offset);
-        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT + where + "ORDER BY "
-                + orderBy(criteria.getSort()) + " LIMIT ? OFFSET ?", ROW_MAPPER, parameters.toArray()));
+        return "WHERE " + String.join(" AND ", clauses) + " ";
     }
 
     @Override
@@ -215,6 +242,19 @@ public class PostJdbcDao implements PostDao {
         return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT
                         + "WHERE p.user_id = ? ORDER BY " + NEWEST_FIRST + " LIMIT ? OFFSET ?",
                 ROW_MAPPER, publisherId, limit, offset));
+    }
+
+    @Override
+    public List<PostSummary> findAvailableByPublisherId(final long publisherId, final int limit, final int offset) {
+        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT
+                        + "WHERE p.user_id = ? AND p.status = ? ORDER BY " + NEWEST_FIRST + " LIMIT ? OFFSET ?",
+                ROW_MAPPER, publisherId, PostStatus.AVAILABLE.name(), limit, offset));
+    }
+
+    @Override
+    public int countAvailableByPublisherId(final long publisherId) {
+        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM posts WHERE user_id = ? AND status = ?",
+                Integer.class, publisherId, PostStatus.AVAILABLE.name());
     }
 
     @Override
@@ -270,6 +310,21 @@ public class PostJdbcDao implements PostDao {
         return findById(id);
     }
 
+    // Dos sentencias fijas para cualquier cantidad de posts: el bloqueo en orden de id y
+    // despues los summaries, sin un findById por post.
+    @Override
+    public List<PostSummary> findByIdsForUpdate(final Collection<Long> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        final String placeholders = String.join(", ", Collections.nCopies(ids.size(), "?"));
+        final Object[] parameters = ids.toArray();
+        jdbcTemplate.queryForList("SELECT id FROM posts WHERE id IN (" + placeholders + ") ORDER BY id FOR UPDATE",
+                Long.class, parameters);
+        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT + "WHERE p.id IN (" + placeholders + ") ORDER BY p.id",
+                ROW_MAPPER, parameters));
+    }
+
     @Override
     public boolean existsByUserIdAndAlbumId(final long userId, final long albumId) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
@@ -314,7 +369,7 @@ public class PostJdbcDao implements PostDao {
     @Override
     public boolean updateWithImage(final long id, final long albumId, final int price, final String description,
                                    final Condition condition, final Integer pressingYear, final String zone,
-                                   final long imageId) {
+                                   final Long imageId) {
         try {
             return jdbcTemplate.update(UPDATE_POST + ", image_id = ? WHERE id = ?", albumId, price, description,
                     condition == null ? null : condition.name(), pressingYear, zone, imageId, id) == 1;
@@ -323,10 +378,11 @@ public class PostJdbcDao implements PostDao {
         }
     }
 
+    // Guarda de estado en el WHERE: si otra transaccion ya movio el post, no actualiza nada.
     @Override
-    public boolean markSoldIfAvailable(final long id) {
+    public boolean updateStatus(final long id, final PostStatus from, final PostStatus to) {
         return jdbcTemplate.update("UPDATE posts SET status = ? WHERE id = ? AND status = ?",
-                PostStatus.SOLD.name(), id, PostStatus.AVAILABLE.name()) == 1;
+                to.name(), id, from.name()) == 1;
     }
 
     @Override
@@ -338,12 +394,16 @@ public class PostJdbcDao implements PostDao {
     }
 
     @Override
+    public Optional<Long> findAlbumCoverImageId(final long id) {
+        return jdbcTemplate.queryForList("SELECT a.cover_image_id FROM posts p JOIN albums a ON a.id = p.album_id " +
+                        "WHERE p.id = ? AND a.cover_image_id IS NOT NULL", Long.class, id)
+                .stream()
+                .findFirst();
+    }
+
+    @Override
     public boolean delete(final long id) {
         return jdbcTemplate.update("DELETE FROM posts WHERE id = ?", id) == 1;
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

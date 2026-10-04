@@ -4,25 +4,33 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUserDetailsService.java"]
 ---
 
 # AuthenticatedUserDetailsService
 
-Loads an account through UserService.findByEmail and returns AuthenticatedUser. Missing accounts and null password hashes produce the same Invalid credentials message; enabled is checked by Spring Security using the adapter.
+Carga la Cuenta por correo para el login. Si no existe o no tiene contraseña, responde con el mismo error genérico.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[AuthenticatedUser]], [[User]], [[UserService]].
+Datos y dependencias declaradas: `userService`.
 
-Referenced by: [[SecurityConfig]].
+Operaciones para localizar en la fuente: `loadUserByUsername`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUserDetailsService.java, lines 1–26](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUserDetailsService.java>)
+Referencias estáticas a tipos del proyecto: [[AuthenticatedUser]], [[User]], [[UserService]].
+
+Referenciado por: [[SecurityConfig]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUserDetailsService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUserDetailsService.java>), líneas 1–26.
 
 ```java
 package ar.edu.itba.paw.webapp.security;
@@ -52,7 +60,3 @@ public final class AuthenticatedUserDetailsService implements UserDetailsService
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

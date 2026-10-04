@@ -4,25 +4,31 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PasswordHasher.java"]
 ---
 
 # PasswordHasher
 
-Service contract with hash and matches, so services can create and verify password hashes without Spring Security types. [[SecurityConfig]] supplies an anonymous adapter over the BCrypt PasswordEncoder bean.
+Hashear y comparar contraseñas sin que `services` dependa de Spring Security. El adaptador sobre BCrypt está en [[SecurityConfig]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Operaciones para localizar en la fuente: `hash`, `matches`.
 
-Referenced by: [[SecurityConfig]], [[UserServiceImpl]], [[UserServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/PasswordHasher.java, lines 1–7](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PasswordHasher.java>)
+Referenciado por: [[SecurityConfig]], [[UserServiceImpl]], [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/PasswordHasher.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PasswordHasher.java>), líneas 1–7.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -33,7 +39,3 @@ public interface PasswordHasher {
     boolean matches(String rawPassword, String passwordHash);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

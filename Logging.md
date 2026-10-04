@@ -4,38 +4,92 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-tags: ["codemap", "operations"]
-sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/logback-test.xml"]
+sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/logback-test.xml", "services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java", "webapp/pom.xml"]
 ---
 
 # Logging
 
-SLF4J/Logback writes application records under `${catalina.base:-.}/logs`. The current application pattern is paw-2026b-14-webapp.%d{yyyy-MM-dd}.log; warnings use paw-2026b-14-webapp-warnings.%d{yyyy-MM-dd}.log. Both retain seven daily periods. The configuration files did not change in this range.
+> [!summary] En una frase
+> El código loguea contra la fachada SLF4J y Logback escribe dos archivos diarios: uno con lo que hace la aplicación (INFO) y otro con las advertencias de todo lo demás (WARN), con el nombre exacto que la cátedra publica.
 
-The rolling appenders omit an explicit file element, so the active file uses the dated pattern as well. The source comments tie this naming to the course server log path; no remote log or deployment was checked.
+## Herramientas
 
-ar.edu.itba logs INFO to APP_FILE with additivity=false. Root WARN goes to WARNINGS_FILE, so application WARN and ERROR records, including the new dropped-mail warning from [[WebConfig]], stay in the application file and are not copied into the warnings file. logback-test.xml remains in webapp main resources and is excluded from the packaged WAR; it configures application DEBUG and root WARN to console.
-
-## Application log lines
-
-| Source | Events |
+| Herramienta | Para qué |
 |---|---|
-| [[UserServiceImpl]] | Verification link sent, email verified, username updated, password changed, reset link sent, password reset, ignored or concurrent reset requests; user IDs only |
-| [[InquiryServiceImpl]] | Inquiry created, accepted (with competing rejections) and rejected; inquiry, post, buyer or seller IDs |
-| [[PostServiceImpl]] | Post deleted with publisher ID, detached inquiry count and own image ID |
-| [[ImageServiceImpl]] | Rejected type or size; stored image ID, type and byte count |
-| [[EmailServiceImpl]] | Success or failure of each of the six messages, with user, post or inquiry ID and the full exception on failure |
-| [[WebConfig]] | WARN when the saturated mail pool drops a task |
-| [[MultipartExceptionHandlerFilter]] | WARN with the request URI of an oversized upload |
+| SLF4J (`slf4j-api`) | Fachada: el código no depende de la implementación |
+| Logback (`logback-classic`) | Implementación y configuración por XML |
+| `RollingFileAppender` + `TimeBasedRollingPolicy` | Un archivo por día, siete días de historia |
 
-The inquiry, verification, password and reset success lines are now emitted inside after-commit callbacks, so they no longer appear for transactions that roll back. The explicit messages avoid inquiry text, email addresses and tokens. The unknown-account reset request is logged without the address. Exception objects are still passed to the logger on mail failure, and the source does not establish what external mail exception text may contain. Controllers do not log.
+## Configuración
 
-## Production configuration
+| Logger | Nivel | Destino |
+|---|---|---|
+| `ar.edu.itba` (el código del proyecto) | INFO | `paw-2026b-14-webapp.<fecha>.log` |
+| Raíz (Spring, drivers, contenedor) | WARN | `paw-2026b-14-webapp-warnings.<fecha>.log` |
 
-[webapp/src/main/resources/logback.xml, lines 1–45](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/logback.xml>)
+- `additivity="false"` en el logger del proyecto: sus mensajes no se repiten en el archivo de advertencias.
+- El directorio es `${catalina.base}/logs`; fuera de Tomcat cae a `./logs`.
+- El patrón incluye fecha, hilo, nivel, logger abreviado y mensaje. El nombre del hilo permite distinguir los envíos de correo (`mail-1`, `mail-2`, ...).
+
+`logback-test.xml` configura consola y nivel DEBUG para el proyecto. Logback lo prefiere sobre `logback.xml` cuando está en el classpath, así que es el que rige al correr con `mvn jetty:run`. El WAR **no** lo incluye: `maven-war-plugin` lo excluye con `packagingExcludes`, de modo que en el servidor rige `logback.xml`.
+
+## Qué se loguea
+
+Hay `LOGGER` en ocho services ([[UserServiceImpl]], [[InquiryServiceImpl]], [[PostServiceImpl]], [[CartServiceImpl]], [[AddressServiceImpl]], [[ReviewServiceImpl]], [[ImageServiceImpl]], [[EmailServiceImpl]]), en [[WebConfig]] (rechazo del pool de correo) y en [[MultipartExceptionHandlerFilter]]. Ningún controller ni DAO loguea.
+
+| Nivel | Cantidad | Uso |
+|---|---|---|
+| INFO | 39 | Una operación de negocio que terminó: registro, verificación, publicación, consulta, cambio de estado, correo enviado |
+| WARN | 9 | Algo esperable que no salió: intento rechazado, pool saturado, archivo demasiado grande |
+| ERROR | 7 | Fallas de infraestructura, sobre todo de SMTP, con la excepción |
+
+Convenciones que se repiten:
+
+- `private static final Logger LOGGER = LoggerFactory.getLogger(Clase.class)`.
+- Mensajes parametrizados (`"... userId={}"`), nunca concatenación: el texto no se arma si el nivel está apagado.
+- Se loguean **ids**, no datos personales: ni correos, ni tokens, ni contraseñas.
+- Los logs de éxito se emiten **después del commit** ([[TransactionCallbacks]]): si la transacción se revierte, no queda un log que afirme algo que no pasó.
+- Las lecturas no se loguean.
+
+## Decisiones y por qué
+
+| Decisión | Motivo | Fuente |
+|---|---|---|
+| Nombre de archivo fijo con fecha | La cátedra publica los logs en una URL con ese nombre exacto | Comentario en `logback.xml` |
+| Sin `<file>` en los appenders | Con la política por tiempo, omitirlo hace que el archivo del día ya lleve la fecha; con `<file>`, el de hoy quedaría sin fecha y no se podría abrir desde la URL hasta rotar | Comentario en `logback.xml` |
+| Dos archivos | Separar la actividad propia del ruido de los frameworks | Estructura de `logback.xml`; inferencia |
+| Loguear en services, no en controllers | La operación de negocio vive en el service | `CLAUDE.md` del repo |
+| No loguear tokens ni correos | Los logs son públicos para la cátedra | Inferencia sobre los mensajes |
+| Excluir `logback-test.xml` del WAR | Consola en desarrollo, archivos en el servidor | `webapp/pom.xml` |
+
+## Límites conocidos
+
+- La separación entre desarrollo y servidor depende de la exclusión del WAR: `logback-test.xml` vive en `src/main/resources`, y si se quitara `packagingExcludes` el servidor loguearía a consola en vez de a los archivos que publica la cátedra.
+- No hay ninguna llamada `LOGGER.debug`: el nivel DEBUG de desarrollo hoy no agrega mensajes propios.
+- No hay id de correlación por request.
+
+## Preguntas de defensa
+
+**¿Qué usan para loguear?**
+SLF4J como interfaz y Logback como implementación.
+
+**¿Dónde quedan los logs?**
+En `logs/` del contenedor, un archivo por día para la aplicación y otro para advertencias, con el nombre que la cátedra expone.
+
+**¿Qué loguean y qué no?**
+Operaciones de negocio completadas y fallas, con ids. No datos personales ni secretos, y no lecturas.
+
+**¿Por qué algunos logs se emiten después del commit?**
+Para que el log no afirme una operación que después se revirtió.
+
+## Evidencia de código
+
+### Configuración de producción
+
+Fuente exacta en `8929aea`: [webapp/src/main/resources/logback.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback.xml>), líneas 1–45.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -85,9 +139,9 @@ The inquiry, verification, password and reset success lines are now emitted insi
 </configuration>
 ```
 
-## Test configuration
+### Configuración de consola
 
-[webapp/src/main/resources/logback-test.xml, lines 1–16](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/resources/logback-test.xml>)
+Fuente exacta en `8929aea`: [webapp/src/main/resources/logback-test.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback-test.xml>), líneas 1–16.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -108,4 +162,26 @@ The inquiry, verification, password and reset success lines are now emitted insi
 </configuration>
 ```
 
-[[Mail delivery]] · [[Configuration and running]] · [[Transactions and concurrency]]
+### Exclusión del WAR
+
+Fuente exacta en `8929aea`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>), líneas 153–159.
+
+```xml
+        <plugin>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.4.0</version>
+          <configuration>
+            <packagingExcludes>**/logback-test.xml</packagingExcludes>
+          </configuration>
+        </plugin>
+```
+
+## Archivos para seguir el flujo
+
+- [webapp/src/main/resources/logback.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback.xml>)
+- [webapp/src/main/resources/logback-test.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback-test.xml>)
+- [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>) · [[UserServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>) · [[InquiryServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>) · [[EmailServiceImpl]]
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Post.java"]
 ---
 
 # Post
 
-One physical exemplar offered by an authenticated publisher. Holds album/user IDs, a positive price and a condition (both required by schema and form), optional description, pressing year, zone and image ID, plus AVAILABLE or SOLD status. Stock stays in SQL at one; this model has no stock field. Only AVAILABLE posts can be edited or deleted by their owner.
+La publicación guardada: publicante, álbum, precio, descripción, [[Condition]], año de prensado, zona, foto principal y [[PostStatus]]. Representa un ejemplar único. Ver [[Publish flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Condition]], [[PostStatus]].
+Datos y dependencias declaradas: `id`, `userId`, `albumId`, `price`, `description`, `condition`, `pressingYear`, `zone`, `imageId`, `status`.
 
-Referenced by: [[EmailServiceImpl]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
+Operaciones para localizar en la fuente: `getId`, `getUserId`, `getAlbumId`, `getPrice`, `getDescription`, `getCondition`, `getPressingYear`, `getZone`, `getImageId`, `getStatus`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/Post.java, lines 1–69](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Post.java>)
+Referencias estáticas a tipos del proyecto: [[Condition]], [[PostStatus]].
+
+Referenciado por: [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Post.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Post.java>), líneas 1–69.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -95,7 +103,3 @@ public final class Post {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

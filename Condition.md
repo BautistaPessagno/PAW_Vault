@@ -4,25 +4,31 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Condition.java"]
 ---
 
 # Condition
 
-Fixed physical-condition choices NEW and USED. Required on every publication in this revision: PublishForm declares @NotNull, and schema.sql backfills legacy nulls to USED before adding NOT NULL and a CHECK. Usable as an exact search filter, rendered as a segmented control.
+Estado físico del ejemplar: `NEW` o `USED`. Obligatorio al publicar; filtro del catálogo. La base lo refuerza con un `CHECK`.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Sin campos ni métodos propios: el archivo completo está abajo.
 
-Referenced by: [[InquiryServiceImplTest]], [[LandingController]], [[Post]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostSearchCriteria]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PostSummary]], [[PublishController]], [[PublishForm]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[models/src/main/java/ar/edu/itba/paw/models/Condition.java, lines 1–6](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Condition.java>)
+Referenciado por: [[CartServiceImplTest]], [[CatalogFilterForm]], [[InquiryServiceImplTest]], [[LandingController]], [[Post]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostSearchCriteria]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PostSummary]], [[PublishController]], [[PublishForm]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Condition.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Condition.java>), líneas 1–6.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -32,7 +38,3 @@ public enum Condition {
     USED
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

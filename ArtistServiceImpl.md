@@ -4,25 +4,33 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java"]
 ---
 
 # ArtistServiceImpl
 
-Trims the display name and derives identity from lowercase letters and digits only (accented letters kept, spaces and punctuation dropped) before findOrCreate. resolveForEdit rewrites the shared display name when it differs. findSuggestions returns nothing for queries over 255 characters or without letters/digits, compacts the rest with [[SearchText]] and asks the DAO for five matches.
+Busca o crea el artista por identidad: el nombre en minúsculas, solo letras y dígitos. Al editar puede actualizar el nombre visible compartido. Sugerencias normalizadas con [[SearchText]], hasta 5.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Artist]], [[ArtistDao]], [[ArtistService]], [[SearchText]].
+Datos y dependencias declaradas: `SUGGESTION_LIMIT`, `MAX_QUERY_LENGTH`, `artistDao`.
 
-Referenced by: [[ArtistServiceImplTest]].
+Operaciones para localizar en la fuente: `findOrCreate`, `resolveForEdit`, `findSuggestions`, `normalizeForIdentity`.
 
-## Exact source
+## Conexiones
 
-[services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java, lines 1–64](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>)
+Referencias estáticas a tipos del proyecto: [[Artist]], [[ArtistDao]], [[ArtistService]], [[SearchText]].
+
+Referenciado por: [[ArtistServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>), líneas 1–64.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -90,7 +98,3 @@ public class ArtistServiceImpl implements ArtistService {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

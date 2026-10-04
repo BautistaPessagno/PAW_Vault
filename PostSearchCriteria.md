@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/PostSearchCriteria.java"]
 ---
 
 # PostSearchCriteria
 
-Criteria passed from the landing controller through the service to the DAO: query, sort, genre, condition, artist ID, release year and minimum/maximum price. A null optional filter means no restriction. [[PostServiceImpl]] normalizes input before SQL. artistId no longer has a visible control; it survives only through URLs and hidden inputs.
+Filtros combinables del catálogo: texto, orden, género, condición, artista, año y rango de precio. Un campo nulo es un filtro que no se aplica. Ver [[Landing flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Condition]], [[Genre]], [[PostSort]].
+Datos y dependencias declaradas: `query`, `sort`, `genre`, `condition`, `artistId`, `releaseYear`, `minPrice`, `maxPrice`.
 
-Referenced by: [[LandingController]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]].
+Operaciones para localizar en la fuente: `getQuery`, `getSort`, `getGenre`, `getCondition`, `getArtistId`, `getReleaseYear`, `getMinPrice`, `getMaxPrice`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/PostSearchCriteria.java, lines 1–36](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSearchCriteria.java>)
+Referencias estáticas a tipos del proyecto: [[Condition]], [[Genre]], [[PostSort]].
+
+Referenciado por: [[CatalogFilterForm]], [[LandingController]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[SearchResult]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PostSearchCriteria.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSearchCriteria.java>), líneas 1–36.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -62,7 +70,3 @@ public final class PostSearchCriteria {
     public Integer getMaxPrice() { return maxPrice; }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

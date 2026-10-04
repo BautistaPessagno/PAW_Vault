@@ -4,25 +4,31 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PasswordsMatching.java"]
 ---
 
 # PasswordsMatching
 
-Interface with the password and confirmation getters, implemented by [[VerifyEmailForm]], [[ResetPasswordForm]] and [[ChangePasswordForm]] so one validator serves all three.
+Interfaz con los dos getters que necesita [[MatchingPasswordsValidator]]; la implementan los tres formularios con contraseña.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Operaciones para localizar en la fuente: `getPassword`, `getPasswordConfirmation`.
 
-Referenced by: [[ChangePasswordForm]], [[MatchingPasswordsValidator]], [[ResetPasswordForm]], [[VerifyEmailForm]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PasswordsMatching.java, lines 1–8](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PasswordsMatching.java>)
+Referenciado por: [[ChangePasswordForm]], [[MatchingPasswordsValidator]], [[RegisterForm]], [[ResetPasswordForm]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PasswordsMatching.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PasswordsMatching.java>), líneas 1–8.
 
 ```java
 package ar.edu.itba.paw.webapp.validation;
@@ -34,7 +40,3 @@ public interface PasswordsMatching {
     String getPasswordConfirmation();
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

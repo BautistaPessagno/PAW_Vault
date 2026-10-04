@@ -1,28 +1,43 @@
 ---
 title: "ArtistServiceImplTest"
-categories: ["Testing"]
+categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java"]
 ---
 
 # ArtistServiceImplTest
 
-Uses MockitoExtension, mocked dependencies and InjectMocks to exercise service logic directly. These tests check the assertions listed in the exact source below. They do not create a Spring transaction or async proxy and therefore do not establish real rollback or scheduling behavior.
+Tests de `ArtistServiceImpl` en `services`: 6 casos declarados. Cubre: identidad normalizada, edición del nombre visible y sugerencias. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Artist]], [[ArtistDao]], [[ArtistServiceImpl]].
+Datos y dependencias declaradas: `artistDao`, `artistService`.
 
-Referenced by: none.
+Casos declarados: 6.
 
-## Exact source
+- `testFindOrCreateWhenNameHasOuterSpacesReturnsTrimmedArtist`
+- `testFindOrCreateWhenNameHasDifferentSeparatorsReturnsExistingArtist`
+- `testFindOrCreateWhenNameHasAccentsPreservesLettersInNormalizedIdentity`
+- `testResolveForEditWhenDisplayNameChangesReturnsUpdatedArtist`
+- `testFindSuggestionsWhenQueryHasAccentsAndSeparatorsSearchesWithNormalizedText`
+- `testFindSuggestionsWhenQueryHasNoLettersOrDigitsReturnsEmptyList`
 
-[services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java, lines 1–119](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java>)
+## Conexiones
+
+Referencias estáticas a tipos del proyecto: [[Artist]], [[ArtistDao]], [[ArtistServiceImpl]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java>), líneas 1–119.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -145,7 +160,3 @@ public class ArtistServiceImplTest {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

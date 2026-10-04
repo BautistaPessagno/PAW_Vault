@@ -4,25 +4,33 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java"]
 ---
 
 # SupportedLocales
 
-Package-private locale utility for persisted preferences and mail recipients. Supports es/en/fr, defaulting null or unsupported languages to Spanish. It resolves the seller's language for interest mail and the buyer's for acceptance mail. Request UI locale resolution is configured separately in [[WebConfig]].
+Idiomas que la aplicación sabe hablar (`es`, `en`, `fr`). Normaliza antes de guardar `preferred_locale` y antes de elegir el idioma de un correo.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `DEFAULT_LANGUAGE`, `SUPPORTED_LANGUAGES`.
 
-Referenced by: [[InquiryServiceImpl]], [[UserServiceImpl]].
+Operaciones para localizar en la fuente: `languageOf`, `localeOf`.
 
-## Exact source
+## Conexiones
 
-[services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java, lines 1–35](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[InquiryServiceImpl]], [[UserServiceImpl]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java>), líneas 1–35.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -61,7 +69,3 @@ final class SupportedLocales {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

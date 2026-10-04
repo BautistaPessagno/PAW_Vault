@@ -4,12 +4,48 @@ categories: [Testing]
 type: guide
 module: vault
 project: quieroVinilos
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: verified-static
 ---
 
 # Verification record
+
+## Actualización a 8929aea, 2026-10-04
+
+El objetivo es `8929aeaa59b250e6c7119212f96437e153e815ac`, merge del PR #48 y cabeza de `main` en el clon local. No se hizo `fetch`. El árbol de trabajo solo tenía modificado `.gitignore`, que queda fuera. Durante el trabajo `main` avanzó dos veces (`ca88067` → `41c32af` → `8929aea`); todas las notas se regeneraron contra el último y la verificación final confirmó que `HEAD` seguía ahí.
+
+Desde el mapa anterior (`f12af08`) hay 112 commits. El repositorio tiene 460 archivos versionados, 232 de ellos Java.
+
+**Alcance de la evidencia.** Todo es lectura estática del código en ese commit. No se compiló, no se corrieron los tests de Maven y no se levantó la aplicación. Los posibles defectos de [[Known gaps and document drift]] salen de leer el código, no de observarlos.
+
+| Verificación | Resultado |
+|---|---|
+| Notas en la raíz | 299 sin contar el enlace simbólico `CLAUDE.md`; 283 fijadas a `8929aea` |
+| Notas fuera del commit actual | 14: diez históricas de clases borradas, [[Legacy user flow]], [[Audit local 2026-09-17]], [[Welcome]] y `AGENTS` (sin commit). Las secciones anteriores de este registro conservan sus fechas |
+| Notas sin frontmatter | `TODO cambios` y `TODO`, apuntes personales; no se tocaron |
+| Cobertura de Java | Las 232 clases tienen nota propia en `8929aea`, con su ruta en `sources` |
+| Extractos de código | 509 extractos comparados línea por línea con `git show` del commit que cada uno cita: 509 coinciden |
+| Rutas citadas | 2.431 rutas (`sources` y enlaces a archivos) existen en el commit |
+| Inventario | [[Source inventory]] tiene 460 filas, una por archivo versionado |
+| Roadmap | [[Roadmap de lectura]] tiene 460 casillas; el generador falla si un archivo falta o se repite |
+| Enlaces internos | 4.169 wikilinks y embeds fuera de bloques de código: cero sin resolver |
+| Frontmatter | Todas las notas con frontmatter tienen `categories` no vacío y cada categoría tiene su vista `.base` |
+| Categorías | All notes 298, Architecture 4, Domain 54, Flows 22, History 17, Navigation 13, Operations 7, Persistence 57, Services 96, Testing 33, Web 92 |
+| Diagramas | Los 14 bloques Mermaid se renderizaron con mermaid-cli 11.17.0 en Chromium sin interfaz: 14 de 14 |
+| Preguntas de defensa | 168 preguntas en 36 notas, indexadas en [[Defense guide]] |
+| Credenciales | Ninguna propiedad real. Tres notas de test contienen hashes BCrypt de cuentas de prueba, porque embeben el código de test versionado. `populator.sql` y `demo-users.sql` no se embeben |
+| Chequeo del repositorio | `python3 tools/paw_checks.py all` informa i18n OK, flyway OK y jsp OK. Es un chequeo estático de solo lectura |
+
+Las verificaciones automáticas están en `.vaultbuild/verify.py`. Los conteos de categorías se hicieron por búsqueda de texto en el frontmatter, no abriendo las vistas en Obsidian.
+
+**Método.** Las notas de flujo y de mecanismo se escribieron como borradores; un script insertó cada extracto desde los objetos de Git del commit y falla si una ruta no está versionada o un rango no existe. Las notas de clase se generaron una por archivo Java. Antes de afirmar una cantidad, una constante, una ruta o un comportamiento se buscó en el código. Esa revisión corrigió varios errores del borrador antes de publicarlos (por ejemplo, que `logback-test.xml` viajara en el WAR, que el hook de pre-commit no bloqueara sin Python, o que una consulta pendiente pudiera cancelarse).
+
+**Lo que no se pudo verificar.**
+
+- La transcripción completa de la defensa del sprint 2. El conector de Wispr Flow no devolvió reuniones ni notas para la cuenta; la nota "Sprint 2 defensa" (23 de septiembre, 20:26) se leyó en la aplicación de escritorio. Se leyó el **resumen** entero; la pestaña de transcripción no se pudo abrir en segundo plano. [[Sprint 2 defense review]] se apoya en ese resumen, que es automático y puede omitir detalle.
+- El estado del Git del propio vault: su directorio `.git` no se pudo leer desde el entorno de trabajo, así que no se hizo commit ni se comparó con versiones anteriores.
+- Cualquier comportamiento en ejecución.
 
 ## Refresh through f12af08, 2026-09-22
 

@@ -4,36 +4,97 @@ categories: ["Architecture"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/webapp/WEB-INF/web.xml", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java"]
 ---
 
 # Startup and dependency injection
 
-The Servlet 4.0 descriptor creates a root AnnotationConfigWebApplicationContext with WebConfig. DispatcherServlet maps / and resolves MVC controllers and JSP logical names. WebConfig imports SecurityConfig and scans persistence, services and controllers.
+> [!summary] En una frase
+> El contenedor lee `web.xml`, crea un contexto de Spring a partir de `WebConfig`, que escanea los tres paquetes, aplica las migraciones Flyway y deja listos seguridad, vistas, i18n y correo; el `DispatcherServlet` atiende todo lo que no es estático.
 
-Request filters are declared in this order: UTF-8 CharacterEncodingFilter for all paths, MultipartExceptionHandlerFilter and MultipartFilter for /publish and now also /post/*, then the Spring Security DelegatingFilterProxy for all paths. Multipart parsing precedes security so the CSRF token in the publish and edit forms can be read. A lazy overflow is translated by the outer exception filter, which redirects back to the originating form.
+## Herramientas
 
-| Bean | Configuration |
+| Herramienta | Para qué |
 |---|---|
-| DataSource | DriverManagerDataSource, required db properties, no pool |
-| Transaction manager | DataSourceTransactionManager |
-| Schema initializer | classpath schema.sql, including backfills and constraint additions |
-| taskExecutor | Core 2, max 5, queue 50, mail- prefix; a saturated pool logs and drops the task; waits up to 30 s on shutdown |
-| Multipart resolver | CommonsMultipartResolver, UTF-8, lazy parsing, 6 MiB request limit |
-| Locale resolver | AcceptHeaderLocaleResolver, Spanish default |
-| Message source | UTF-8 i18n/messages, no system-locale fallback |
-| View resolver | JstlView, /WEB-INF/views/ + name + .jsp |
-| Mail template engine | Thymeleaf, classpath mail/*.html |
-| Security beans | BCrypt encoder, PasswordHasher adapter with hash and matches, UserDetailsService, SecurityFilterChain |
+| Servlet 4.0 (`web.xml`) | Declarar filtros, listeners, el servlet y la sesión |
+| `ContextLoaderListener` + `AnnotationConfigWebApplicationContext` | Crear el contexto raíz desde una clase `@Configuration` |
+| `DispatcherServlet` | Front controller de Spring MVC |
+| `@ComponentScan` | Descubrir `@Repository`, `@Service` y `@Controller` |
+| Inyección por constructor (`@Autowired`) | Todas las dependencias son `final` |
+| Flyway (`@Bean(initMethod = "migrate")`) | Aplicar el esquema al arrancar |
 
-PropertySource files are optional; missing required values still fail Environment lookups. @Transactional and @Async operate through Spring proxies; services additionally register after-commit synchronizations through [[TransactionCallbacks]]. The descriptor sets HttpOnly session cookies and, new in this range, `tracking-mode COOKIE`: without it the container could rewrite URLs with `;jsessionid`, which Spring Security's StrictHttpFirewall rejects, and stylesheets were the first requests to fail. Unmatched 404 errors route through ErrorController. Cover bytes use ImageController; /css, /js and /images use static resource handlers.
+## Secuencia de arranque
 
-## Servlet descriptor
+1. Tomcat (o Jetty en desarrollo) despliega `app.war` y lee `web.xml`.
+2. `ContextLoaderListener` crea el contexto raíz con `WebConfig`.
+3. `WebConfig` importa `SecurityConfig` y escanea `ar.edu.itba.paw.persistence`, `ar.edu.itba.paw.services` y `ar.edu.itba.paw.webapp.controller`.
+4. Lee `database.properties` y `mail.properties` del classpath (`ignoreResourceNotFound`, pero cada valor se pide con `getRequiredProperty`: si falta una key, el arranque falla).
+5. Crea el `DataSource` y el bean `flyway`, cuyo `initMethod` corre `migrate()`: aplica las migraciones que la base todavía no tiene. Si una falla, la aplicación no arranca.
+6. Crea el resto de los beans (tabla siguiente) e inyecta por constructor.
+7. `HttpSessionEventPublisher` queda escuchando el ciclo de vida de las sesiones.
+8. `DispatcherServlet` se carga con `load-on-startup` y queda mapeado a `/`.
 
-[webapp/src/main/webapp/WEB-INF/web.xml, lines 1–112](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>)
+## Beans de `WebConfig`
+
+| Bean | Configuración | Para qué |
+|---|---|---|
+| `taskExecutor` | `ThreadPoolTaskExecutor` 2–5 hilos, cola 50, descarta al saturarse | Hilos de los métodos `@Async` de correo ([[Mail delivery]]) |
+| `dataSource` | `DriverManagerDataSource` con `db.*` | Conexiones JDBC. No es un pool: abre una conexión por uso |
+| `transactionManager` | `DataSourceTransactionManager` | Respaldo de `@Transactional` ([[Transactions and concurrency]]) |
+| `flyway` | `classpath:db/migration`, `baselineOnMigrate`, `baselineVersion("1")` | Esquema ([[Database schema]]) |
+| `multipartResolver` | Commons FileUpload, tope de 26 MiB, perezoso | Archivos ([[Cover image flow]]) |
+| `viewResolver` | `/WEB-INF/views/` + nombre + `.jsp`, `JstlView` | Vistas |
+| `localeResolver` | `AcceptHeaderLocaleResolver`, español por defecto | Idioma del request ([[Localization]]) |
+| `mailSender` | `JavaMailSenderImpl` con `mail.*` y tres timeouts | SMTP |
+| `mailTemplateEngine` | Thymeleaf, `mail/*.html`, mismo `MessageSource` | HTML de los correos |
+| `messageSource` | `classpath:i18n/messages`, UTF-8, sin fallback al idioma del sistema | Textos |
+| `validator` | `LocalValidatorFactoryBean` con ese `MessageSource` | Mensajes de Bean Validation desde los bundles |
+| Recursos estáticos | `/css/**`, `/js/**`, `/images/**` | Servidos sin pasar por un controller |
+
+Anotaciones de la clase: `@EnableWebMvc`, `@EnableTransactionManagement`, `@EnableAsync`.
+
+## Beans de `SecurityConfig`
+
+`passwordEncoder` (BCrypt 12), `passwordHasher` (adaptador para `services`), `userDetailsService`, `addressAccess`, `inquiryAccess`, `postAccess`, `sessionRegistry` y `securityFilterChain`. Detalle en [[Security and authorization]].
+
+## Decisiones y por qué
+
+| Decisión | Motivo | Fuente |
+|---|---|---|
+| Spring 5 sin Spring Boot, con `web.xml` | Requisito de la cátedra para esta etapa | `docs/setup.md` |
+| Un solo contexto para todo | `WebConfig` es a la vez contexto raíz y configuración de MVC; el servlet no declara configuración propia | `web.xml` |
+| Flyway con `baselineOnMigrate` en la versión 1 | Las bases anteriores a Flyway ya tenían el esquema inicial: se las marca en V1 sin ejecutarla y siguen desde V2. Una base vacía corre todas | Comentario en [[WebConfig]] |
+| `getRequiredProperty` | Falla fuerte al arrancar si falta configuración, en vez de fallar en el primer uso | `CLAUDE.md` del repo |
+| Nombres de bean fijos (`taskExecutor`, `multipartResolver`) | Son los que Spring busca por convención | Comentarios en [[WebConfig]] |
+| Sesión solo por cookie y `HttpOnly` | Seguridad y compatibilidad con el firewall de Spring Security | Comentario en `web.xml` |
+
+## Límites conocidos
+
+- `DriverManagerDataSource` no reutiliza conexiones: cada transacción abre una. Es suficiente para el volumen del TP; un pool sería el siguiente paso.
+- No hay perfiles de Spring: la diferencia entre local y servidor está en los archivos de propiedades y en el perfil Maven `pampero` ([[Configuration and running]]).
+
+## Preguntas de defensa
+
+**¿Cómo se crean las tablas?**
+Flyway corre al levantar el contexto y aplica las migraciones `V<n>__*.sql` que falten, anotándolas en su tabla de historial.
+
+**¿Qué pasa si falta `mail.properties`?**
+El archivo es opcional, pero las keys no: `getRequiredProperty` lanza una excepción y la aplicación no arranca.
+
+**¿Cómo se inyectan las dependencias?**
+Por constructor, con `@Autowired`, contra interfaces. Spring encuentra las implementaciones por `@ComponentScan`.
+
+**¿Por qué `@EnableAsync` y `@EnableTransactionManagement`?**
+Para que Spring envuelva los beans en proxies que interpretan `@Async` y `@Transactional`.
+
+## Evidencia de código
+
+### web.xml
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>), líneas 1–123.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -79,10 +140,12 @@ PropertySource files are optional; missing required values still fail Environmen
     <filter-name>multipartExceptionHandlerFilter</filter-name>
     <url-pattern>/publish</url-pattern>
     <url-pattern>/post/*</url-pattern>
+    <url-pattern>/inquiries/*</url-pattern>
+    <url-pattern>/profile/avatar</url-pattern>
   </filter-mapping>
   <!--
     Corre antes de la cadena de Spring Security para que el token CSRF del form multipart
-    de publicacion o edicion ya este parseado cuando se valida.
+    de publicacion, edicion, comprobante o foto de perfil ya este parseado cuando se valida.
   -->
   <filter>
     <filter-name>multipartFilter</filter-name>
@@ -96,6 +159,8 @@ PropertySource files are optional; missing required values still fail Environmen
     <filter-name>multipartFilter</filter-name>
     <url-pattern>/publish</url-pattern>
     <url-pattern>/post/*</url-pattern>
+    <url-pattern>/inquiries/*</url-pattern>
+    <url-pattern>/profile/avatar</url-pattern>
   </filter-mapping>
   <filter>
     <filter-name>springSecurityFilterChain</filter-name>
@@ -109,6 +174,13 @@ PropertySource files are optional; missing required values still fail Environmen
     <listener-class>
       org.springframework.web.context.ContextLoaderListener
 </listener-class>
+  </listener>
+  <!--
+    Publica la creacion, el cambio de id y la destruccion de cada sesion para que el
+    SessionRegistry de SecurityConfig sepa que sesiones siguen vivas.
+  -->
+  <listener>
+    <listener-class>org.springframework.security.web.session.HttpSessionEventPublisher</listener-class>
   </listener>
 
   <servlet>
@@ -150,4 +222,120 @@ PropertySource files are optional; missing required values still fail Environmen
 </web-app>
 ```
 
-[[WebConfig]] · [[SecurityConfig]] · [[Configuration and running]]
+### Anotaciones y escaneo
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 45–53.
+
+```java
+@EnableWebMvc
+@EnableTransactionManagement
+@EnableAsync
+@Import(SecurityConfig.class)
+@ComponentScan({ "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services" })
+@PropertySource(value = "classpath:database.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "classpath:mail.properties", ignoreResourceNotFound = true)
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+```
+
+### DataSource, transacciones y Flyway
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 82–113.
+
+```java
+  @Bean
+  public DataSource dataSource(final Environment environment) {
+    final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName(environment.getRequiredProperty("db.driver"));
+    dataSource.setUrl(environment.getRequiredProperty("db.url"));
+    dataSource.setUsername(environment.getRequiredProperty("db.username"));
+    dataSource.setPassword(environment.getRequiredProperty("db.password"));
+    return dataSource;
+  }
+
+  @Bean
+  public PlatformTransactionManager transactionManager(final DataSource dataSource) {
+    return new DataSourceTransactionManager(dataSource);
+  }
+
+  /*
+   * Aplica al levantar el contexto las migraciones de persistence que la base todavia
+   * no tiene. Si una falla, la aplicacion no arranca.
+   *
+   * Las bases anteriores a Flyway ya tienen el esquema inicial pero no la tabla de
+   * historial: el baseline las marca en esa version sin ejecutarla y sigue desde la
+   * siguiente. Una base vacia no hace baseline y corre todas.
+   */
+  @Bean(initMethod = "migrate")
+  public Flyway flyway(final DataSource dataSource) {
+    return Flyway.configure()
+        .dataSource(dataSource)
+        .locations("classpath:db/migration")
+        .baselineOnMigrate(true)
+        .baselineVersion("1")
+        .load();
+  }
+```
+
+### Vistas, idioma, i18n y validación
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 129–143.
+
+```java
+  @Bean
+  public ViewResolver viewResolver() {
+    final InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+    viewResolver.setViewClass(JstlView.class);
+    viewResolver.setPrefix("/WEB-INF/views/");
+    viewResolver.setSuffix(".jsp");
+    return viewResolver;
+  }
+
+  @Bean
+  public LocaleResolver localeResolver() {
+    final AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
+    localeResolver.setDefaultLocale(Locale.forLanguageTag("es"));
+    return localeResolver;
+  }
+```
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 177–204.
+
+```java
+  @Bean
+  public MessageSource messageSource() {
+    final ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+    messageSource.setBasename("classpath:i18n/messages");
+    messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
+    messageSource.setFallbackToSystemLocale(false);
+    return messageSource;
+  }
+
+  @Bean
+  public LocalValidatorFactoryBean validator() {
+    final LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    validator.setValidationMessageSource(messageSource());
+    return validator;
+  }
+
+  @Override
+  public Validator getValidator() {
+    return validator();
+  }
+
+  @Override
+  public void addResourceHandlers(final ResourceHandlerRegistry registry) {
+    registry.addResourceHandler("/css/**").addResourceLocations("/css/");
+    registry.addResourceHandler("/js/**").addResourceLocations("/js/");
+    registry.addResourceHandler("/images/**").addResourceLocations("/images/");
+  }
+}
+```
+
+## Archivos para seguir el flujo
+
+- [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>)
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>) · [[WebConfig]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>) · [[SecurityConfig]]
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

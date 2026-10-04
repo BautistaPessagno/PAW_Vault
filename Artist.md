@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Artist.java"]
 ---
 
 # Artist
 
-The reusable artist identity. `id` is the generated database key and `name` is the display name as typed, trimmed but with its original casing. Identity lives in the persisted artists.normalized_name column (lowercase letters and digits only), which [[ArtistServiceImpl]] computes and this model does not carry. [[ArtistJdbcDao]] also stores a search_phrase for suggestions. An owner's edit can overwrite the shared display name. Multiple [[Album]] records refer to its ID.
+Artista del catálogo compartido: id y nombre visible. La identidad (nombre normalizado) y la frase de búsqueda viven en la tabla, no en el modelo. Ver [[Publish flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `id`, `name`.
 
-Referenced by: [[ArtistDao]], [[ArtistJdbcDao]], [[ArtistJdbcDaoTest]], [[ArtistService]], [[ArtistServiceImpl]], [[ArtistServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+Operaciones para localizar en la fuente: `getId`, `getName`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/Artist.java, lines 1–19](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Artist.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[ArtistDao]], [[ArtistJdbcDao]], [[ArtistJdbcDaoTest]], [[ArtistService]], [[ArtistServiceImpl]], [[ArtistServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Artist.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Artist.java>), líneas 1–19.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -45,7 +53,3 @@ public class Artist {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

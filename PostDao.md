@@ -4,25 +4,31 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java"]
 ---
 
 # PostDao
 
-Paged catalog search, search suggestions, a publisher's paged listing and count, summary and locking lookups, duplicate-pair check, create, update with or without a new image, guarded sale transition, own-image lookup and delete. Criteria, limits and offsets cross this interface without JDBC types. Locking calls require the service transaction to hold the row lock.
+Contrato de publicaciones: búsqueda y conteo con filtros, sugerencias, listados por publicante, lectura con bloqueo de una o varias filas, alta, edición, cambio de estado con guarda y borrado.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Condition]], [[Post]], [[PostSearchCriteria]], [[PostSummary]], [[SearchSuggestion]].
+Operaciones para localizar en la fuente: `search`, `countSearch`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `countAvailableByPublisherId`, `countByPublisherId`, `findById`, `findByIdForUpdate`, `findByIdsForUpdate`, `existsByUserIdAndAlbumId`, `create`, `update`, `updateWithImage`, `updateStatus`, `findOwnImageId`, `findAlbumCoverImageId`, `delete`.
 
-Referenced by: [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[Condition]], [[Post]], [[PostSearchCriteria]], [[PostStatus]], [[PostSummary]], [[SearchSuggestion]].
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java, lines 1–45](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java>)
+Referenciado por: [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java>), líneas 1–60.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -30,14 +36,18 @@ package ar.edu.itba.paw.persistence;
 import ar.edu.itba.paw.models.Condition;
 import ar.edu.itba.paw.models.Post;
 import ar.edu.itba.paw.models.PostSearchCriteria;
+import ar.edu.itba.paw.models.PostStatus;
 import ar.edu.itba.paw.models.PostSummary;
 import ar.edu.itba.paw.models.SearchSuggestion;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface PostDao {
     List<PostSummary> search(PostSearchCriteria criteria, int limit, int offset);
+
+    int countSearch(PostSearchCriteria criteria);
 
     // normalizedQuery llega ya pasada por SearchText.compact: el ranking se
     // resuelve contra la columna search_phrase, sin traer la tabla entera.
@@ -45,12 +55,20 @@ public interface PostDao {
 
     List<PostSummary> findByPublisherId(long publisherId, int limit, int offset);
 
+    List<PostSummary> findAvailableByPublisherId(long publisherId, int limit, int offset);
+
+    int countAvailableByPublisherId(long publisherId);
+
     // Total de publicaciones de un publicante, para numerar las paginas del perfil.
     int countByPublisherId(long publisherId);
 
     Optional<PostSummary> findById(long id);
 
     Optional<PostSummary> findByIdForUpdate(long id);
+
+    // Bloquea las filas en orden de id, asi dos transacciones que comparten posts no se
+    // traban entre si, y devuelve los summaries de los que existen.
+    List<PostSummary> findByIdsForUpdate(Collection<Long> ids);
 
     boolean existsByUserIdAndAlbumId(long userId, long albumId);
 
@@ -61,17 +79,16 @@ public interface PostDao {
                    Integer pressingYear, String zone);
 
     boolean updateWithImage(long id, long albumId, int price, String description, Condition condition,
-                            Integer pressingYear, String zone, long imageId);
+                            Integer pressingYear, String zone, Long imageId);
 
-    boolean markSoldIfAvailable(long id);
+    // Guarda de estado: solo actualiza si el post esta en el estado "from" esperado.
+    boolean updateStatus(long id, PostStatus from, PostStatus to);
 
     // Imagen propia de la publicacion, sin caer en la portada del album.
     Optional<Long> findOwnImageId(long id);
 
+    Optional<Long> findAlbumCoverImageId(long id);
+
     boolean delete(long id);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -4,25 +4,31 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/AlbumDao.java"]
 ---
 
 # AlbumDao
 
-Catalog identity lookup with a case-insensitive title, insertion with a genre, and updateMetadata to rewrite the title text and genre of an existing album. New inserts do not accept an exemplar image; the stored album cover remains a legacy fallback.
+Contrato de persistencia de álbumes: buscar por artista, título y año sin distinguir mayúsculas, crear y actualizar título y género. Lo implementa [[AlbumJdbcDao]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Album]], [[Genre]].
+Operaciones para localizar en la fuente: `findByArtistTitleYear`, `create`, `updateMetadata`.
 
-Referenced by: [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[Album]], [[Genre]].
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/AlbumDao.java, lines 1–14](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/AlbumDao.java>)
+Referenciado por: [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/AlbumDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/AlbumDao.java>), líneas 1–14.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -40,7 +46,3 @@ public interface AlbumDao {
     Album updateMetadata(long id, String title, Genre genre);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

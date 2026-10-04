@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/PostSummary.java"]
 ---
 
 # PostSummary
 
-Joined publication projection for catalog cards, the public detail page, edit-form population and contact checks. Includes seller ID, email and preferred locale, album ID/title/artist/year/genre, cover image ID, price (now a primitive int), condition, optional description, pressing year and zone, and publication status. coverImageId resolves posts.image_id first, falling back to albums.cover_image_id in [[PostJdbcDao]].
+La publicación unida a su publicante, álbum y artista en una sola fila: lo que muestran las tarjetas y la ficha. Trae también el correo y el idioma del publicante para no volver a buscarlo al mandar un aviso. Evita el N+1 del listado.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Condition]], [[Genre]], [[PostStatus]].
+Datos y dependencias declaradas: `id`, `userId`, `publisherEmail`, `publisherLocale`, `albumId`, `title`, `artistName`, `releaseYear`, `genre`, `coverImageId`, `price`, `description`, `condition`, `pressingYear`, `zone`, `status`.
 
-Referenced by: [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostPage]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
+Operaciones para localizar en la fuente: `getId`, `getUserId`, `getPublisherEmail`, `getPublisherLocale`, `getAlbumId`, `getTitle`, `getArtistName`, `getReleaseYear`, `getGenre`, `getCoverImageId`, `getPrice`, `getDescription`, `getCondition`, `getPressingYear`, `getZone`, `getStatus`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/PostSummary.java, lines 1–109](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSummary.java>)
+Referencias estáticas a tipos del proyecto: [[Condition]], [[Genre]], [[PostStatus]].
+
+Referenciado por: [[CartService]], [[CartServiceImpl]], [[CartServiceImplTest]], [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[PostContactController]], [[PostDao]], [[PostDetail]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostPage]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[PublishController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PostSummary.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSummary.java>), líneas 1–109.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -135,7 +143,3 @@ public final class PostSummary {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -4,25 +4,33 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java"]
 ---
 
 # EmailServiceImpl
 
-Six @Async operations render Thymeleaf HTML and send through JavaMailSender. Verification and reset links use app.base-url plus /verify?token= or /reset-password?token=. Interest mail links /inquiries and sets the buyer as Reply-To; acceptance mail links /inquiries/sent; welcome links home; the password-changed notice has no link. Rendering/SMTP exceptions are logged and swallowed. See [[Mail delivery]] for queue limits.
+Arma y envía los siete correos: plantilla Thymeleaf, asunto de i18n, `MimeMessage` HTML en UTF-8. Cada método es `@Async` y atrapa sus errores para loguearlos. La URL base sale de `app.base-url`. Ver [[Mail delivery]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[EmailService]], [[Inquiry]], [[InquiryAcceptedNotification]], [[Post]], [[PostInterestNotification]], [[User]].
+Datos y dependencias declaradas: `LOGGER`, `WELCOME_TEMPLATE`, `VERIFICATION_TEMPLATE`, `POST_INTEREST_TEMPLATE`, `INQUIRY_UPDATE_TEMPLATE`, `INQUIRY_UPDATE_PREFIX`, `MESSAGE_TEMPLATE`, `CONVERSATION_ANCHOR`, `PASSWORD_CHANGED_TEMPLATE`, `PASSWORD_RESET_TEMPLATE`, `mailSender`, `templateEngine`, `messageSource`, `from`, `baseUrl`.
 
-Referenced by: [[EmailServiceImplTest]].
+Operaciones para localizar en la fuente: `sendWelcomeEmail`, `sendVerificationEmail`, `sendPostInterestEmail`, `sendInquiryUpdateEmail`, `sendMessageEmail`, `sendPasswordChangedEmail`, `sendPasswordResetEmail`, `inquiryUrl`, `inquiriesUrl`, `createMessage`.
 
-## Exact source
+## Conexiones
 
-[services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java, lines 1–187](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>)
+Referencias estáticas a tipos del proyecto: [[EmailService]], [[InquiryEvent]], [[InquiryUpdateNotification]], [[MessageNotification]], [[PostInterestNotification]], [[User]].
+
+Referenciado por: [[EmailServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 1–235.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -43,6 +51,7 @@ import org.thymeleaf.spring5.SpringTemplateEngine;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -52,7 +61,11 @@ public class EmailServiceImpl implements EmailService {
     private static final String WELCOME_TEMPLATE = "welcome";
     private static final String VERIFICATION_TEMPLATE = "email-verification";
     private static final String POST_INTEREST_TEMPLATE = "post-interest";
-    private static final String INQUIRY_ACCEPTED_TEMPLATE = "inquiry-accepted";
+    private static final String INQUIRY_UPDATE_TEMPLATE = "inquiry-update";
+    private static final String INQUIRY_UPDATE_PREFIX = "email.inquiryUpdate.";
+    private static final String MESSAGE_TEMPLATE = "inquiry-message";
+    // La Conversacion esta al pie del detalle de la Consulta: el mail de Mensaje nuevo va directo a ella.
+    private static final String CONVERSATION_ANCHOR = "#conversation";
     private static final String PASSWORD_CHANGED_TEMPLATE = "password-changed";
     private static final String PASSWORD_RESET_TEMPLATE = "password-reset";
 
@@ -118,49 +131,84 @@ public class EmailServiceImpl implements EmailService {
     @Async
     @Override
     public void sendPostInterestEmail(final PostInterestNotification notification, final Locale locale) {
+        final List<Long> inquiryIds = notification.getPosts().stream()
+                .map(PostInterestNotification.InterestedPost::getInquiryId)
+                .toList();
         try {
+            final List<PostInterestNotification.InterestedPost> posts = notification.getPosts();
             final Context context = new Context(locale);
             context.setVariable("contactName", notification.getContactName());
-            context.setVariable("contactEmail", notification.getContactEmail());
             context.setVariable("message", notification.getMessage());
-            context.setVariable("albumTitle", notification.getAlbumTitle());
-            context.setVariable("artistName", notification.getArtistName());
-            context.setVariable("releaseYear", notification.getReleaseYear());
-            context.setVariable("inquiriesUrl", baseUrl + "/inquiries");
+            context.setVariable("posts", posts);
+            // Cada vinilo enlaza a su Consulta: el template le suma el id.
+            context.setVariable("inquiriesUrl", inquiriesUrl());
             final String body = templateEngine.process(POST_INTEREST_TEMPLATE, context);
-            final Object[] subjectArguments = {notification.getAlbumTitle()};
-            final String subject = messageSource.getMessage(
-                    "email.postInterest.subject", subjectArguments, locale);
-            final MimeMessage message = createMessage(notification.getPublisherEmail(),
-                    notification.getContactEmail(), subject, body);
+            // Con un vinilo el asunto lo nombra; con varios, dice cuantos son.
+            final String subject = posts.size() == 1
+                    ? messageSource.getMessage("email.postInterest.subject",
+                            new Object[] {posts.get(0).getAlbumTitle()}, locale)
+                    : messageSource.getMessage("email.postInterest.subject.many",
+                            new Object[] {posts.size()}, locale);
+            final MimeMessage message = createMessage(notification.getPublisherEmail(), null, subject, body);
 
             mailSender.send(message);
-            LOGGER.info("Post interest email sent postId={}", notification.getPostId());
+            LOGGER.info("Post interest email sent inquiryIds={}", inquiryIds);
         } catch (final MessagingException | RuntimeException exception) {
-            LOGGER.error("Post interest email delivery failed postId={}", notification.getPostId(), exception);
+            LOGGER.error("Post interest email delivery failed inquiryIds={}", inquiryIds, exception);
         }
     }
 
+    /*
+     * Un solo template para todos los cambios de una consulta: el evento elige el asunto,
+     * el titulo y el texto. Los datos de cobro y la direccion no viajan por correo: se ven
+     * en la pagina de la venta, que es a donde lleva el enlace.
+     */
     @Async
     @Override
-    public void sendInquiryAcceptedEmail(final InquiryAcceptedNotification notification, final Locale locale) {
+    public void sendInquiryUpdateEmail(final InquiryUpdateNotification notification, final Locale locale) {
         try {
+            final String prefix = INQUIRY_UPDATE_PREFIX + notification.getEvent().name();
+            final Object[] titleArgument = {notification.getAlbumTitle()};
             final Context context = new Context(locale);
+            context.setVariable("heading", messageSource.getMessage(prefix + ".heading", null, locale));
+            context.setVariable("body", messageSource.getMessage(prefix + ".body", titleArgument, locale));
             context.setVariable("albumTitle", notification.getAlbumTitle());
             context.setVariable("artistName", notification.getArtistName());
             context.setVariable("releaseYear", notification.getReleaseYear());
-            // El aviso es para el comprador: su consulta esta en la bandeja de enviadas.
-            context.setVariable("inquiriesUrl", baseUrl + "/inquiries/sent");
-            final String body = templateEngine.process(INQUIRY_ACCEPTED_TEMPLATE, context);
-            final Object[] subjectArguments = {notification.getAlbumTitle()};
-            final String subject = messageSource.getMessage(
-                    "email.inquiryAccepted.subject", subjectArguments, locale);
-            final MimeMessage message = createMessage(notification.getBuyerEmail(), null, subject, body);
-
-            mailSender.send(message);
-            LOGGER.info("Inquiry accepted email sent inquiryId={}", notification.getInquiryId());
+            // Un rechazo ya no tiene nada que hacer en la venta: lleva a la bandeja del comprador.
+            final String path = notification.getEvent() == InquiryEvent.REJECTED
+                    ? "/inquiries/sent" : "/inquiries/" + notification.getInquiryId();
+            context.setVariable("actionUrl", baseUrl + path);
+            final String body = templateEngine.process(INQUIRY_UPDATE_TEMPLATE, context);
+            final String subject = messageSource.getMessage(prefix + ".subject", titleArgument, locale);
+            mailSender.send(createMessage(notification.getRecipientEmail(), null, subject, body));
+            LOGGER.info("Inquiry update email sent inquiryId={} event={}", notification.getInquiryId(),
+                    notification.getEvent());
         } catch (final MessagingException | RuntimeException exception) {
-            LOGGER.error("Inquiry accepted email delivery failed inquiryId={}", notification.getInquiryId(), exception);
+            LOGGER.error("Inquiry update email delivery failed inquiryId={} event={}", notification.getInquiryId(),
+                    notification.getEvent(), exception);
+        }
+    }
+
+    // El texto viaja escapado por Thymeleaf y con sus saltos de linea. El log no lo registra.
+    @Async
+    @Override
+    public void sendMessageEmail(final MessageNotification notification, final Locale locale) {
+        try {
+            final Context context = new Context(locale);
+            context.setVariable("senderUsername", notification.getSenderUsername());
+            context.setVariable("body", notification.getBody());
+            context.setVariable("albumTitle", notification.getAlbumTitle());
+            context.setVariable("artistName", notification.getArtistName());
+            context.setVariable("releaseYear", notification.getReleaseYear());
+            context.setVariable("actionUrl", inquiryUrl(notification.getInquiryId()) + CONVERSATION_ANCHOR);
+            final String body = templateEngine.process(MESSAGE_TEMPLATE, context);
+            final Object[] titleArgument = {notification.getAlbumTitle()};
+            final String subject = messageSource.getMessage("email.message.subject", titleArgument, locale);
+            mailSender.send(createMessage(notification.getRecipientEmail(), null, subject, body));
+            LOGGER.info("Message email sent inquiryId={}", notification.getInquiryId());
+        } catch (final MessagingException | RuntimeException exception) {
+            LOGGER.error("Message email delivery failed inquiryId={}", notification.getInquiryId(), exception);
         }
     }
 
@@ -198,6 +246,14 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    private String inquiryUrl(final long inquiryId) {
+        return inquiriesUrl() + inquiryId;
+    }
+
+    private String inquiriesUrl() {
+        return baseUrl + "/inquiries/";
+    }
+
     private MimeMessage createMessage(final String recipient, final String replyTo, final String subject,
                                       final String body) throws MessagingException {
         final MimeMessage message = mailSender.createMimeMessage();
@@ -213,7 +269,3 @@ public class EmailServiceImpl implements EmailService {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

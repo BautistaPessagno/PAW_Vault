@@ -1,145 +1,332 @@
 ---
 title: "Cover image flow"
-categories: ["Flows", "Web"]
+categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java", "webapp/src/main/webapp/js/publish-preview.js"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ImageFiles.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java", "models/src/main/java/ar/edu/itba/paw/models/ImageRules.java", "models/src/main/java/ar/edu/itba/paw/models/Image.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java", "persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java", "webapp/src/main/webapp/WEB-INF/web.xml"]
 ---
 
 # Cover image flow
 
-Uploaded photos belong to the physical exemplar through posts.image_id. A photo can be supplied when publishing and replaced when the owner edits an AVAILABLE post. Deleting the post also deletes its own photo. AlbumService never handles image creation; the legacy album cover is only a fallback.
+> [!summary] En una frase
+> Las imágenes se guardan como bytes en la tabla `images`, se validan por firma al subir y se sirven siempre a través del recurso al que pertenecen, con caché de un año.
 
-## Flow diagram
+## Qué resuelve
 
-The sequence follows the controller, service and DAO calls at `f12af08`. Error handling and transaction limits are explained below; this is a source trace, not a runtime test.
+El transversal de "manejo de imágenes": subida, validación, almacenamiento y entrega de fotos de publicaciones, portadas heredadas y fotos de perfil.
 
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant P as PostServiceImpl
-    participant S as ImageServiceImpl
-    participant D as ImageJdbcDao
-    participant J as PostJdbcDao
-    participant C as ImageController
-    B->>B: publish-preview.js shows the chosen file locally
-    opt Publish or edit with nonempty photo
-        P->>S: create(MIME, bytes)
-        S->>S: Validate label and maximum 5 MiB
-        S->>D: create(normalizedType, bytes)
-        D-->>P: New image ID through service
-        P->>J: create(..., imageId) or updateWithImage(..., imageId)
-    end
-    opt Delete an AVAILABLE post
-        P->>J: findOwnImageId(postId)
-        P->>J: delete(postId)
-        P->>S: delete(ownImageId)
-    end
-    Note over B,P: PostSummary prefers post image, then legacy album cover
-    alt Summary has an image ID
-        B->>C: GET /covers/id
-        C->>S: findById(id)
-        C-->>B: Bytes with Content-Type and one-year cache, or 404
-    else No image ID
-        B->>B: Load placeholder.svg
-    end
+## Herramientas
+
+| Herramienta | Para qué se usa acá |
+|---|---|
+| Commons FileUpload (`CommonsMultipartResolver`) | Parsear `multipart/form-data` |
+| `MultipartFilter` | Parsear antes de Spring Security para leer el token CSRF |
+| [[MultipartExceptionHandlerFilter]] | Convertir "archivo demasiado grande" en una redirección con aviso |
+| [[ImageRules]] | Tipos, tamaño y firma |
+| PostgreSQL `BYTEA` | Almacenamiento |
+| `ResponseEntity<byte[]>` + `Cache-Control` | Entrega |
+
+## Subida
+
+1. El formulario declara `enctype="multipart/form-data"`.
+2. `MultipartFilter` usa el bean `multipartResolver`: tope del request `MAX_MULTIPART_BYTES` (26 MiB), UTF-8 y resolución perezosa.
+3. Si el request excede el tope, la excepción salta al leer las partes y [[MultipartExceptionHandlerFilter]] la atrapa (mirando también la causa, porque puede venir envuelta) y redirige: al formulario de publicar o editar con `?coverTooLarge`, a la venta con `?receiptTooLarge`, o al perfil con `?avatarTooLarge`.
+4. El validador del formulario llama a `ImageFiles.isValid`: mira el tamaño antes de leer los bytes y después aplica [[ImageRules]].
+5. El controller convierte a [[ImageUpload]] y el service llama a `ImageService.create`, que normaliza el tipo, valida **de nuevo** y guarda. Un rechazo se loguea como `WARN` con tipo y tamaño.
+
+Reglas: PNG, JPEG o WEBP; el tipo que declara el navegador tiene que coincidir con los primeros bytes del archivo; entre 1 byte y 5 MiB.
+
+## Entrega
+
+| URL | Qué exige el SQL |
+|---|---|
+| `/post/{postId}/images/{imageId}` | Que la imagen sea la principal del post, la portada de su álbum o una de su galería |
+| `/users/{userId}/avatar/{imageId}` | Que sea el avatar vigente de esa Cuenta y que esté verificada |
+| `/albums/{albumId}/cover/{imageId}` | Que sea la portada de ese álbum |
+
+Respuesta: el `Content-Type` guardado y `Cache-Control: max-age` de 365 días, público. Si no hay coincidencia, 404 sin cuerpo.
+
+Las tres rutas son públicas. Lo que protege no es la sesión sino la pertenencia: no existe una URL `/images/{id}` que permita recorrer ids.
+
+## Borrado
+
+`ImageDao.delete` es un `DELETE` con cuatro `NOT EXISTS`: solo borra si ningún álbum, post, galería ni Cuenta referencia la imagen. Por eso el orden importa: primero se quita la referencia, después se pide el borrado.
+
+## Decisiones y por qué
+
+| Decisión | Alternativa | Motivo | Fuente |
+|---|---|---|---|
+| Imágenes en la base | Sistema de archivos del servidor | El servidor de la cátedra solo recibe un WAR; la base es el único almacenamiento persistente | Inferencia; ADR 0002 habla de mantener catálogo y arte dentro del proyecto |
+| Validar la firma y no solo el tipo declarado | Confiar en `Content-Type` | "El tipo declarado tiene que coincidir con la firma del contenido: no alcanza la extensión" | Comentario en [[ImageRules]]; commit `2d2603a7` |
+| Servir desde el recurso asociado | `/images/{id}` | Que no se puedan enumerar imágenes ajenas ni huérfanas | Commit `b30c8745` |
+| Caché de un año | Sin caché | "Una imagen nunca cambia una vez guardada": cambiar la foto crea otro id | Comentario en [[ImageController]] |
+| Resolución multipart perezosa | Parseo inmediato | Que el exceso de tamaño se pueda traducir en un filtro externo | Comentario en [[WebConfig]] |
+| Commons FileUpload y no el multipart de Servlet 3 | `StandardServletMultipartResolver` | "Se conserva como resolver multipart de esta entrega" | Comentario en [[WebConfig]] |
+| Validar en formulario y en service | Un solo lugar | Error junto al campo, y garantía aunque se saltee el formulario | Comentario en [[ImageFiles]] |
+| Borrado condicional | Borrado directo | La tabla es compartida por posts, álbumes y avatares | SQL de [[ImageJdbcDao]] |
+| Portada del álbum heredada, sin escritura nueva | Seguir escribiéndola | Las fotos son del ejemplar; `cover_image_id` queda como dato viejo que el `COALESCE` todavía lee | Comentario en [[AlbumJdbcDao]] |
+
+## Límites conocidos
+
+- Cada imagen se lee entera en memoria para servirla; no hay `ETag` ni respuestas parciales.
+- No se redimensiona ni se quitan metadatos.
+- La validación mira la firma, no decodifica la imagen: un archivo con cabecera válida y contenido corrupto se acepta.
+- Con caché pública de un año, una imagen que deja de ser accesible puede seguir en cachés intermedios.
+
+## Preguntas de defensa
+
+**¿Dónde guardan las imágenes?**
+En PostgreSQL, columna `BYTEA` de la tabla `images`, con su tipo.
+
+**¿Cómo validan que sea una imagen?**
+Comparando los primeros bytes con la firma del formato declarado: `89 50 4E 47...` para PNG, `FF D8 FF` para JPEG, `RIFF....WEBP` para WEBP.
+
+**¿Qué pasa si subo algo de 100 MB?**
+El resolver corta el request; un filtro propio atrapa la excepción y redirige al formulario con un aviso, en lugar de un error 500.
+
+**¿Por qué el filtro multipart va antes que el de seguridad?**
+Porque en un formulario multipart el token CSRF viaja dentro del cuerpo. Si no se parsea antes, el filtro CSRF no lo encuentra.
+
+**¿Puedo ver cualquier imagen cambiando el id?**
+No: la consulta exige que esa imagen pertenezca al post, usuario o álbum de la misma URL.
+
+## Evidencia de código
+
+Reglas:
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/ImageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ImageRules.java>), líneas 9–77.
+
+```java
+public final class ImageRules {
+
+    public static final int MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    public static final int MAX_GALLERY_IMAGES = 5;
+    public static final long MAX_MULTIPART_BYTES = (long) MAX_IMAGE_BYTES * MAX_GALLERY_IMAGES + 1024 * 1024;
+
+    // El tipo declarado tiene que coincidir con la firma del contenido: no alcanza la extension.
+    private enum Format {
+        PNG("image/png") {
+            @Override
+            boolean matches(final byte[] data) {
+                return startsWith(data, 0, (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A);
+            }
+        },
+        JPEG("image/jpeg") {
+            @Override
+            boolean matches(final byte[] data) {
+                return startsWith(data, 0, (byte) 0xFF, (byte) 0xD8, (byte) 0xFF);
+            }
+        },
+        WEBP("image/webp") {
+            @Override
+            boolean matches(final byte[] data) {
+                return startsWith(data, 0, 'R', 'I', 'F', 'F') && startsWith(data, 8, 'W', 'E', 'B', 'P');
+            }
+        };
+
+        private final String contentType;
+
+        Format(final String contentType) {
+            this.contentType = contentType;
+        }
+
+        abstract boolean matches(byte[] data);
+    }
+
+    // Lista para el atributo accept de los input file.
+    public static final String ACCEPTED_CONTENT_TYPES = Arrays.stream(Format.values())
+            .map(format -> format.contentType).collect(Collectors.joining(","));
+
+    private ImageRules() {
+    }
+
+    // Unico lugar que normaliza: lo que se guarda es igual a lo que se valido.
+    public static String normalizeContentType(final String contentType) {
+        return contentType == null ? null : contentType.trim().toLowerCase(Locale.ROOT);
+    }
+
+    // Espera el tipo ya normalizado.
+    public static boolean isValid(final String contentType, final byte[] data) {
+        if (contentType == null || data == null || data.length == 0 || data.length > MAX_IMAGE_BYTES) {
+            return false;
+        }
+        return Arrays.stream(Format.values())
+                .anyMatch(format -> format.contentType.equals(contentType) && format.matches(data));
+    }
+
+    private static boolean startsWith(final byte[] data, final int offset, final int... signature) {
+        if (data.length < offset + signature.length) {
+            return false;
+        }
+        for (int index = 0; index < signature.length; index++) {
+            if (data[offset + index] != (byte) signature[index]) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
 ```
 
-## Behavior and limits
+Guardado:
 
-1. [[PublishController]] passes the upload's declared MIME and bytes to [[PostServiceImpl]] for both publish and edit.
-2. Nonempty bytes go to [[ImageServiceImpl]]. Allowed labels are image/png, image/jpeg and image/webp; size must not exceed 5,242,880 bytes.
-3. [[ImageJdbcDao]] stores the bytes. Publishing inserts the post with that image ID; editing calls updateWithImage, while an empty upload keeps the current image through update.
-4. [[PostJdbcDao]] reads COALESCE(p.image_id, a.cover_image_id). ui:vinyl-card, the detail page and inbox group headers use /covers/{id}, or the SVG placeholder when both references are null.
-
-The edit form shows the current cover in the preview card. publish-preview.js replaces it with a local object URL when a file is chosen and restores the original when the selection is cleared; nothing is uploaded until submit.
-
-Replacing a photo does not delete the previous image row. Because image IDs are immutable and served with a one-year public cache, the edit produces a new ID instead of overwriting bytes; the old row becomes unreferenced. Only post deletion removes an image, and only the post's own one (findOwnImageId ignores the album fallback).
-
-The whole multipart request limit is 6,291,456 bytes. web.xml now maps the multipart and exception filters to /publish and /post/*. [[MultipartExceptionHandlerFilter]] redirects an overflow on /post/{id}/edit back to that edit path, and anything else to /publish, with coverTooLarge. Multipart parsing precedes Spring Security so CSRF can read the multipart token.
-
-[[ImageController]] returns stored bytes and Content-Type with public max-age=31536000. The route is public; missing images return 404. No ETag, decoder, signature check, resizing or content deduplication is implemented. [[Image]] copies byte arrays on construction and retrieval.
-
-[[Database schema]] · [[Publish flow]] · [[Edit and delete flow]] · [[UI components]]
-
-## Code snippets
-
-### Validate and store the photo
-
-This checks the supplied MIME label and byte count. It does not decode or inspect an image signature. See [[ImageServiceImpl]] for the complete class.
-
-[services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java, lines 40–55](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>)
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>), líneas 48–65.
 
 ```java
     @Override
     @Transactional
     public Image create(final String contentType, final byte[] data) {
-        final String normalizedType = contentType == null ? null : contentType.trim().toLowerCase(Locale.ROOT);
-        if (normalizedType == null || !ALLOWED_CONTENT_TYPES.contains(normalizedType)) {
-            LOGGER.info("Rejected image with content type {}", contentType);
-            throw new InvalidImageException();
-        }
-        if (data == null || data.length == 0 || data.length > MAX_IMAGE_BYTES) {
-            LOGGER.info("Rejected image of {} bytes", data == null ? 0 : data.length);
+        final String normalizedType = ImageRules.normalizeContentType(contentType);
+        if (!ImageRules.isValid(normalizedType, data)) {
+            LOGGER.warn("Rejected image contentType={} bytes={}", normalizedType, data == null ? 0 : data.length);
             throw new InvalidImageException();
         }
         final Image image = imageDao.create(normalizedType, data);
         LOGGER.info("Stored image {} ({}, {} bytes)", image.getId(), image.getContentType(), data.length);
         return image;
     }
+
+    @Override
+    @Transactional
+    public boolean delete(final long id) {
+        return imageDao.delete(id);
+    }
 ```
 
-### Serve immutable image bytes
+Entrega:
 
-The public retrieval endpoint returns the stored Content-Type and one-year cache policy; its missing-image exception is mapped to 404 in the same controller. See [[ImageController]] for the complete class.
-
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java, lines 33–40](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>)
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>), líneas 20–62.
 
 ```java
-    @RequestMapping(value = "/covers/{id:\\d+}", method = RequestMethod.GET)
-    public ResponseEntity<byte[]> cover(@PathVariable("id") final long id) {
-        final Image image = imageService.findById(id).orElseThrow(ImageNotFoundException::new);
+@Controller
+public class ImageController {
+
+    // Una imagen nunca cambia una vez guardada, asi que el navegador puede cachearla por id.
+    private static final long CACHE_DAYS = 365;
+
+    private final ImageService imageService;
+
+    @Autowired
+    public ImageController(final ImageService imageService) {
+        this.imageService = imageService;
+    }
+
+    @RequestMapping(value = "/post/{postId:\\d+}/images/{imageId:\\d+}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> postImage(@PathVariable("postId") final long postId,
+                                           @PathVariable("imageId") final long imageId) {
+        return imageResponse(imageService.findPostImage(postId, imageId).orElseThrow(ImageNotFoundException::new));
+    }
+
+    @RequestMapping(value = "/users/{userId:\\d+}/avatar/{imageId:\\d+}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> userAvatar(@PathVariable("userId") final long userId,
+                                            @PathVariable("imageId") final long imageId) {
+        return imageResponse(imageService.findUserAvatar(userId, imageId).orElseThrow(ImageNotFoundException::new));
+    }
+
+    @RequestMapping(value = "/albums/{albumId:\\d+}/cover/{imageId:\\d+}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> albumCover(@PathVariable("albumId") final long albumId,
+                                            @PathVariable("imageId") final long imageId) {
+        return imageResponse(imageService.findAlbumCover(albumId, imageId).orElseThrow(ImageNotFoundException::new));
+    }
+
+    private static ResponseEntity<byte[]> imageResponse(final Image image) {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.getContentType()))
                 .cacheControl(CacheControl.maxAge(CACHE_DAYS, TimeUnit.DAYS).cachePublic())
                 .body(image.getData());
     }
+
+    @ExceptionHandler(ImageNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public void imageNotFound() {
+    }
+}
 ```
 
-### Oversized upload redirect
+Pertenencia y borrado condicional:
 
-The filter keeps the user on the edit page when the oversized request targeted one. See [[MultipartExceptionHandlerFilter]] for the complete class.
-
-[webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java, lines 18–38](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>)
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>), líneas 47–87.
 
 ```java
     @Override
-    protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-                                    final FilterChain filterChain) throws ServletException, IOException {
-        try {
-            filterChain.doFilter(request, response);
-        } catch (final ServletException | RuntimeException exception) {
-            /*
-             * El resolver multipart parsea de forma lazy, asi que el limite excedido puede
-             * saltar dentro del DispatcherServlet y llegar aca envuelto en una
-             * NestedServletException. Por eso tambien se mira la causa directa.
-             */
-            if (!(exception instanceof MaxUploadSizeExceededException)
-                    && !(exception.getCause() instanceof MaxUploadSizeExceededException)) {
-                throw exception;
-            }
-            LOGGER.warn("Rejected a multipart request over the size limit uri={}", request.getRequestURI());
-            final String servletPath = request.getServletPath();
-            final String target = servletPath.matches("/post/[0-9]+/edit") ? servletPath : "/publish";
-            response.sendRedirect(request.getContextPath() + target + "?coverTooLarge");
-        }
+    public Optional<Image> findPostImage(final long postId, final long imageId) {
+        return jdbcTemplate.query(IMAGE_SELECT + "WHERE i.id = ? AND EXISTS ("
+                        + "SELECT 1 FROM posts p JOIN albums a ON a.id = p.album_id WHERE p.id = ? "
+                        + "AND (p.image_id = i.id OR a.cover_image_id = i.id OR EXISTS ("
+                        + "SELECT 1 FROM post_images pi WHERE pi.post_id = p.id AND pi.image_id = i.id)))",
+                ROW_MAPPER, imageId, postId).stream().findFirst();
     }
+
+    @Override
+    public Optional<Image> findUserAvatar(final long userId, final long imageId) {
+        return jdbcTemplate.query(IMAGE_SELECT + "WHERE i.id = ? AND EXISTS ("
+                        + "SELECT 1 FROM users u WHERE u.id = ? AND u.verified = TRUE AND u.avatar_image_id = i.id)",
+                ROW_MAPPER, imageId, userId).stream().findFirst();
+    }
+
+    @Override
+    public Optional<Image> findAlbumCover(final long albumId, final long imageId) {
+        return jdbcTemplate.query(IMAGE_SELECT + "WHERE i.id = ? AND EXISTS ("
+                        + "SELECT 1 FROM albums a WHERE a.id = ? AND a.cover_image_id = i.id)",
+                ROW_MAPPER, imageId, albumId).stream().findFirst();
+    }
+
+    @Override
+    public Image create(final String contentType, final byte[] data) {
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("content_type", contentType);
+        parameters.put("data", data);
+        final Number id = jdbcInsert.executeAndReturnKey(parameters);
+        return new Image(id.longValue(), contentType, data);
+    }
+
+    @Override
+    public boolean delete(final long id) {
+        return jdbcTemplate.update("DELETE FROM images WHERE id = ? " +
+                        "AND NOT EXISTS (SELECT 1 FROM albums WHERE cover_image_id = images.id) " +
+                        "AND NOT EXISTS (SELECT 1 FROM posts WHERE image_id = images.id) " +
+                        "AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id = images.id) " +
+                        "AND NOT EXISTS (SELECT 1 FROM users WHERE avatar_image_id = images.id)", id) == 1;
+    }
+}
 ```
 
-## Evidencia local anterior, 2026-09-17
+Resolver:
 
-[[Audit local 2026-09-17]] ejecutó la rama `e5e926d`, anterior a `f12af08`. Sus resultados de ejecución no se repitieron para esta revisión; [[Known gaps and document drift]] indica qué hallazgos del audit quedaron resueltos en el código actual y cuáles siguen abiertos.
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 115–127.
+
+```java
+  /*
+   * Se conserva Commons FileUpload como resolver multipart de esta entrega. El nombre
+   * del bean es obligatorio: DispatcherServlet lo busca como "multipartResolver".
+   */
+  @Bean
+  public MultipartResolver multipartResolver() {
+    final CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
+    multipartResolver.setMaxUploadSize(ImageRules.MAX_MULTIPART_BYTES);
+    multipartResolver.setDefaultEncoding(StandardCharsets.UTF_8.name());
+    // El filtro multipart externo traduce el limite excedido antes de entrar al controller.
+    multipartResolver.setResolveLazily(true);
+    return multipartResolver;
+  }
+```
+
+## Archivos para seguir el flujo
+
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>) · [[ImageController]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ImageFiles.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ImageFiles.java>) · [[ImageFiles]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>) · [[MultipartExceptionHandlerFilter]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>) · [[WebConfig]]
+- [models/src/main/java/ar/edu/itba/paw/models/ImageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ImageRules.java>) · [[ImageRules]]
+- [models/src/main/java/ar/edu/itba/paw/models/Image.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Image.java>) · [[Image]]
+- [services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>) · [[ImageServiceImpl]]
+- [services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java>) · [[ImageService]]
+- [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java>) · [[ImageDao]]
+- [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>) · [[ImageJdbcDao]]
+- [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>)
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

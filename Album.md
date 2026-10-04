@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Album.java"]
 ---
 
 # Album
 
-Shared catalog work identified by artist ID, title and release year. The title keeps the casing the publisher typed; lookups compare LOWER(title), and PostgreSQL enforces a unique (artist_id, LOWER(title), release_year) index. Genre is now required (legacy nulls are backfilled to OTHER) and, together with the title casing, can be rewritten by an owner's edit through [[AlbumServiceImpl]]. coverImageId remains a historical album cover; exemplar photos belong to [[Post]].
+La obra del catálogo compartido: título, artista, año de lanzamiento, [[Genre]] y una portada heredada opcional. Su identidad es artista, título normalizado y año. Varias publicaciones de distintas Cuentas apuntan al mismo álbum. Ver [[Publish flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Genre]].
+Datos y dependencias declaradas: `id`, `title`, `artistId`, `releaseYear`, `genre`, `coverImageId`.
 
-Referenced by: [[AlbumDao]], [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumService]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]], [[EmailServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+Operaciones para localizar en la fuente: `getId`, `getTitle`, `getArtistId`, `getReleaseYear`, `getGenre`, `getCoverImageId`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/Album.java, lines 1–44](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Album.java>)
+Referencias estáticas a tipos del proyecto: [[Genre]].
+
+Referenciado por: [[AlbumDao]], [[AlbumJdbcDao]], [[AlbumJdbcDaoTest]], [[AlbumService]], [[AlbumServiceImpl]], [[AlbumServiceImplTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Album.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Album.java>), líneas 1–44.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -70,7 +78,3 @@ public class Album {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

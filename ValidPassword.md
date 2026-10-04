@@ -4,25 +4,31 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ValidPassword.java"]
 ---
 
 # ValidPassword
 
-Composed field constraint: NotBlank, Size 12–72 (BCrypt's 72-byte limit expressed as characters) and two patterns requiring an ASCII letter and a digit, each with its own message. It declares no validator of its own; the composed constraints report individually.
+Restricción compuesta de contraseña: obligatoria, de 12 a 72 caracteres (el tope de BCrypt), con al menos una letra y un número.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Operaciones para localizar en la fuente: `message`, `groups`, `payload`.
 
-Referenced by: [[ChangePasswordForm]], [[ResetPasswordForm]], [[VerifyEmailForm]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ValidPassword.java, lines 1–32](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ValidPassword.java>)
+Referenciado por: [[ChangePasswordForm]], [[RegisterForm]], [[ResetPasswordForm]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ValidPassword.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ValidPassword.java>), líneas 1–32.
 
 ```java
 package ar.edu.itba.paw.webapp.validation;
@@ -58,7 +64,3 @@ public @interface ValidPassword {
     Class<? extends Payload>[] payload() default { };
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

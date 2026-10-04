@@ -1,20 +1,24 @@
 ---
 title: "PaginationTest"
-categories: ["Testing"]
+categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/PaginationTest.java"]
 ---
 
 # PaginationTest
 
-Plain JUnit tests for [[Pagination]]: page counts for empty, exact and overflowing totals, offsets inside a total, and PageNotFoundException for pages past the total, below one or overflowing an int. No Spring context or mock is involved. Source evidence only; no new Maven execution is claimed.
+Tests de `Pagination` en `services`: 8 casos declarados. Cubre: páginas para totales vacíos, exactos y con resto; offsets y páginas fuera de rango. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
-Test methods in this revision:
+## Guía de lectura
+
+Datos y dependencias declaradas: `PAGE_SIZE`.
+
+Casos declarados: 8.
 
 - `testPagesForWhenTotalIsZeroReturnsZero`
 - `testPagesForWhenTotalIsAMultipleOfThePageSizeReturnsExactPages`
@@ -25,15 +29,17 @@ Test methods in this revision:
 - `testOffsetForWhenPageIsBelowOneReturnsPageNotFoundException`
 - `testOffsetForWhenOffsetOverflowsAnIntReturnsPageNotFoundException`
 
-## Connections
+## Conexiones
 
-Project types referenced: [[PageNotFoundException]], [[Pagination]].
+Referencias estáticas a tipos del proyecto: [[PageNotFoundException]], [[Pagination]].
 
-Referenced by: none.
+Referenciado por: sin referencias léxicas desde otros archivos Java.
 
-## Exact source
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
-[services/src/test/java/ar/edu/itba/paw/services/PaginationTest.java, lines 1–109](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PaginationTest.java>)
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/PaginationTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PaginationTest.java>), líneas 1–109.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -146,7 +152,3 @@ public class PaginationTest {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

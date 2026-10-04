@@ -4,25 +4,33 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/ProfileForm.java"]
 ---
 
 # ProfileForm
 
-Username edit bean: required and at most 100 characters, reusing the registration messages. [[UserServiceImpl]] trims the value before saving it.
+Edición del nombre visible: obligatorio y hasta 100 caracteres.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `username`.
 
-Referenced by: [[ProfileController]].
+Operaciones para localizar en la fuente: `getUsername`, `setUsername`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/ProfileForm.java, lines 1–19](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ProfileForm.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[ProfileController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ProfileForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ProfileForm.java>), líneas 1–19.
 
 ```java
 package ar.edu.itba.paw.webapp.form;
@@ -45,7 +53,3 @@ public class ProfileForm {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

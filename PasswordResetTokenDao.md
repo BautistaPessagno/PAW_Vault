@@ -4,25 +4,31 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenDao.java"]
 ---
 
 # PasswordResetTokenDao
 
-Create, find, delete by token, delete by user and purge expired password-recovery tokens. Expiry instants and the current time come from the service; the DAO does not judge whether a token is still valid.
+Contrato de los tokens de recuperación: crear con vencimiento, buscar, borrar por token, borrar por Cuenta y purgar vencidos. Ver [[Tokens and email links]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[PasswordResetToken]].
+Operaciones para localizar en la fuente: `create`, `findByToken`, `deleteByToken`, `deleteByUserId`, `deleteExpired`.
 
-Referenced by: [[PasswordResetTokenJdbcDao]], [[PasswordResetTokenJdbcDaoTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[PasswordResetToken]].
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenDao.java, lines 1–20](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenDao.java>)
+Referenciado por: [[PasswordResetTokenJdbcDao]], [[PasswordResetTokenJdbcDaoTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenDao.java>), líneas 1–20.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -46,7 +52,3 @@ public interface PasswordResetTokenDao {
 
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

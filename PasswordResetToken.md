@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/PasswordResetToken.java"]
 ---
 
 # PasswordResetToken
 
-Immutable password-recovery token: ID, user ID, random URL-safe token and expiresAt. Unlike [[EmailVerificationToken]] it carries an expiry. [[UserServiceImpl]] sets a one-hour window and decides validity, because [[PasswordResetTokenJdbcDao]] also returns expired rows.
+Fila de `password_reset_tokens`: id, Cuenta, token y vencimiento. Un solo enlace vivo por Cuenta. Ver [[Tokens and email links]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `id`, `userId`, `token`, `expiresAt`.
 
-Referenced by: [[PasswordResetTokenDao]], [[PasswordResetTokenJdbcDao]], [[PasswordResetTokenJdbcDaoTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
+Operaciones para localizar en la fuente: `getId`, `getUserId`, `getToken`, `getExpiresAt`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/PasswordResetToken.java, lines 1–36](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PasswordResetToken.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[PasswordResetTokenDao]], [[PasswordResetTokenJdbcDao]], [[PasswordResetTokenJdbcDaoTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PasswordResetToken.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PasswordResetToken.java>), líneas 1–36.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -62,7 +70,3 @@ public final class PasswordResetToken {
 
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

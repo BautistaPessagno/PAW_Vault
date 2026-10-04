@@ -4,55 +4,57 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java"]
 ---
 
 # PostInterestNotification
 
-Mail payload with post ID, seller address, authenticated buyer name/email, optional inquiry message and album facts. [[Inquiry]] stores the request independently of delivery; this payload is not a database entity.
+Carga del correo de "consulta nueva": publicante, quién consulta, mensaje opcional y la lista de vinilos (`InterestedPost`) con la Consulta de cada uno. El contacto manda uno; el carrito, todos los de un mismo publicante en un solo correo.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `publisherEmail`, `contactName`, `message`, `posts`, `postId`, `inquiryId`, `albumTitle`, `artistName`, `releaseYear`.
 
-Referenced by: [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[UserServiceImplTest]].
+Operaciones para localizar en la fuente: `getPublisherEmail`, `getContactName`, `getMessage`, `getPosts`, `InterestedPost`, `getPostId`, `getInquiryId`, `getAlbumTitle`, `getArtistName`, `getReleaseYear`.
 
-## Exact source
+## Conexiones
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java, lines 1–59](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]], [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java>), líneas 1–80.
 
 ```java
 package ar.edu.itba.paw.services;
 
+import java.util.List;
+
+/*
+ * Aviso al Publicante de que alguien consulto por sus vinilos: uno desde el contacto, uno o
+ * varios desde el carrito, siempre en un solo correo. No lleva el correo del comprador: el
+ * Publicante le responde desde la Conversacion de cada Consulta.
+ */
 public final class PostInterestNotification {
 
-    private final long postId;
     private final String publisherEmail;
     private final String contactName;
-    private final String contactEmail;
     private final String message;
-    private final String albumTitle;
-    private final String artistName;
-    private final int releaseYear;
+    private final List<InterestedPost> posts;
 
-    public PostInterestNotification(final long postId, final String publisherEmail, final String contactName,
-                                    final String contactEmail, final String message, final String albumTitle,
-                                    final String artistName, final int releaseYear) {
-        this.postId = postId;
+    public PostInterestNotification(final String publisherEmail, final String contactName, final String message,
+                                    final List<InterestedPost> posts) {
         this.publisherEmail = publisherEmail;
         this.contactName = contactName;
-        this.contactEmail = contactEmail;
         this.message = message;
-        this.albumTitle = albumTitle;
-        this.artistName = artistName;
-        this.releaseYear = releaseYear;
-    }
-
-    public long getPostId() {
-        return postId;
+        this.posts = List.copyOf(posts);
     }
 
     public String getPublisherEmail() {
@@ -63,29 +65,52 @@ public final class PostInterestNotification {
         return contactName;
     }
 
-    public String getContactEmail() {
-        return contactEmail;
-    }
-
-    // null cuando el interesado no dejo ningun mensaje.
+    // null cuando el interesado no dejo ningun mensaje. El carrito nunca lo trae.
     public String getMessage() {
         return message;
     }
 
-    public String getAlbumTitle() {
-        return albumTitle;
+    public List<InterestedPost> getPosts() {
+        return posts;
     }
 
-    public String getArtistName() {
-        return artistName;
-    }
+    // Un vinilo consultado y la Consulta que lo pide, a la que lleva el enlace del correo.
+    public static final class InterestedPost {
 
-    public int getReleaseYear() {
-        return releaseYear;
+        private final long postId;
+        private final long inquiryId;
+        private final String albumTitle;
+        private final String artistName;
+        private final int releaseYear;
+
+        public InterestedPost(final long postId, final long inquiryId, final String albumTitle,
+                              final String artistName, final int releaseYear) {
+            this.postId = postId;
+            this.inquiryId = inquiryId;
+            this.albumTitle = albumTitle;
+            this.artistName = artistName;
+            this.releaseYear = releaseYear;
+        }
+
+        public long getPostId() {
+            return postId;
+        }
+
+        public long getInquiryId() {
+            return inquiryId;
+        }
+
+        public String getAlbumTitle() {
+            return albumTitle;
+        }
+
+        public String getArtistName() {
+            return artistName;
+        }
+
+        public int getReleaseYear() {
+            return releaseYear;
+        }
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

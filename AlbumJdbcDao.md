@@ -4,25 +4,33 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java"]
 ---
 
 # AlbumJdbcDao
 
-A shared SELECT_ALBUM alias list feeds the static RowMapper. findByArtistTitleYear compares LOWER(title) = LOWER(?) with artist and year; create stores the title as given, the required genre and a search_phrase from [[SearchText]]. updateMetadata rewrites title, genre and search_phrase, then rereads the row, throwing IllegalStateException if it disappeared. readGenre now assumes a non-null genre.
+Álbumes con Spring JDBC. Busca por artista, `normalized_title` y año; al crear o editar recalcula `normalized_title` y `search_phrase`. No escribe `cover_image_id`: la portada del álbum es un dato heredado.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Album]], [[AlbumDao]], [[Genre]], [[SearchText]].
+Datos y dependencias declaradas: `ROW_MAPPER`, `SELECT_ALBUM`, `jdbcTemplate`, `jdbcInsert`.
 
-Referenced by: [[PostJdbcDao]].
+Operaciones para localizar en la fuente: `readCoverImageId`, `readGenre`, `findByArtistTitleYear`, `create`, `updateMetadata`, `normalizeTitle`.
 
-## Exact source
+## Conexiones
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java, lines 1–93](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java>)
+Referencias estáticas a tipos del proyecto: [[Album]], [[AlbumDao]], [[Genre]], [[SearchText]].
+
+Referenciado por: [[PostJdbcDao]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java>), líneas 1–102.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -40,6 +48,7 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -85,8 +94,8 @@ public class AlbumJdbcDao implements AlbumDao {
     public Optional<Album> findByArtistTitleYear(final String title, final long artistId,
                                                  final int releaseYear) {
         return jdbcTemplate.query(
-                        SELECT_ALBUM + "WHERE artist_id = ? AND LOWER(title) = LOWER(?) AND release_year = ?",
-                        ROW_MAPPER, artistId, title, releaseYear)
+                        SELECT_ALBUM + "WHERE artist_id = ? AND normalized_title = ? AND release_year = ?",
+                        ROW_MAPPER, artistId, normalizeTitle(title), releaseYear)
                 .stream()
                 .findAny();
     }
@@ -99,6 +108,7 @@ public class AlbumJdbcDao implements AlbumDao {
     public Album create(final String title, final long artistId, final int releaseYear, final Genre genre) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("title", title);
+        parameters.put("normalized_title", normalizeTitle(title));
         parameters.put("artist_id", artistId);
         parameters.put("release_year", releaseYear);
         parameters.put("genre", genre == null ? null : genre.name());
@@ -110,16 +120,19 @@ public class AlbumJdbcDao implements AlbumDao {
 
     @Override
     public Album updateMetadata(final long id, final String title, final Genre genre) {
-        if (jdbcTemplate.update("UPDATE albums SET title = ?, genre = ?, search_phrase = ? WHERE id = ?",
-                title, genre == null ? null : genre.name(), SearchText.phrase(title), id) != 1) {
+        if (jdbcTemplate.update(
+                "UPDATE albums SET title = ?, normalized_title = ?, genre = ?, search_phrase = ? WHERE id = ?",
+                title, normalizeTitle(title), genre == null ? null : genre.name(), SearchText.phrase(title),
+                id) != 1) {
             throw new IllegalStateException("Album disappeared while updating metadata");
         }
         return jdbcTemplate.queryForObject(SELECT_ALBUM + "WHERE id = ?", ROW_MAPPER, id);
     }
 
+    // Misma regla que el LOWER(title) con que la migracion relleno las filas anteriores.
+    private static String normalizeTitle(final String title) {
+        return title.toLowerCase(Locale.ROOT);
+    }
+
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

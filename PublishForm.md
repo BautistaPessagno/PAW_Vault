@@ -4,39 +4,51 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java"]
 ---
 
 # PublishForm
 
-Required title/artist up to 255 characters, release year 1000–9999, genre, price 1–99,999,999 and condition. Optional zone up to 100, pressing year 1000–9999, description up to 1000 and MultipartFile cover. The same bean backs publishing and editing; no publisher identity or stock field remains.
+Formulario de publicar y editar: título, artista, año, género, precio, condición, zona, prensado, descripción, fotos nuevas y fotos a retirar. Reglas cruzadas en [[PublishFormValidator]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Condition]], [[Genre]].
+Datos y dependencias declaradas: `title`, `artistName`, `releaseYear`, `genre`, `price`, `condition`, `zone`, `pressingYear`, `description`, `covers`, `removedImageIds`.
 
-Referenced by: [[PublishController]].
+Operaciones para localizar en la fuente: `getTitle`, `setTitle`, `getArtistName`, `setArtistName`, `getReleaseYear`, `setReleaseYear`, `getGenre`, `setGenre`, `getPrice`, `setPrice`, `getCondition`, `setCondition`, `getZone`, `setZone`, `getPressingYear`, `setPressingYear`, `getDescription`, `setDescription`, `getCovers`, `setCovers`, `toImageUploads`, `getRemovedImageIds`, `setRemovedImageIds`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java, lines 1–130](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java>)
+Referencias estáticas a tipos del proyecto: [[Condition]], [[Genre]], [[ImageFiles]], [[ImageUpload]], [[ValidPublishForm]].
+
+Referenciado por: [[PublishController]], [[PublishFormValidator]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java>), líneas 1–143.
 
 ```java
 package ar.edu.itba.paw.webapp.form;
 
 import ar.edu.itba.paw.models.Condition;
 import ar.edu.itba.paw.models.Genre;
+import ar.edu.itba.paw.models.ImageUpload;
+import ar.edu.itba.paw.webapp.validation.ValidPublishForm;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+@ValidPublishForm
 public class PublishForm {
 
     @NotBlank(message = "{publish.title.required}")
@@ -48,16 +60,12 @@ public class PublishForm {
     private String artistName;
 
     @NotNull(message = "{publish.releaseYear.required}")
-    @Min(value = 1000, message = "{publish.releaseYear.range}")
-    @Max(value = 9999, message = "{publish.releaseYear.range}")
     private Integer releaseYear;
 
     @NotNull(message = "{publish.genre.required}")
     private Genre genre;
 
     @NotNull(message = "{publish.price.required}")
-    @Min(value = 1, message = "{publish.price.range}")
-    @Max(value = 99999999, message = "{publish.price.range}")
     private Integer price;
 
     @NotNull(message = "{publish.condition.required}")
@@ -66,14 +74,14 @@ public class PublishForm {
     @Size(max = 100, message = "{publish.zone.size}")
     private String zone;
 
-    @Min(value = 1000, message = "{publish.pressingYear.range}")
-    @Max(value = 9999, message = "{publish.pressingYear.range}")
     private Integer pressingYear;
 
     @Size(max = 1000, message = "{publish.description.size}")
     private String description;
 
-    private MultipartFile cover;
+    private MultipartFile[] covers;
+
+    private List<Long> removedImageIds = new ArrayList<>();
 
     public String getTitle() {
         return title;
@@ -147,16 +155,25 @@ public class PublishForm {
         this.description = description;
     }
 
-    public MultipartFile getCover() {
-        return cover;
+    public MultipartFile[] getCovers() {
+        return covers;
     }
 
-    public void setCover(final MultipartFile cover) {
-        this.cover = cover;
+    public void setCovers(final MultipartFile[] covers) {
+        this.covers = covers;
+    }
+
+    // Las fotos elegidas, en el orden del input: la primera es la principal.
+    public List<ImageUpload> toImageUploads() throws IOException {
+        return ImageFiles.toUploads(covers);
+    }
+
+    public List<Long> getRemovedImageIds() {
+        return removedImageIds;
+    }
+
+    public void setRemovedImageIds(final List<Long> removedImageIds) {
+        this.removedImageIds = removedImageIds;
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

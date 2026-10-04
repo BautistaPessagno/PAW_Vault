@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Inquiry.java"]
 ---
 
 # Inquiry
 
-Persisted purchase inquiry: ID, nullable post ID, buyer ID, optional message and [[InquiryStatus]]. postId becomes null when the publication is deleted; isPostDeleted exposes that case and [[InquiryServiceImpl]] refuses to accept or reject such an inquiry. The timestamp and the album/seller copy kept for deleted publications are not part of this compact model.
+La Consulta tal como está guardada: id, post (nulo si la publicación fue eliminada), comprador y [[InquiryStatus]]. Ver [[Inquiry and sale flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[InquiryStatus]].
+Datos y dependencias declaradas: `id`, `postId`, `buyerId`, `status`.
 
-Referenced by: [[EmailServiceImpl]], [[InquiryDao]], [[InquiryJdbcDao]], [[InquiryJdbcDaoTest]], [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]].
+Operaciones para localizar en la fuente: `getId`, `getPostId`, `isPostDeleted`, `getBuyerId`, `getStatus`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/Inquiry.java, lines 1–47](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Inquiry.java>)
+Referencias estáticas a tipos del proyecto: [[InquiryStatus]].
+
+Referenciado por: [[InquiryDao]], [[InquiryJdbcDao]], [[InquiryJdbcDaoTest]], [[InquiryService]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Inquiry.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Inquiry.java>), líneas 1–39.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -35,15 +43,12 @@ public final class Inquiry {
     private final long id;
     private final Long postId;
     private final long buyerId;
-    private final String message;
     private final InquiryStatus status;
 
-    public Inquiry(final long id, final Long postId, final long buyerId, final String message,
-                   final InquiryStatus status) {
+    public Inquiry(final long id, final Long postId, final long buyerId, final InquiryStatus status) {
         this.id = id;
         this.postId = postId;
         this.buyerId = buyerId;
-        this.message = message;
         this.status = status;
     }
 
@@ -63,17 +68,8 @@ public final class Inquiry {
         return buyerId;
     }
 
-    // null cuando el comprador no dejo ningun mensaje.
-    public String getMessage() {
-        return message;
-    }
-
     public InquiryStatus getStatus() {
         return status;
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

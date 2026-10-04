@@ -4,44 +4,79 @@ categories: ["Navigation"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 tags: ["codemap", "navigation"]
 ---
 
 # Home
 
-This vault maps quieroVinilos at commit `f12af080cf6a27101160f005102a20f436574cf7`, inspected on 2026-09-22 after the post detail page, editing and deletion, pagination, the profile page, password change and recovery, search suggestions and the split inbox. All documentation notes live in the root. The `Categories` folder contains property-filtered Bases, so one note can appear in several categories without being moved.
+Este vault documenta quieroVinilos en el commit `8929aeaa59b250e6c7119212f96437e153e815ac`, inspeccionado el 4 de octubre de 2026. Todas las notas viven en la raíz; la carpeta `Categories` solo tiene vistas filtradas, así que una nota puede aparecer en varias categorías sin moverse.
 
-## Read the project in order
+## Empezá por acá
 
-1. [[Project snapshot]] explains what exists and what does not.
-2. [[Domain and identity]] explains accounts, catalog works, physical exemplars and inquiries.
-3. [[Architecture]] explains the six modules and their boundaries.
-4. [[Startup and dependency injection]] explains how the WAR becomes a running application.
-5. The flow notes trace the current routes through the layers with Mermaid diagrams and focused, source-linked code snippets:
-    - Browsing: [[Landing flow]], [[Search suggestions flow]], [[Post detail flow]]
-    - Selling: [[Publish flow]], [[Edit and delete flow]], [[Cover image flow]]
-    - Buying: [[Contact flow]], [[Inquiry and sale flow]]
-    - Accounts: [[Authentication flow]], [[Profile flow]], [[Password recovery flow]]
-    - [[Legacy user flow]] records the removed scaffold.
-6. [[UI components]] and [[UI styles and tokens]] cover the shared JSP components and styles; [[Views and assets]] covers pages and scripts.
-7. [[Database schema]], [[Transactions and concurrency]], [[Paginated listings]], [[Validation and errors]] and [[Mail delivery]] explain the shared mechanisms.
-8. [[Testing and evidence]] and [[Known gaps and document drift]] show what the available evidence does and does not establish.
+| Si querés... | Abrí |
+|---|---|
+| Saber qué es el proyecto y qué versión está documentada | [[Project snapshot]] |
+| Ver qué cambió desde el mapa anterior | [[Recent changes 2026-10-04]] |
+| Ubicar una funcionalidad, sus rutas y sus clases | [[Feature map]] |
+| Leer todo el código en un orden que tenga sentido | [[Roadmap de lectura]] |
+| Preparar una defensa | [[Defense guide]] |
+| Ver qué se observó en la defensa del sprint 2 y cómo está hoy | [[Sprint 2 defense review]] |
+| Saber qué falta o qué puede fallar | [[Known gaps and document drift]] |
 
-## Browse by category
+## Fundamentos
+
+1. [[Domain and identity]]: Cuenta, Álbum, Post, Consulta y sus estados.
+2. [[Architecture]]: los seis módulos y por qué una capa no puede saltearse otra.
+3. [[Startup and dependency injection]]: cómo el WAR se convierte en una aplicación andando.
+4. [[Database schema]] y [[Schema history and seeds]]: tablas, restricciones y migraciones.
+
+## Flujos por funcionalidad
+
+Cada nota de flujo tiene la misma estructura: qué resuelve, herramientas, recorrido paso a paso, datos, decisiones con su fuente, concurrencia, límites, preguntas de defensa y código.
+
+| Área | Notas |
+|---|---|
+| Cuenta | [[Authentication flow]] · [[Tokens and email links]] · [[Password recovery flow]] · [[Profile flow]] · [[Public profile flow]] |
+| Catálogo | [[Landing flow]] · [[Search suggestions flow]] · [[Post detail flow]] |
+| Vender | [[Publish flow]] · [[Edit and delete flow]] · [[Cover image flow]] · [[Gallery flow]] |
+| Comprar | [[Contact flow]] · [[Cart flow]] · [[Addresses and payment flow]] |
+| Venta | [[Inquiry and sale flow]] · [[Conversation flow]] · [[Reviews flow]] |
+
+## Mecanismos transversales
+
+| Tema | Nota |
+|---|---|
+| Quién puede hacer qué | [[Security and authorization]] |
+| Correo | [[Mail delivery]] |
+| Transacciones y bloqueos | [[Transactions and concurrency]] |
+| Validación y respuestas de error | [[Validation and errors]] |
+| Paginación | [[Paginated listings]] |
+| Idiomas | [[Localization]] |
+| Interfaz | [[UI components]] · [[UI styles and tokens]] · [[Views and assets]] |
+
+## Operación y evidencia
+
+[[Build and dependencies]] · [[Configuration and running]] · [[Logging]] · [[Development tools]] · [[Repository tooling]] · [[Testing and evidence]] · [[History and specifications]]
+
+## Notas de código
+
+Hay una nota por cada una de las 232 clases Java, con su resumen, sus métodos, quién la usa, sus tests y el código completo. Se llega por el buscador rápido con el nombre de la clase, o por [[Source inventory]], que lista los 460 archivos versionados y dónde está documentado cada uno. Las referencias entre notas de código son estáticas; el orden de ejecución lo dan las notas de flujo.
+
+## Categorías
 
 ![[Categories/Navigation.base]]
 
 [[Categories/Architecture.base|Architecture]] · [[Categories/Domain.base|Domain]] · [[Categories/Web.base|Web]] · [[Categories/Services.base|Services]] · [[Categories/Persistence.base|Persistence]] · [[Categories/Flows.base|Flows]] · [[Categories/Operations.base|Operations]] · [[Categories/Testing.base|Testing]] · [[Categories/History.base|History]]
 
-Use [[Source inventory]] to locate a file and its documentation. Code notes contain exact source, explanation, project-type references, reverse references and linked tests. Reference links describe static code references, not a complete dynamic call graph; flow notes explain execution order.
+## Mantenimiento
 
-## Maintain the vault
+[[Vault guide]] define las categorías, el estándar de profundidad de las notas y el procedimiento de actualización. [[AGENTS]] es la entrada para agentes; `CLAUDE.md` es un enlace simbólico a ese archivo. [[Verification record]] guarda qué se verificó en cada actualización. [[Note template]] es el punto de partida para una nota nueva.
 
-[[Vault guide]] defines the category convention, search examples and update procedure. [[AGENTS]] is the agent entry point; `CLAUDE.md` is a symlink to it. [[Note template]] is a root-level starter for future notes.
+## Material anterior
 
-## Auditoría local anterior
+[[Audit local 2026-09-17]] registra una auditoría manual sobre una rama anterior. [[Legacy user flow]] describe el esqueleto inicial. [[TODO cambios]] son apuntes personales tomados después de la defensa del sprint 2.
 
-[[Audit local 2026-09-17]] registra la carga de 27 publicaciones, sus imágenes, seis consultas y hallazgos de usabilidad sobre la rama ejecutada `e5e926d`, anterior a este mapa. [[Known gaps and document drift]] indica cuáles de esos hallazgos resuelve `f12af08`.
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación.

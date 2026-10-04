@@ -4,25 +4,31 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswords.java"]
 ---
 
 # MatchingPasswords
 
-Class-level Bean Validation constraint for forms implementing [[PasswordsMatching]]. Its default message is auth.password.mismatch, and [[MatchingPasswordsValidator]] attaches the violation to the passwordConfirmation field.
+Restricción de clase para formularios con contraseña y confirmación ([[PasswordsMatching]]).
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[MatchingPasswordsValidator]].
+Operaciones para localizar en la fuente: `message`, `groups`, `payload`.
 
-Referenced by: [[ChangePasswordForm]], [[MatchingPasswordsValidator]], [[ResetPasswordForm]], [[VerifyEmailForm]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[MatchingPasswordsValidator]].
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswords.java, lines 1–24](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswords.java>)
+Referenciado por: [[ChangePasswordForm]], [[MatchingPasswordsValidator]], [[RegisterForm]], [[ResetPasswordForm]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswords.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswords.java>), líneas 1–24.
 
 ```java
 package ar.edu.itba.paw.webapp.validation;
@@ -50,7 +56,3 @@ public @interface MatchingPasswords {
     Class<? extends Payload>[] payload() default { };
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -4,25 +4,31 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/DuplicatePostKeyException.java"]
 ---
 
 # DuplicatePostKeyException
 
-Unchecked persistence-contract exception raised by [[PostJdbcDao]] when Spring reports a duplicate key on create, update or updateWithImage. It has no custom message or cause constructor. [[PostServiceImpl]] translates it to [[DuplicatePostException]] so the controller need not import DAO-layer exceptions.
+Marca de persistencia: el `INSERT` o `UPDATE` de un post violó la unicidad `(user_id, album_id)`. [[PostServiceImpl]] la traduce a [[DuplicatePostException]]. Existe para que services no dependa de la excepción de Spring.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Sin campos ni métodos propios: el archivo completo está abajo.
 
-Referenced by: [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/DuplicatePostKeyException.java, lines 1–4](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/DuplicatePostKeyException.java>)
+Referenciado por: [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostServiceImpl]], [[PostServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/DuplicatePostKeyException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/DuplicatePostKeyException.java>), líneas 1–4.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -30,7 +36,3 @@ package ar.edu.itba.paw.persistence;
 public class DuplicatePostKeyException extends RuntimeException {
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

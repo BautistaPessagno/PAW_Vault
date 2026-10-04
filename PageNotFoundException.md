@@ -4,25 +4,31 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PageNotFoundException.java"]
 ---
 
 # PageNotFoundException
 
-Unchecked signal for a page number below one, past a known total, or empty beyond page one in catalog search. [[Pagination]] and [[PostServiceImpl]] raise it; [[LandingController]], [[ProfileController]] and [[InquiryController]] map it to HTTP 404.
+Número de página menor que 1 o mayor que el total. [[ErrorResponseAdvice]] responde 404.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Sin campos ni métodos propios: el archivo completo está abajo.
 
-Referenced by: [[InquiryController]], [[InquiryServiceImplTest]], [[LandingController]], [[Pagination]], [[PaginationTest]], [[PostServiceImpl]], [[PostServiceImplTest]], [[ProfileController]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/PageNotFoundException.java, lines 1–4](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PageNotFoundException.java>)
+Referenciado por: [[ErrorResponseAdvice]], [[InquiryServiceImplTest]], [[Pagination]], [[PaginationTest]], [[PostServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/PageNotFoundException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PageNotFoundException.java>), líneas 1–4.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -30,7 +36,3 @@ package ar.edu.itba.paw.services;
 public class PageNotFoundException extends RuntimeException {
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

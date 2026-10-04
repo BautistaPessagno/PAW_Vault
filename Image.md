@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Image.java"]
 ---
 
 # Image
 
-Stored MIME label and binary content. The constructor and getData both copy the byte array, so callers cannot mutate the stored model through their array references. [[ImageServiceImpl]] validates MIME labels and size before persistence.
+Una imagen guardada: id, tipo de contenido y bytes. La usan fotos de publicaciones, portadas heredadas y avatares. Ver [[Cover image flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `id`, `contentType`, `data`.
 
-Referenced by: [[ImageController]], [[ImageDao]], [[ImageJdbcDao]], [[ImageJdbcDaoTest]], [[ImageService]], [[ImageServiceImpl]], [[ImageServiceImplTest]], [[PostServiceImplTest]].
+Operaciones para localizar en la fuente: `getId`, `getContentType`, `getData`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/Image.java, lines 1–28](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Image.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[ImageController]], [[ImageDao]], [[ImageJdbcDao]], [[ImageJdbcDaoTest]], [[ImageService]], [[ImageServiceImpl]], [[ImageServiceImplTest]], [[InMemoryImageService]], [[PostServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Image.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Image.java>), líneas 1–28.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -54,7 +62,3 @@ public class Image {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

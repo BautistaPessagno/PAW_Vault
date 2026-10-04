@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java"]
 ---
 
 # SearchSuggestion
 
-Autocomplete entry for the global catalog search: a [[SearchSuggestionType]], the displayed value and, for albums, the artist name. [[PostJdbcDao]] builds these only from AVAILABLE publications, and search/suggestions.jsp renders them as listbox options.
+Una sugerencia del buscador: tipo, valor y, para un álbum, el artista.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[SearchSuggestionType]].
+Datos y dependencias declaradas: `type`, `value`, `artistName`.
 
-Referenced by: [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]].
+Operaciones para localizar en la fuente: `getType`, `getValue`, `getArtistName`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java, lines 1–25](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java>)
+Referencias estáticas a tipos del proyecto: [[SearchSuggestionType]].
+
+Referenciado por: [[PostDao]], [[PostJdbcDao]], [[PostJdbcDaoTest]], [[PostService]], [[PostServiceImpl]], [[PostServiceImplTest]], [[SearchSuggestionController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java>), líneas 1–25.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -51,7 +59,3 @@ public class SearchSuggestion {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

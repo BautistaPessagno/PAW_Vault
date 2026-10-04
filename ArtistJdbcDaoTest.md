@@ -1,20 +1,26 @@
 ---
 title: "ArtistJdbcDaoTest"
-categories: ["Testing"]
+categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java"]
 ---
 
 # ArtistJdbcDaoTest
 
-HSQLDB DAO tests using the Spring test context and SQL fixtures. Source evidence for [[ArtistJdbcDao]]; no new Maven execution is claimed.
+Tests de `ArtistJdbcDao` en `persistence`: 11 casos declarados. Cubre: buscar o crear por nombre normalizado, nombre visible y sugerencias sin tildes. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
-Test methods in this revision:
+## Guía de lectura
+
+Datos y dependencias declaradas: `ARTISTS_TABLE`, `ARTIST_ID`, `ARTIST_NAME`, `ARTIST_NORMALIZED_NAME`, `artistDao`, `dataSource`, `jdbcTemplate`.
+
+Operaciones para localizar en la fuente: `setUp`, `sqlString`.
+
+Casos declarados: 11.
 
 - `testFindOrCreateWhenArtistExistsReturnsExistingArtist`
 - `testFindOrCreateWhenNameDiffersOnlyInCaseReturnsExistingArtist`
@@ -28,15 +34,17 @@ Test methods in this revision:
 - `testFindSuggestionsWhenLimitIsBelowMatchCountReturnsBestRanked`
 - `testFindSuggestionsWhenQueryMatchesNothingReturnsEmptyList`
 
-## Connections
+## Conexiones
 
-Project types referenced: [[Artist]], [[ArtistDao]], [[TestConfiguration]].
+Referencias estáticas a tipos del proyecto: [[Artist]], [[ArtistDao]], [[TestConfiguration]].
 
-Referenced by: none.
+Referenciado por: sin referencias léxicas desde otros archivos Java.
 
-## Exact source
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java, lines 1–192](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java>)
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java>), líneas 1–192.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -232,7 +240,3 @@ public class ArtistJdbcDaoTest {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

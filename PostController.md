@@ -4,67 +4,91 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java"]
 ---
 
 # PostController
 
-Public GET /post/{id} renders post/detail for any existing publication, including sold ones. The JSP shows edit/delete actions only to the owner of an AVAILABLE post, and a contact button to everyone else while it is available. PostNotFoundException maps to 404.
+Ficha pública `GET /post/{id}`: pide a [[CartService]] la ficha con lo que se le ofrece a quien mira y resuelve a dónde volver. Ver [[Post detail flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[PostNotFoundException]], [[PostService]].
+Datos y dependencias declaradas: `cartService`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `detail`, `returnProfilePath`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java, lines 1–38](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java>)
+Referencias estáticas a tipos del proyecto: [[AuthenticatedUser]], [[CartService]], [[PostDetail]], [[PostOrigin]], [[PostView]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java>), líneas 1–58.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
-import ar.edu.itba.paw.services.PostNotFoundException;
-import ar.edu.itba.paw.services.PostService;
+import ar.edu.itba.paw.models.PostDetail;
+import ar.edu.itba.paw.models.PostView;
+import ar.edu.itba.paw.services.CartService;
+import ar.edu.itba.paw.webapp.security.AuthenticatedUser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 // La ficha de la publicacion es publica: el contacto sigue pidiendo sesion en su propio controller.
 @Controller
 public class PostController {
 
-    private final PostService postService;
+    private final CartService cartService;
 
     @Autowired
-    public PostController(final PostService postService) {
-        this.postService = postService;
+    public PostController(final CartService cartService) {
+        this.cartService = cartService;
     }
 
     @RequestMapping(value = "/post/{postId:[0-9]+}", method = RequestMethod.GET)
-    public ModelAndView detail(@PathVariable("postId") final long postId) {
+    public ModelAndView detail(@PathVariable("postId") final long postId,
+                               @RequestParam(value = "from", required = false) final String returnQuery,
+                               @RequestParam(value = "origin", required = false) final PostOrigin origin,
+                               @RequestParam(value = "originPage", defaultValue = "1") final int originPage,
+                               @AuthenticationPrincipal final AuthenticatedUser currentUser) {
         final ModelAndView modelAndView = new ModelAndView("post/detail");
-        modelAndView.addObject("post", postService.findById(postId));
+        final PostView view = cartService.findPostView(postId, currentUser == null ? null : currentUser.getId(),
+                currentUser != null && currentUser.isAdmin());
+        final PostDetail detail = view.getDetail();
+        modelAndView.addObject("detail", detail);
+        modelAndView.addObject("contact", view.getContact());
+        modelAndView.addObject("post", detail.getPost());
+        final String profilePath = returnProfilePath(origin, detail);
+        if (profilePath != null) {
+            modelAndView.addObject("returnProfilePath", profilePath);
+            modelAndView.addObject("returnProfilePage", originPage);
+        }
+        // Query string del listado de origen. Solo se usa detras de "/?", asi que no puede
+        // sacar al usuario de la aplicacion.
+        modelAndView.addObject("returnQuery", returnQuery);
         return modelAndView;
     }
 
-    @ExceptionHandler(PostNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ModelAndView postNotFound() {
-        return new ModelAndView("error/404");
+    // Solo se vuelve a un perfil conocido: el publico del Publicante, o el propio si el mismo Publicante abre su Post.
+    private static String returnProfilePath(final PostOrigin origin, final PostDetail detail) {
+        if (origin == PostOrigin.PUBLIC_PROFILE) {
+            return "/users/" + detail.getPost().getUserId();
+        }
+        return origin == PostOrigin.PRIVATE_PROFILE && detail.isOwnedByViewer() ? "/profile" : null;
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

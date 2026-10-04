@@ -4,36 +4,49 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java"]
 ---
 
 # ArtistSuggestionController
 
-Public GET /artists/suggestions?q= renders the artist/suggestions fragment: up to five artist names as listbox options for the publish-form autocomplete. Blank or oversized queries yield an empty fragment.
+`GET /artists/suggestions`: devuelve en JSON hasta cinco artistas para el autocompletado del formulario de publicar. Ver [[Search suggestions flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[ArtistService]].
+Datos y dependencias declaradas: `artistService`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `suggestions`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java, lines 1–25](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java>)
+Referencias estáticas a tipos del proyecto: [[ArtistService]], [[ArtistSuggestionDto]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java>), líneas 1–34.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.services.ArtistService;
+import ar.edu.itba.paw.webapp.dto.ArtistSuggestionDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class ArtistSuggestionController {
@@ -45,13 +58,13 @@ public class ArtistSuggestionController {
         this.artistService = artistService;
     }
 
-    @RequestMapping(value = "/artists/suggestions", method = RequestMethod.GET)
-    public ModelAndView suggestions(@RequestParam(value = "q", required = false) final String query) {
-        return new ModelAndView("artist/suggestions", "artists", artistService.findSuggestions(query));
+    @RequestMapping(value = "/artists/suggestions", method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<ArtistSuggestionDto> suggestions(@RequestParam(value = "q", required = false) final String query) {
+        return artistService.findSuggestions(query).stream()
+                .map(artist -> new ArtistSuggestionDto(artist.getName()))
+                .collect(Collectors.toList());
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

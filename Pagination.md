@@ -4,25 +4,31 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/Pagination.java"]
 ---
 
 # Pagination
 
-Package-private page arithmetic shared by the services. pagesFor rounds up. offsetFor with a known total rejects pages past it, while page one always exists; offsetFor without a total rejects pages below one and offsets beyond Integer.MAX_VALUE. Violations raise [[PageNotFoundException]].
+Aritmética de páginas compartida: páginas para un total y offset de una página. Una sola regla para "fuera de rango": la página 1 siempre existe; cualquier otra tiene que caer dentro del total. Ver [[Paginated listings]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[PageNotFoundException]].
+Operaciones para localizar en la fuente: `pagesFor`, `offsetFor`.
 
-Referenced by: [[InquiryServiceImpl]], [[PaginationTest]], [[PostServiceImpl]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[PageNotFoundException]].
 
-[services/src/main/java/ar/edu/itba/paw/services/Pagination.java, lines 1–36](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/Pagination.java>)
+Referenciado por: [[InquiryServiceImpl]], [[PaginationTest]], [[PostServiceImpl]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pagination.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/Pagination.java>), líneas 1–35.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -48,8 +54,7 @@ final class Pagination {
         return offsetFor(pageNumber, pageSize);
     }
 
-    // Offset de una pagina cuando el total no se conoce (la busqueda del catalogo mira una
-    // fila de mas en lugar de contar).
+    // Offset de una pagina sin mirar el total: solo descarta numeros que no dan un offset valido.
     static int offsetFor(final int pageNumber, final int pageSize) {
         if (pageNumber < 1) {
             throw new PageNotFoundException();
@@ -62,7 +67,3 @@ final class Pagination {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

@@ -4,73 +4,142 @@ categories: ["History"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: ["CONTEXT.md", "README.md", "TODO.md", "docs/adr/0001-establish-quiero-vinilos-domain.md", "docs/adr/0002-own-the-album-catalog-locally.md", "docs/issues/01-mostrar-primer-album-en-landing.md", "docs/issues/02-completar-catalogo-inicial.md", "docs/issues/03-terminar-landing-editorial-responsive.md", "docs/issues/publicacion-albumes/01-convertir-artist-en-entidad.md", "docs/issues/publicacion-albumes/02-publicar-album-nuevo.md", "docs/issues/publicacion-albumes/03-reutilizar-catalogo-en-publicaciones.md", "docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md", "docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md", "docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md", "docs/issues/selling-flow/01-seguimiento-de-consultas-por-publicacion.md", "docs/issues/selling-flow/02-confirmar-venta-de-ejemplar-unico.md", "docs/issues/selling-flow/03-avisar-al-comprador-aceptado.md", "docs/plans/entrega-intermedia/02-configuracion-y-deploy.md", "docs/plans/entrega-intermedia/03-autenticacion-permisos.md", "docs/plans/entrega-intermedia/04-venta-ejemplar-unico.md", "docs/plans/entrega-intermedia/05-filtros-publicaciones.md", "docs/plans/entrega-intermedia/06-selling-flow.md", "docs/plans/perfil-consultas-ui.md", "docs/setup.md", "docs/specs/feature_cambio-contrasena_20260920.md", "docs/specs/feature_contacto-post_20260904.md", "docs/specs/feature_perfil-consultas-ui_20260921.md", "docs/specs/feature_publicacion-albumes_20260904.md", "docs/specs/landing-quiero-vinilos.md"]
+sources: ["CONTEXT.md", "README.md", "TODO.md", "docs/setup.md", "docs/adr/0001-establish-quiero-vinilos-domain.md", "docs/adr/0002-own-the-album-catalog-locally.md", "docs/adr/0003-conversation-inside-the-inquiry.md", "docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md", "docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md", "docs/specs/feature_venta-con-comprobante_20260924.md", "docs/plans/carrito-consultas.md"]
 ---
 
 # History and specifications
 
-The repository documents several stages of the application. Dates and done/ready labels below come from those files, not a live project board. Source behavior takes precedence for this codemap. Requirements remain requirements even when written in imperative language.
+> [!summary] En una frase
+> El repositorio guarda, junto al código, el glosario del dominio, tres decisiones de arquitectura, las especificaciones y planes de cada funcionalidad y los issues que las originaron; son la fuente del **por qué** de muchas decisiones que el código solo muestra como resultado.
 
-The two ADRs establish the quieroVinilos domain and its locally owned catalog/assets. The earlier landing plan describes an editorial album gallery. Later publication work introduces Artist identity and Posts. The code then represents publishers through User rows, adds accounts, persisted inquiries and single-exemplar sales, and in this range a public detail page, editing, deletion, paging, a profile and password management.
+Estos documentos son material de referencia. Describen intenciones de un momento; cuando difieren del código, manda el código ([[Known gaps and document drift]]).
 
-## Document register
+## Dónde buscar cada cosa
 
-| Source | Meaning and current relationship |
+| Pregunta | Documento |
 |---|---|
-| [docs/adr/0001-establish-quiero-vinilos-domain.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/adr/0001-establish-quiero-vinilos-domain.md>) | Decision record. Establish quieroVinilos as the project domain |
-| [docs/adr/0002-own-the-album-catalog-locally.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>) | Decision record. Own the album catalog locally |
-| [docs/issues/01-mostrar-primer-album-en-landing.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/01-mostrar-primer-album-en-landing.md>) | 01: Mostrar el primer álbum real en `/`. **Status:** done — implementada y verificada en el browser contra localhost. El diseño editorial queda para la issue 03. |
-| [docs/issues/02-completar-catalogo-inicial.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/02-completar-catalogo-inicial.md>) | 02: Completar el catálogo inicial de ocho álbumes. **Status:** ready-for-agent |
-| [docs/issues/03-terminar-landing-editorial-responsive.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/03-terminar-landing-editorial-responsive.md>) | 03: Terminar la landing editorial responsive. **Status:** ready-for-agent |
-| [docs/issues/publicacion-albumes/01-convertir-artist-en-entidad.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-albumes/01-convertir-artist-en-entidad.md>) | 01: Convertir Artist en entidad sin romper el catálogo. **Status:** done — implementada en `08a5de1` y verificada por el usuario contra PostgreSQL y la landing. |
-| [docs/issues/publicacion-albumes/02-publicar-album-nuevo.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-albumes/02-publicar-album-nuevo.md>) | 02: Publicar un álbum nuevo desde /publish. **Status:** done — implementada en `fe32671` y `30251a2`, y verificada por el usuario en localhost. |
-| [docs/issues/publicacion-albumes/03-reutilizar-catalogo-en-publicaciones.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-albumes/03-reutilizar-catalogo-en-publicaciones.md>) | 03: Reutilizar artistas y álbumes entre publicaciones. **Status:** done |
-| [docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-albumes/04-rechazar-posts-duplicados.md>) | 04: Rechazar Posts duplicados dentro del formulario. **Status:** done |
-| [docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-mailing/01-contactar-publicante-desde-post.md>) | 01: Contactar al publicante desde un Post. **Status:** done |
-| [docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/publicacion-mailing/02-recuperarse-de-fallo-de-entrega.md>) | 02: Recuperarse de un fallo de entrega de contacto. **Status:** ready-for-agent |
-| [docs/issues/selling-flow/01-seguimiento-de-consultas-por-publicacion.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/selling-flow/01-seguimiento-de-consultas-por-publicacion.md>) | 01: Seguimiento de consultas por publicación. **Status:** implemented; pending end-to-end manual test. Groups inquiries by publication and sends the buyer to the inbox after contacting. |
-| [docs/issues/selling-flow/02-confirmar-venta-de-ejemplar-unico.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/selling-flow/02-confirmar-venta-de-ejemplar-unico.md>) | 02: Confirmar la venta de un ejemplar único. **Status:** implemented; pending end-to-end manual test. In-page confirmation before accept. |
-| [docs/issues/selling-flow/03-avisar-al-comprador-aceptado.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/issues/selling-flow/03-avisar-al-comprador-aceptado.md>) | 03: Avisar al comprador cuya consulta fue aceptada. **Status:** implemented; pending end-to-end manual test. Acceptance email and inquiries call to action. |
-| [docs/plans/entrega-intermedia/02-configuracion-y-deploy.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/02-configuracion-y-deploy.md>) | Configuration and deploy plan; now also describes the `pampero` Maven profile and `mvn clean package -Ppampero`. The first Pampero deploy is still listed as a pending step. |
-| [docs/plans/entrega-intermedia/03-autenticacion-permisos.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/03-autenticacion-permisos.md>) | Authentication and permissions plan; implemented before 40328f0. Its route list predates the profile, edit/delete and recovery routes. |
-| [docs/plans/entrega-intermedia/04-venta-ejemplar-unico.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/04-venta-ejemplar-unico.md>) | Single-exemplar sale plan; now states it was integrated into main by PR #20 and points to 06-selling-flow.md for the inbox, confirmation and acceptance email increment. |
-| [docs/plans/entrega-intermedia/05-filtros-publicaciones.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/05-filtros-publicaciones.md>) | Combined filters plan; implemented before 40328f0. It does not cover the later pagination or the removal of the artist filter control. |
-| [docs/plans/entrega-intermedia/06-selling-flow.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/entrega-intermedia/06-selling-flow.md>) | Selling-flow plan dated 2026-09-17, marked implemented and pending a manual end-to-end walk-through; merged as PR #25. |
-| [docs/plans/perfil-consultas-ui.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/plans/perfil-consultas-ui.md>) | Task-by-task agent plan for the profile, inbox and detail redesign (inline account rows, inbox paginated by post, icons, state markers, notices). Implemented through PR #34; its checkboxes are plan text, not evidence. |
-| [docs/setup.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/setup.md>) | Setup now documents Pampero properties and the profile build, and says the local setup script applies the canonical schema and the separate seed script loads demo data. Dependency-centralization claims still differ from the POMs. |
-| [docs/specs/feature_cambio-contrasena_20260920.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_cambio-contrasena_20260920.md>) | Password change specification. Still labelled lista para implementar although implemented by PR #30 (ddff7ec). |
-| [docs/specs/feature_contacto-post_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_contacto-post_20260904.md>) | Now marked historical and implemented from the public detail page. It says POST contact redirects to /inquiries, while the code redirects to /inquiries/sent. Older synchronous-delivery sections remain in the body. |
-| [docs/specs/feature_perfil-consultas-ui_20260921.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_perfil-consultas-ui_20260921.md>) | Profile, inbox and detail redesign specification. Still labelled lista para implementar although implemented by PR #34. |
-| [docs/specs/feature_publicacion-albumes_20260904.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/feature_publicacion-albumes_20260904.md>) | Updated to User-linked Posts, multipart publishing, optional Image storage and PostSummary. Some old no-Post-list and constraint assumptions remain; see [[Known gaps and document drift]]. |
-| [docs/specs/landing-quiero-vinilos.md](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/docs/specs/landing-quiero-vinilos.md>) | Now acknowledges PostDao and deleted scaffold routes; old no-action/gallery criteria remain in the body. |
+| ¿Qué significa un término del dominio? | `CONTEXT.md` |
+| ¿Por qué se tomó una decisión estructural? | `docs/adr/` |
+| ¿Qué tenía que hacer una funcionalidad? | `docs/specs/` |
+| ¿Cómo se planeó implementarla, paso a paso? | `docs/plans/` |
+| ¿Qué problema o pedido la originó? | `docs/issues/` |
+| ¿Cómo se instala y corre? | `README.md`, `docs/setup.md` |
+| ¿Qué reglas sigue el equipo al programar? | `CLAUDE.md` ([[Repository tooling]]) |
 
-## Changes through f12af08
+## Glosario: `CONTEXT.md`
 
-The range from `40328f0` to `f12af08` has 101 commits and changes 168 paths. The merged pull requests, in order:
+Define el lenguaje del proyecto y qué palabras evitar. Los términos que más importan para leer el código:
 
-| PR | Date | Branch | Result in code |
+| Término | Significado | En el código |
+|---|---|---|
+| Álbum | La obra, identificada por título, artista y año | [[Album]] |
+| Post | La publicación que vincula a un publicante con un álbum | [[Post]] |
+| Cuenta | La identidad registrada: correo, contraseña y rol | [[User]] |
+| Cuenta verificada | La Cuenta que demostró controlar su correo | `users.verified`, autoridad `VERIFIED` |
+| Publicante | La Cuenta como autora de un Post | `posts.user_id` |
+| Consulta | El pedido de un comprador sobre un Post; la venta es una etapa suya | [[Inquiry]] |
+| Conversación | Los mensajes dentro de una Consulta | [[Message]] |
+
+El glosario distingue **Cambio de contraseña** (con sesión, probando la actual) de **Recuperación de contraseña** (sin sesión, por enlace): son dos operaciones con reglas distintas ([[Profile flow]], [[Password recovery flow]]).
+
+## Decisiones de arquitectura (ADR)
+
+| ADR | Decisión | Consecuencia en el código |
+|---|---|---|
+| 0001 | El producto es quieroVinilos, un marketplace de vinilos usados entre particulares; el lenguaje sale de `CONTEXT.md` y las restricciones técnicas, de la cursada | Nombres de modelos, tablas y textos |
+| 0002 | El catálogo de álbumes es propio, sin depender de un servicio externo | [[Artist]] y [[Album]] se crean al publicar, con `findOrCreate` ([[Publish flow]]) |
+| 0003 | Comprador y publicante hablan dentro de la Consulta | Una conversación por consulta, sin tiempo real, sin `Reply-To` en los correos ([[Conversation flow]], [[Mail delivery]]) |
+
+## Especificaciones y planes
+
+| Funcionalidad | Especificación | Plan | Nota del vault |
 |---|---|---|---|
-| #23 | 2026-09-16 | e-tormakh/boton-volver | Back navigation on views without an exit (later reworked into ui:back-link and Cancel buttons) |
-| #25 | 2026-09-19 | feature/selling-flow, stacked on redesign-header-filtros | Merged first and brought the #24 commits with it, plus the inbox split into received and sent grouped by post, sale confirmation dialog, acceptance email, mail after commit, non-blocking mail pool, logo and auth screens, and the Pampero profile |
-| #24 | 2026-09-19 | redesign-header-filtros | Compact header with global search, filter sidebar, public post detail, case-preserving titles and artists, cookie-only sessions; its own merge added the shared password validator refactor |
-| — | 2026-09-19 to 20 | Local merges of catalog, profile and pagination branches | Normalized artists and suggestions, required genre/condition/positive price with backfills, post editing with preview, first profile panel, catalog and profile pagination, demo catalog seed |
-| #30 | 2026-09-21 | b-pessagno/cambio-contrasena | Password change from the profile with logout and notice email; shared password validators |
-| #29, #32 | 2026-09-21 to 22 | b-pessagno/ui-fixes | Icons, unified badges and confirmation dialog, compact cards, suggestion query in one statement |
-| #31 | 2026-09-21 | l-mendez/delete-own-posts | Owner deletion with detached inquiries and own-image removal |
-| #34 | 2026-09-22 | l-mendez/rework-profile-page-navigation | One-column profile with inline editing, numbered profile pagination, inbox as a flat list paginated by post, state markers, publish/edit notices |
-| #33 | 2026-09-22 | feature/password-reset | Forgot/reset password with one-hour single-use links |
+| Portada | `docs/specs/landing-quiero-vinilos.md` | | [[Landing flow]] |
+| Publicación de álbumes | `feature_publicacion-albumes_20260904.md` | | [[Publish flow]] |
+| Contacto con el publicante | `feature_contacto-post_20260904.md` | | [[Contact flow]] |
+| Cambio de contraseña | `feature_cambio-contrasena_20260920.md` | | [[Profile flow]] |
+| Perfil, consultas y ficha | `feature_perfil-consultas-ui_20260921.md` | `docs/plans/perfil-consultas-ui.md` | [[Profile flow]], [[Post detail flow]] |
+| Venta con comprobante | `feature_venta-con-comprobante_20260924.md` | `docs/plans/venta-con-comprobante.md` | [[Inquiry and sale flow]] |
+| Carrito | | `docs/plans/carrito-consultas.md` | [[Cart flow]] |
+| Entrega intermedia | | `docs/plans/entrega-intermedia/02` a `06` | Configuración, autenticación, venta, filtros |
 
-Source behavior is traced in [[Post detail flow]], [[Edit and delete flow]], [[Profile flow]], [[Password recovery flow]], [[Search suggestions flow]] and the updated older flows. [[Paginated listings]] summarizes the three paged views.
+## Issues
 
-The specifications written for password change and the profile redesign still say they are ready to implement, and the selling-flow issues still wait for a manual end-to-end test. README now lists every current route, credentials, the Pampero build and the demo seed; its /inquiries row describes both inbox halves although that route shows received inquiries only. CONTEXT.md gained the Cuenta and password vocabulary but still says recovery does not exist. TODO.md keeps its 09/09 heading and blockers alongside new known-debt entries about sessions and post deletion. These are recorded in [[Known gaps and document drift]].
+| Carpeta | Tema |
+|---|---|
+| `docs/issues/01` a `03` | Primera portada con catálogo fijo. Superados |
+| `publicacion-albumes/` | Artista como entidad, publicar un álbum nuevo, reutilizar catálogo, rechazar duplicados |
+| `publicacion-mailing/` | Contactar al publicante; recuperarse de un fallo de entrega |
+| `selling-flow/` | Seguimiento de consultas, venta de ejemplar único, aviso al comprador |
+| `conversacion-consulta/` | Conversación dentro de la consulta |
+| `observaciones-sprint-2/` | Las cuatro observaciones de la cátedra |
 
-## Changes through 40328f0
+### Las observaciones del sprint 2
 
-The earlier merge added authenticated accounts with email verification, persistent inquiries and seller actions, single-exemplar sale states, per-post photos, commercial details and combined catalog search/filter/sort. The plans under docs/plans/entrega-intermedia describe that work; their draft/dependency labels are historical.
+El issue `observaciones-sprint-2/01` recoge cuatro de las observaciones de la defensa y cómo se resolvieron. La lista completa, con lo que quedó pendiente, está en [[Sprint 2 defense review]]. Es la referencia para entender por qué cambió el registro:
 
-The removed [[AlbumSummary]], [[HelloWorldController]], [[UserForm]], [[Legacy UserNotFoundException]] and [[EmailDeliveryException]] preserve their pinned historical code. The newer [[UserNotFoundException]] belongs to services-contracts and is a separate class.
+| Observación | Qué se cambió | Dónde leerlo |
+|---|---|---|
+| El registro estaba al revés: pedía verificar el correo antes de crear la cuenta | La cuenta se crea al registrarse, queda con sesión iniciada y se verifica después. Sin verificar puede navegar pero no operar | [[Authentication flow]] |
+| Había más de una pantalla para "sin resultados" | Un único estado vacío para toda búsqueda | [[Landing flow]] |
+| Las sugerencias devolvían HTML que se insertaba con `innerHTML` | Devuelven JSON y el cliente arma los nodos | [[Search suggestions flow]] |
+| La autorización estaba repartida entre capas sin un criterio | Reglas por URL para la verificación; `@PreAuthorize` para la pertenencia; 403 y 404 centralizados | [[Security and authorization]] |
 
-[[Known gaps and document drift]] · [[Verification record]]
+## Línea de tiempo
+
+| Fecha | Hito |
+|---|---|
+| 21 de agosto | Primer commit del esqueleto |
+| 9 de septiembre | Cierre de la primera iteración (`TODO.md`): portada, publicación, contacto por correo |
+| Hasta el 22 de septiembre | Autenticación, perfil, cambio y recuperación de contraseña, sugerencias, bandejas. Es el estado que describía el mapa anterior del vault (`f12af08`) |
+| 23 de septiembre | Búsqueda y filtros del catálogo (PR #35) |
+| 24 al 30 de septiembre | Venta con comprobante, direcciones, datos de cobro (PR #40, #44, #42); Flyway (PR #38) |
+| 2 de octubre | Cuenta verificada y observaciones del sprint 2 (PR #43); conversación (PR #45) |
+| 4 de octubre | Galería, avatares, perfiles públicos y reseñas (PR #46); carrito (PR #47); lógica fuera de los controllers (PR #48) |
+
+El detalle por commit está en [[Recent changes 2026-10-04]].
+
+## Notas históricas del vault
+
+Las notas con `status: historical` conservan clases que ya no existen: [[HelloWorldController]], [[UserForm]], [[AlbumSummary]], [[EmailDeliveryException]], [[Legacy UserNotFoundException]], [[AdminController]], [[VerifyEmailForm]], [[InquiryAcceptedNotification]], [[ContactFormValidator]], [[ValidContactForm]]. [[Legacy user flow]] describe el esqueleto inicial y [[Audit local 2026-09-17]] registra una auditoría manual sobre una versión anterior.
+
+## Evidencia de código
+
+### ADR 0002
+
+Fuente exacta en `8929aea`: [docs/adr/0002-own-the-album-catalog-locally.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>), líneas 1–3.
+
+```markdown
+# Own the album catalog locally
+
+quieroVinilos stores its album catalog and cover assets inside this project instead of consuming VinylOS or another external catalog. This keeps the application independently deployable and makes PostgreSQL the source of truth, at the cost of maintaining its own seed data and artwork.
+```
+
+### ADR 0003
+
+Fuente exacta en `8929aea`: [docs/adr/0003-conversation-inside-the-inquiry.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0003-conversation-inside-the-inquiry.md>), líneas 1–3.
+
+```markdown
+# Keep buyer and publisher talking inside the Inquiry
+
+Earlier specs (`feature_contacto-post`, `entrega-intermedia/06-selling-flow`) kept in-app replies out of scope and let the publisher answer by email through the inquiry mail's `Reply-To`. We now give every Inquiry exactly one Conversation of immutable Messages, refreshed by reload with one notification email per Message, and drop the `Reply-To` so neither party learns the other's email and the Conversation is the single record of what was agreed. We rejected a pre-purchase thread per Post (a second aggregate with its own access rules and inbox) and real-time delivery (WebSocket/polling infrastructure not justified for this stage).
+```
+
+## Archivos para seguir el flujo
+
+- [CONTEXT.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/CONTEXT.md>)
+- [README.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/README.md>)
+- [TODO.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/TODO.md>)
+- [docs/setup.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/setup.md>)
+- [docs/adr/0001-establish-quiero-vinilos-domain.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0001-establish-quiero-vinilos-domain.md>)
+- [docs/adr/0002-own-the-album-catalog-locally.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>)
+- [docs/adr/0003-conversation-inside-the-inquiry.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0003-conversation-inside-the-inquiry.md>)
+- [docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md>)
+- [docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md>)
+- [docs/specs/feature_venta-con-comprobante_20260924.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/specs/feature_venta-con-comprobante_20260924.md>)
+- [docs/plans/carrito-consultas.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/plans/carrito-consultas.md>)
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

@@ -1,16 +1,18 @@
 ---
 title: "InquiryAcceptedNotification"
-categories: ["Services"]
+categories: ["History"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
 snapshot: "2026-09-22"
 commit: "f12af080cf6a27101160f005102a20f436574cf7"
-status: "documented"
+status: "historical"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryAcceptedNotification.java"]
 ---
 
 # InquiryAcceptedNotification
+
+> Histórico. Este archivo ya no existe con ese nombre en `41c32af`. El código inferior conserva su revisión original. Fue reemplazado por [[InquiryUpdateNotification]].
 
 Mail payload for the accepted buyer: inquiry ID, buyer email, album title, artist and release year. [[InquiryServiceImpl]] builds it inside the sale transaction and hands it to [[EmailService]] after commit. It is not a database entity.
 
@@ -22,7 +24,7 @@ Referenced by: [[EmailService]], [[EmailServiceImpl]], [[EmailServiceImplTest]],
 
 ## Exact source
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryAcceptedNotification.java, lines 1–24](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryAcceptedNotification.java>)
+[services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryAcceptedNotification.java, lines 1–24](<file:///Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryAcceptedNotification.java>)
 
 ```java
 package ar.edu.itba.paw.services;

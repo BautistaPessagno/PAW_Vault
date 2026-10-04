@@ -4,39 +4,61 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java"]
 ---
 
 # RegisterForm
 
-Email-only registration bean with required, email-format and 100-character maximum validation. Username/password are chosen later through VerifyEmailForm.
+Registro: correo, nombre, contraseña con [[ValidPassword]] y confirmación con [[MatchingPasswords]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `email`, `username`, `password`, `passwordConfirmation`.
 
-Referenced by: [[AuthenticationController]].
+Operaciones para localizar en la fuente: `getEmail`, `setEmail`, `getUsername`, `setUsername`, `getPassword`, `setPassword`, `getPasswordConfirmation`, `setPasswordConfirmation`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java, lines 1–22](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java>)
+Referencias estáticas a tipos del proyecto: [[MatchingPasswords]], [[PasswordsMatching]], [[ValidPassword]].
+
+Referenciado por: [[AuthenticationController]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java>), líneas 1–61.
 
 ```java
 package ar.edu.itba.paw.webapp.form;
+
+import ar.edu.itba.paw.webapp.validation.MatchingPasswords;
+import ar.edu.itba.paw.webapp.validation.PasswordsMatching;
+import ar.edu.itba.paw.webapp.validation.ValidPassword;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
-public class RegisterForm {
+@MatchingPasswords
+public class RegisterForm implements PasswordsMatching {
 
     @NotBlank(message = "{auth.register.email.required}")
     @Email(message = "{auth.register.email.invalid}")
     @Size(max = 100, message = "{auth.register.email.size}")
     private String email;
+
+    @NotBlank(message = "{auth.register.username.required}")
+    @Size(max = 100, message = "{auth.register.username.size}")
+    private String username;
+
+    @ValidPassword
+    private String password;
+
+    private String passwordConfirmation;
 
     public String getEmail() {
         return email;
@@ -46,9 +68,30 @@ public class RegisterForm {
         this.email = email;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(final String username) {
+        this.username = username;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(final String password) {
+        this.password = password;
+    }
+
+    @Override
+    public String getPasswordConfirmation() {
+        return passwordConfirmation;
+    }
+
+    public void setPasswordConfirmation(final String passwordConfirmation) {
+        this.passwordConfirmation = passwordConfirmation;
+    }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

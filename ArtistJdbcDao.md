@@ -4,25 +4,33 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java"]
 ---
 
 # ArtistJdbcDao
 
-Looks up artists by normalized_name. On a miss it inserts display name, normalized name and search_phrase inside a JDBC savepoint; a DuplicateKeyException rolls back to the savepoint and rereads the winning row, so a concurrent insert does not abort the PostgreSQL transaction. updateDisplayName rewrites name and search_phrase. findSuggestions ranks exact, whole-name prefix, word prefix and substring matches over search_phrase in SQL, with a LIMIT.
+Artistas con Spring JDBC. `findOrCreate` inserta dentro de un savepoint: si otra transacción ganó la carrera, vuelve al savepoint y relee, porque PostgreSQL deja la transacción inutilizable tras una violación de unicidad. Las sugerencias se ordenan con un `CASE` en SQL.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Artist]], [[ArtistDao]], [[SearchText]].
+Datos y dependencias declaradas: `ROW_MAPPER`, `SELECT_ARTIST`, `SUGGESTION_RANK`, `FIND_SUGGESTIONS_QUERY`, `jdbcTemplate`, `jdbcInsert`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `findByNormalizedName`, `create`, `findOrCreate`, `updateDisplayName`, `findSuggestions`.
 
-## Exact source
+## Conexiones
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java, lines 1–113](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>)
+Referencias estáticas a tipos del proyecto: [[Artist]], [[ArtistDao]], [[SearchText]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>), líneas 1–113.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -139,7 +147,3 @@ public class ArtistJdbcDao implements ArtistDao {
 
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

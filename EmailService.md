@@ -4,25 +4,31 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java"]
 ---
 
 # EmailService
 
-Six mail operations: verification, welcome, post interest, inquiry accepted, password changed and password reset. Each takes an explicit Locale because delivery runs on a worker thread outside the request.
+Contrato de envío de correos: siete operaciones, cada una con el `Locale` como parámetro porque el envío corre en otro hilo. Ver [[Mail delivery]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[InquiryAcceptedNotification]], [[PostInterestNotification]], [[User]].
+Operaciones para localizar en la fuente: `sendWelcomeEmail`, `sendVerificationEmail`, `sendPostInterestEmail`, `sendInquiryUpdateEmail`, `sendMessageEmail`, `sendPasswordChangedEmail`, `sendPasswordResetEmail`.
 
-Referenced by: [[EmailServiceImpl]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[InquiryUpdateNotification]], [[MessageNotification]], [[PostInterestNotification]], [[User]].
 
-[services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java, lines 1–24](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java>)
+Referenciado por: [[EmailServiceImpl]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[UserServiceImpl]], [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java>), líneas 1–26.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -43,14 +49,12 @@ public interface EmailService {
      */
     void sendPostInterestEmail(PostInterestNotification notification, Locale locale);
 
-    void sendInquiryAcceptedEmail(InquiryAcceptedNotification notification, Locale locale);
+    void sendInquiryUpdateEmail(InquiryUpdateNotification notification, Locale locale);
+
+    void sendMessageEmail(MessageNotification notification, Locale locale);
 
     void sendPasswordChangedEmail(User user, Locale locale);
 
     void sendPasswordResetEmail(User user, String token, Locale locale);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

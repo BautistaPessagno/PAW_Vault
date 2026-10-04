@@ -4,25 +4,31 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java"]
 ---
 
 # ArtistDao
 
-findOrCreate receives both the display name and the precomputed normalized identity. updateDisplayName rewrites the shown name. findSuggestions receives a query already compacted by [[SearchText]] and returns a ranked, limited list. The former findAll listing for a landing filter has been removed.
+Contrato de persistencia de artistas: buscar o crear por nombre normalizado, actualizar el nombre visible y sugerencias. Lo implementa [[ArtistJdbcDao]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Artist]].
+Operaciones para localizar en la fuente: `findOrCreate`, `updateDisplayName`, `findSuggestions`.
 
-Referenced by: [[ArtistJdbcDao]], [[ArtistJdbcDaoTest]], [[ArtistServiceImpl]], [[ArtistServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[Artist]].
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java, lines 1–15](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java>)
+Referenciado por: [[ArtistJdbcDao]], [[ArtistJdbcDaoTest]], [[ArtistServiceImpl]], [[ArtistServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ArtistDao.java>), líneas 1–15.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -41,7 +47,3 @@ public interface ArtistDao {
     List<Artist> findSuggestions(String normalizedQuery, int limit);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

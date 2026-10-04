@@ -4,25 +4,33 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java"]
 ---
 
 # ImageJdbcDao
 
-Uses JdbcTemplate and SimpleJdbcInsert against images. findById selects aliased ID, content type and binary data into [[Image]]; a missing ID returns Optional.empty. create binds content_type and data and returns the generated ID. delete removes one row by ID and returns whether it existed. MIME and size policy stays in [[ImageServiceImpl]].
+Imágenes con Spring JDBC. Cada lectura exige con `EXISTS` que la imagen pertenezca al post, usuario verificado o álbum de la URL. El borrado lleva cuatro `NOT EXISTS`: solo elimina lo que nadie referencia.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Image]], [[ImageDao]].
+Datos y dependencias declaradas: `ROW_MAPPER`, `IMAGE_SELECT`, `jdbcTemplate`, `jdbcInsert`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `findById`, `findPostImage`, `findUserAvatar`, `findAlbumCover`, `create`, `delete`.
 
-## Exact source
+## Conexiones
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java, lines 1–58](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>)
+Referencias estáticas a tipos del proyecto: [[Image]], [[ImageDao]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>), líneas 1–87.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -48,6 +56,9 @@ public class ImageJdbcDao implements ImageDao {
             resultSet.getBytes("image_data")
     );
 
+    private static final String IMAGE_SELECT = "SELECT i.id AS image_id, "
+            + "i.content_type AS image_content_type, i.data AS image_data FROM images i ";
+
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert jdbcInsert;
 
@@ -62,11 +73,33 @@ public class ImageJdbcDao implements ImageDao {
     @Override
     public Optional<Image> findById(final long id) {
         return jdbcTemplate.query(
-                        "SELECT id AS image_id, content_type AS image_content_type, data AS image_data " +
-                                "FROM images WHERE id = ?",
+                        IMAGE_SELECT + "WHERE i.id = ?",
                         ROW_MAPPER, id)
                 .stream()
                 .findFirst();
+    }
+
+    @Override
+    public Optional<Image> findPostImage(final long postId, final long imageId) {
+        return jdbcTemplate.query(IMAGE_SELECT + "WHERE i.id = ? AND EXISTS ("
+                        + "SELECT 1 FROM posts p JOIN albums a ON a.id = p.album_id WHERE p.id = ? "
+                        + "AND (p.image_id = i.id OR a.cover_image_id = i.id OR EXISTS ("
+                        + "SELECT 1 FROM post_images pi WHERE pi.post_id = p.id AND pi.image_id = i.id)))",
+                ROW_MAPPER, imageId, postId).stream().findFirst();
+    }
+
+    @Override
+    public Optional<Image> findUserAvatar(final long userId, final long imageId) {
+        return jdbcTemplate.query(IMAGE_SELECT + "WHERE i.id = ? AND EXISTS ("
+                        + "SELECT 1 FROM users u WHERE u.id = ? AND u.verified = TRUE AND u.avatar_image_id = i.id)",
+                ROW_MAPPER, imageId, userId).stream().findFirst();
+    }
+
+    @Override
+    public Optional<Image> findAlbumCover(final long albumId, final long imageId) {
+        return jdbcTemplate.query(IMAGE_SELECT + "WHERE i.id = ? AND EXISTS ("
+                        + "SELECT 1 FROM albums a WHERE a.id = ? AND a.cover_image_id = i.id)",
+                ROW_MAPPER, imageId, albumId).stream().findFirst();
     }
 
     @Override
@@ -80,11 +113,11 @@ public class ImageJdbcDao implements ImageDao {
 
     @Override
     public boolean delete(final long id) {
-        return jdbcTemplate.update("DELETE FROM images WHERE id = ?", id) == 1;
+        return jdbcTemplate.update("DELETE FROM images WHERE id = ? " +
+                        "AND NOT EXISTS (SELECT 1 FROM albums WHERE cover_image_id = images.id) " +
+                        "AND NOT EXISTS (SELECT 1 FROM posts WHERE image_id = images.id) " +
+                        "AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id = images.id) " +
+                        "AND NOT EXISTS (SELECT 1 FROM users WHERE avatar_image_id = images.id)", id) == 1;
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

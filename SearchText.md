@@ -4,25 +4,33 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/SearchText.java"]
 ---
 
 # SearchText
 
-Shared search normalizer in the models module. phrase lowercases with Locale.ROOT, strips combining diacritics after NFD decomposition and collapses every run of non-letter/digit characters into one space; compact removes those spaces. DAOs persist phrase() in artists.search_phrase and albums.search_phrase, while services compare compact() queries. schema.sql repeats an approximate SQL backfill with TRANSLATE, so changing the rule requires rebuilding those columns.
+Normalización compartida de búsqueda: minúsculas, sin diacríticos y con separadores reducidos a un espacio (`phrase`), o sin espacios (`compact`). Persistence la usa para llenar `search_phrase` y los services para normalizar lo que se teclea. Ver [[Landing flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Datos y dependencias declaradas: `DIACRITICS`, `SEPARATORS`.
 
-Referenced by: [[AlbumJdbcDao]], [[ArtistJdbcDao]], [[ArtistServiceImpl]], [[PostServiceImpl]].
+Operaciones para localizar en la fuente: `phrase`, `compact`.
 
-## Exact source
+## Conexiones
 
-[models/src/main/java/ar/edu/itba/paw/models/SearchText.java, lines 1–36](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchText.java>)
+Referencias estáticas a tipos del proyecto: ninguna.
+
+Referenciado por: [[AlbumJdbcDao]], [[ArtistJdbcDao]], [[ArtistServiceImpl]], [[PostServiceImpl]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/SearchText.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchText.java>), líneas 1–36.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -62,7 +70,3 @@ public final class SearchText {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

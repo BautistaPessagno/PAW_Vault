@@ -4,34 +4,48 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java"]
 ---
 
 # UserServiceImpl
 
-Registration creates or reuses a pending account and stores a 32-byte URL-safe token; verification activates it once. updateUsername trims and rewrites the name. changePassword checks the current password, rejects reuse and uses a compare-and-set update. requestPasswordReset ignores unknown or pending accounts, purges expired links and keeps one live one-hour link per account. resetPassword checks expiry, rejects reuse, claims the token and updates the hash. Mail and success logs run after commit.
+Cuentas: registro con Cuenta sin verificar, verificación, reenvío con espera de un minuto, cambio y recuperación de contraseña, nombre, avatar y datos de cobro. Genera los tokens, resuelve las carreras con actualizaciones condicionales y registra cada correo para después del commit. Ver [[Authentication flow]], [[Password recovery flow]] y [[Tokens and email links]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[DuplicateUserException]], [[EmailService]], [[EmailVerificationToken]], [[EmailVerificationTokenDao]], [[InvalidCurrentPasswordException]], [[PasswordHasher]], [[PasswordResetToken]], [[PasswordResetTokenDao]], [[SupportedLocales]], [[TransactionCallbacks]], [[UnchangedPasswordException]], [[User]], [[UserDao]], [[UserNotFoundException]], [[UserRole]], [[UserService]].
+Datos y dependencias declaradas: `LOGGER`, `TOKEN_BYTES`, `SECURE_RANDOM`, `RESET_TOKEN_TTL`, `RESEND_COOLDOWN`, `userDao`, `emailService`, `passwordHasher`, `verificationTokenDao`, `resetTokenDao`, `inquiryDao`, `imageService`.
 
-Referenced by: [[UserServiceImplTest]].
+Operaciones para localizar en la fuente: `findById`, `findPublicProfileById`, `findAccountAppearanceById`, `updateAvatar`, `lockById`, `findByEmail`, `register`, `verifyEmail`, `resendVerification`, `issueVerificationToken`, `updateUsername`, `changePassword`, `requestPasswordReset`, `resetPassword`, `updatePaymentInfo`, `generateToken`.
 
-## Exact source
+## Conexiones
 
-[services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java, lines 1–242](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>)
+Referencias estáticas a tipos del proyecto: [[DuplicateUserException]], [[EmailRules]], [[EmailService]], [[EmailVerificationToken]], [[EmailVerificationTokenDao]], [[ImageService]], [[ImageUpload]], [[InquiryDao]], [[InvalidCurrentPasswordException]], [[InvalidPaymentInfoException]], [[PasswordHasher]], [[PasswordResetToken]], [[PasswordResetTokenDao]], [[PaymentInfo]], [[PaymentInfoRequiredException]], [[PaymentInfoRules]], [[PublicUserProfile]], [[SupportedLocales]], [[TransactionCallbacks]], [[UnchangedPasswordException]], [[User]], [[UserDao]], [[UserNotFoundException]], [[UserRole]], [[UserService]].
+
+Referenciado por: [[UserServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 1–359.
 
 ```java
 package ar.edu.itba.paw.services;
 
+import ar.edu.itba.paw.models.EmailRules;
 import ar.edu.itba.paw.models.EmailVerificationToken;
 import ar.edu.itba.paw.models.PasswordResetToken;
+import ar.edu.itba.paw.models.PaymentInfo;
+import ar.edu.itba.paw.models.PaymentInfoRules;
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.models.UserRole;
+import ar.edu.itba.paw.models.PublicUserProfile;
+import ar.edu.itba.paw.models.ImageUpload;
 import ar.edu.itba.paw.persistence.EmailVerificationTokenDao;
+import ar.edu.itba.paw.persistence.InquiryDao;
 import ar.edu.itba.paw.persistence.PasswordResetTokenDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import org.slf4j.Logger;
@@ -39,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
@@ -61,22 +76,31 @@ public class UserServiceImpl implements UserService {
     // esta en uso: se limita la ventana en la que sirve si el correo queda expuesto.
     private static final Duration RESET_TOKEN_TTL = Duration.ofHours(1);
 
+    // Tiempo minimo entre dos enlaces de verificacion pedidos con el boton de reenviar.
+    private static final Duration RESEND_COOLDOWN = Duration.ofMinutes(1);
+
     private final UserDao userDao;
     private final EmailService emailService;
     private final PasswordHasher passwordHasher;
     private final EmailVerificationTokenDao verificationTokenDao;
     private final PasswordResetTokenDao resetTokenDao;
+    private final InquiryDao inquiryDao;
+    private final ImageService imageService;
 
+    // InquiryDao y no InquiryService: InquiryService ya depende de UserService.
     @Autowired
     public UserServiceImpl(final UserDao userDao, final EmailService emailService,
                            final PasswordHasher passwordHasher,
                            final EmailVerificationTokenDao verificationTokenDao,
-                           final PasswordResetTokenDao resetTokenDao) {
+                           final PasswordResetTokenDao resetTokenDao, final InquiryDao inquiryDao,
+                           final ImageService imageService) {
         this.userDao = userDao;
         this.emailService = emailService;
         this.passwordHasher = passwordHasher;
         this.verificationTokenDao = verificationTokenDao;
         this.resetTokenDao = resetTokenDao;
+        this.inquiryDao = inquiryDao;
+        this.imageService = imageService;
     }
 
     @Override
@@ -87,30 +111,77 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<PublicUserProfile> findPublicProfileById(final long id) {
+        return userDao.findPublicProfileById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<PublicUserProfile> findAccountAppearanceById(final long id) {
+        return userDao.findAccountAppearanceById(id);
+    }
+
+    @Override
+    @Transactional
+    public Optional<Long> updateAvatar(final long userId, final ImageUpload avatar) {
+        // El lock serializa dos cambios de foto de la misma Cuenta: cada uno borra la que leyo.
+        final Long previousId = userDao.findAccountAppearanceByIdForUpdate(userId)
+                .orElseThrow(UserNotFoundException::new).getAvatarImageId();
+        final Long newId = avatar == null ? null
+                : imageService.create(avatar.getContentType(), avatar.getData()).getId();
+        if (!userDao.updateAvatarImageId(userId, newId)) {
+            throw new UserNotFoundException();
+        }
+        if (previousId != null) {
+            imageService.delete(previousId);
+        }
+        LOGGER.info("Updated avatar userId={} removed={}", userId, newId == null);
+        return Optional.ofNullable(newId);
+    }
+
+    // MANDATORY: fuera de una transaccion el lock no protegeria nada.
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public User lockById(final long id) {
+        return userDao.findByIdForUpdate(id).orElseThrow(UserNotFoundException::new);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<User> findByEmail(final String email) {
-        return userDao.findByEmail(normalize(email));
+        return userDao.findByEmail(EmailRules.normalize(email));
     }
 
     /*
-     * El registro no pide clave: crea la cuenta deshabilitada y manda un enlace con un token
-     * aleatorio al correo. Recien quien lo reciba elige nombre de usuario y clave, asi que
-     * nadie puede ocupar el correo de otra persona. Una cuenta pendiente puede volver a
-     * registrarse para recibir un enlace nuevo.
+     * La cuenta existe desde el registro, sin verificar, y ya puede iniciar sesion. Un correo
+     * que ya tiene clave, verificado o no, no se puede volver a registrar: si no, quien llegara
+     * segundo pisaria la clave de la cuenta ajena. La unica excepcion es la cuenta pendiente
+     * del flujo anterior, que no tiene clave y se completa con este registro.
      */
     @Override
     @Transactional
-    public User register(final String email, final Locale locale) {
-        final String normalizedEmail = normalize(email);
+    public User register(final String email, final String username, final String rawPassword,
+                         final Locale locale) {
+        final String normalizedEmail = EmailRules.normalize(email);
+        final String trimmedUsername = username.trim();
         final Optional<User> existing = userDao.findByEmail(normalizedEmail);
+        if (existing.isPresent() && existing.get().getPasswordHash() != null) {
+            throw new DuplicateUserException();
+        }
+
+        final String passwordHash = passwordHasher.hash(rawPassword);
         final User user;
         if (existing.isPresent()) {
-            if (existing.get().isEnabled()) {
+            final long pendingId = existing.get().getId();
+            // completePending solo actualiza una cuenta sin clave: si otro registro la completo
+            // entre la lectura y este update, devuelve false y este no pisa la clave elegida.
+            if (!userDao.completePending(pendingId, trimmedUsername, passwordHash)) {
                 throw new DuplicateUserException();
             }
-            user = existing.get();
+            user = userDao.findById(pendingId).orElseThrow(IllegalStateException::new);
         } else {
             try {
-                user = userDao.create(normalizedEmail, normalizedEmail, null, UserRole.USER,
+                user = userDao.create(trimmedUsername, normalizedEmail, passwordHash, UserRole.USER,
                         SupportedLocales.languageOf(locale));
             } catch (final DuplicateKeyException e) {
                 // Otro registro simultaneo del mismo correo se adelanto.
@@ -118,19 +189,14 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        final String token = generateToken();
-        verificationTokenDao.create(user.getId(), token);
-        TransactionCallbacks.afterCommit(() -> {
-            LOGGER.info("Sent verification link userId={}", user.getId());
-            emailService.sendVerificationEmail(user, token, locale);
-        });
+        LOGGER.info("Registered user userId={}", user.getId());
+        issueVerificationToken(user, locale);
         return user;
     }
 
     @Override
     @Transactional
-    public Optional<User> verifyEmail(final String token, final String username, final String rawPassword,
-                                      final Locale locale) {
+    public Optional<User> verifyEmail(final String token, final Locale locale) {
         if (token == null) {
             return Optional.empty();
         }
@@ -140,9 +206,9 @@ public class UserServiceImpl implements UserService {
         }
         final long userId = stored.get().getUserId();
 
-        // activateIfPending solo actualiza si la cuenta sigue deshabilitada: si otro request
-        // ya la activo devuelve false y este enlace no pisa las credenciales elegidas.
-        if (!userDao.activateIfPending(userId, username.trim(), passwordHasher.hash(rawPassword))) {
+        // markVerified solo actualiza si la cuenta sigue sin verificar: si otro request ya la
+        // verifico devuelve false y la bienvenida no se manda dos veces.
+        if (!userDao.markVerified(userId)) {
             return Optional.empty();
         }
         verificationTokenDao.deleteByUserId(userId);
@@ -153,6 +219,41 @@ public class UserServiceImpl implements UserService {
             emailService.sendWelcomeEmail(user, locale);
         });
         return Optional.of(user);
+    }
+
+    /*
+     * Cualquiera puede registrar un correo ajeno y pedir reenvios en bucle: si el ultimo enlace
+     * se mando hace menos de RESEND_COOLDOWN no se manda otro. El anterior sigue sirviendo.
+     * El lock sobre la cuenta impide que dos pedidos en paralelo pasen juntos el chequeo.
+     */
+    @Override
+    @Transactional
+    public boolean resendVerification(final long userId, final Locale locale) {
+        final User user = lockById(userId);
+        if (user.isVerified()) {
+            return false;
+        }
+        final LocalDateTime cooldownStart = LocalDateTime.now().minus(RESEND_COOLDOWN);
+        final boolean recentlySent = verificationTokenDao.findLatestByUserId(userId)
+                .filter(latest -> latest.getCreatedAt().isAfter(cooldownStart))
+                .isPresent();
+        if (recentlySent) {
+            LOGGER.info("Skipped verification resend inside the cooldown userId={}", userId);
+            return false;
+        }
+        issueVerificationToken(user, locale);
+        return true;
+    }
+
+    // Borra los enlaces anteriores antes de crear el nuevo: solo vale el ultimo que se mando.
+    private void issueVerificationToken(final User user, final Locale locale) {
+        verificationTokenDao.deleteByUserId(user.getId());
+        final String token = generateToken();
+        verificationTokenDao.create(user.getId(), token, LocalDateTime.now());
+        TransactionCallbacks.afterCommit(() -> {
+            LOGGER.info("Sent verification link userId={}", user.getId());
+            emailService.sendVerificationEmail(user, token, locale);
+        });
     }
 
     @Override
@@ -187,14 +288,15 @@ public class UserServiceImpl implements UserService {
     /*
      * No distingue un correo desconocido de uno registrado: en los dos casos termina sin
      * avisar nada, asi la pantalla puede dar siempre la misma respuesta y no delatar que
-     * cuentas existen. Una cuenta pendiente tampoco recibe enlace, porque todavia no tiene
-     * clave que recuperar: su camino sigue siendo el correo de verificacion.
+     * cuentas existen. Una cuenta pendiente del flujo anterior tampoco recibe enlace, porque
+     * no tiene clave que recuperar: su camino es volver a registrarse. Una cuenta sin
+     * verificar que ya tiene clave si lo recibe.
      */
     @Override
     @Transactional
     public void requestPasswordReset(final String email, final Locale locale) {
-        final Optional<User> found = userDao.findByEmail(normalize(email));
-        if (found.isEmpty() || !found.get().isEnabled()) {
+        final Optional<User> found = userDao.findByEmail(EmailRules.normalize(email));
+        if (found.isEmpty() || found.get().getPasswordHash() == null) {
             LOGGER.info("Ignored password reset request for an unknown or pending account");
             return;
         }
@@ -248,6 +350,9 @@ public class UserServiceImpl implements UserService {
         if (resetTokenDao.deleteByToken(token) != 1) {
             return Optional.empty();
         }
+        // El enlace llego al correo, asi que demuestra lo mismo que el de verificacion.
+        userDao.markVerified(userId);
+        verificationTokenDao.deleteByUserId(userId);
         final User updated = userDao.updatePassword(userId, passwordHasher.hash(newPassword))
                 .orElseThrow(UserNotFoundException::new);
         TransactionCallbacks.afterCommit(() -> {
@@ -257,18 +362,34 @@ public class UserServiceImpl implements UserService {
         return Optional.of(updated);
     }
 
+    @Override
+    @Transactional
+    public User updatePaymentInfo(final long id, final String cbu, final String alias) {
+        final PaymentInfo paymentInfo = new PaymentInfo(PaymentInfoRules.normalizeCbu(cbu),
+                PaymentInfoRules.normalizeAlias(alias));
+        if ((paymentInfo.getCbu() != null && !PaymentInfoRules.isValidCbu(paymentInfo.getCbu()))
+                || (paymentInfo.getAlias() != null && !PaymentInfoRules.isValidAlias(paymentInfo.getAlias()))) {
+            throw new InvalidPaymentInfoException();
+        }
+        // Vaciar los datos bloquea la cuenta antes de buscar ventas abiertas: accept() lee el
+        // CBU de esa misma fila bloqueada, asi que un Aceptar en paralelo espera a que esto
+        // termine (y ve los datos vacios) o termina antes (y aca se ve su venta abierta).
+        if (!paymentInfo.isPresent()) {
+            lockById(id);
+            if (inquiryDao.hasOpenSalesBySellerId(id)) {
+                throw new PaymentInfoRequiredException();
+            }
+        }
+        final User user = userDao.updatePaymentInfo(id, paymentInfo)
+                .orElseThrow(UserNotFoundException::new);
+        LOGGER.info("Updated payment info userId={}", id);
+        return user;
+    }
+
     private static String generateToken() {
         final byte[] bytes = new byte[TOKEN_BYTES];
         SECURE_RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
-
-    private static String normalize(final String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
-    }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

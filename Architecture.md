@@ -4,15 +4,19 @@ categories: ["Architecture"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 tags: ["codemap", "architecture"]
+sources: ["pom.xml", "models/pom.xml", "persistence-contracts/pom.xml", "persistence/pom.xml", "services-contracts/pom.xml", "services/pom.xml", "webapp/pom.xml"]
 ---
 
 # Architecture
 
-The module boundary separates interfaces from implementations. A controller receives a service interface through constructor injection. A service receives DAO interfaces and other services. JDBC implementations query the database and return Java models. [[WebConfig]] assembles these objects at runtime. The six modules and their dependency directions did not change between `40328f0` and `f12af08`.
+> [!summary] En una frase
+> Seis módulos Maven donde las interfaces viven separadas de sus implementaciones, y la dirección de las dependencias hace que el compilador impida saltearse una capa.
+
+## Los módulos
 
 ```mermaid
 flowchart TD
@@ -27,32 +31,142 @@ flowchart TD
     S -. runtime .-> P
 ```
 
-Solid arrows are project compile dependencies; dashed arrows are runtime dependencies. External framework dependencies are listed in [[Build and dependencies]]. `runtime` packages the implementation without making it available to the consuming module's compiler. Shared package names across contract and implementation modules let the implementation implement its corresponding interface; they do not merge the modules.
+Las flechas llenas son dependencias de compilación; las punteadas, de `runtime`. Con `runtime` la implementación se empaqueta en el WAR pero **no** está disponible para el compilador del módulo que la consume. Por eso un controller no puede hacer `new UserServiceImpl()` ni tocar un DAO: no compila.
 
-| Module | Owns | Concrete connection |
+| Módulo | Qué tiene | Ejemplos |
 |---|---|---|
-| models | Domain values, joined read projections, page models and the shared search normalizer | [[Album]], [[Post]], [[PostSummary]], [[PostPage]], [[InquiryGroup]], [[SearchText]] |
-| persistence-contracts | DAO interfaces and duplicate-key marker | [[PostDao]], [[PasswordResetTokenDao]], [[DuplicatePostKeyException]] |
-| persistence | JDBC queries, row mappers and startup schema resource | [[PostJdbcDao]], [[InquiryJdbcDao]] and [[Database schema]] |
-| services-contracts | Business APIs, notification payloads and business exceptions | [[PostService]], [[EmailService]], [[InquiryAcceptedNotification]], [[PageNotFoundException]] |
-| services | Normalization, orchestration, transactions, paging arithmetic, after-commit callbacks and mail rendering | [[PostServiceImpl]], [[Pagination]], [[TransactionCallbacks]], [[EmailServiceImpl]] |
-| webapp | HTTP binding, validation, views and composition | [[PublishController]], [[ProfileController]], [[ValidPassword]], [[SecurityConfig]], [[WebConfig]] |
+| `models` | Objetos de dominio inmutables, proyecciones de lectura, páginas y reglas compartidas. Sin dependencias | [[User]], [[Post]], [[PostSummary]], [[InquiryDetail]], [[Cart]], [[ImageRules]], [[SearchText]] |
+| `persistence-contracts` | Interfaces de los DAO | [[PostDao]], [[InquiryDao]], [[CartItemDao]] |
+| `persistence` | Spring JDBC, `RowMapper` y migraciones Flyway | [[PostJdbcDao]], [[InquiryJdbcDao]], `db/migration/V1..V11` |
+| `services-contracts` | Interfaces de los services, excepciones de negocio y cargas de correo | [[PostService]], [[CartService]], [[ForbiddenOperationException]], [[PostInterestNotification]] |
+| `services` | Lógica de negocio, transacciones, paginado, correo | [[InquiryServiceImpl]], [[CartServiceImpl]], [[ContactRules]], [[EmailServiceImpl]] |
+| `webapp` | Controllers, formularios, validadores, seguridad, JSP, configuración | [[InquiryController]], [[SecurityConfig]], [[WebConfig]] |
 
-## What crosses each boundary
+Las reglas compartidas (`*Rules`) viven en `models` porque las necesitan dos capas: el formulario web para mostrar el error junto al campo, y el service como garantía. [[SearchText]] también: persistence llena `search_phrase` con ella y services normaliza lo que se teclea.
 
-1. HTTP request fields become mutable form objects through Spring binding; page numbers arrive as plain int parameters.
-2. Controllers pass primitive/string form values, the principal ID and optional cover bytes plus content type to service interfaces. They do not pass HttpServletRequest or BindingResult into business logic. [[ProfileController]] is the one controller that touches the security context directly, to refresh the principal and to log out after a password change.
-3. Services resolve identities, compute offsets and call DAO interfaces with normalized values, limits and offsets.
-4. DAOs bind SQL parameters and turn aliased columns into models using static RowMappers.
-5. Services return models, page objects or raise business exceptions. Side effects that must follow a successful write, mail and success logs, are registered with [[TransactionCallbacks]].
-6. Controllers add models to ModelAndView or translate errors; JSPs read JavaBean getters through expression language, and two fragment views answer autocomplete requests.
+## Qué cruza cada frontera
 
-[[SearchText]] lives in models because both sides need the same rule: persistence stores search_phrase with it, and services normalize incoming queries with it. [[PostSummary]] still avoids loading user, album and artist separately for each card, and [[InquiryJdbcDao]] resolves an inbox page in two statements instead of per-group lookups. [[Image]] carries bytes across the DAO/service boundary and [[ImageController]] returns them directly as an HTTP response.
+1. Los parámetros HTTP se ligan a un formulario mutable de `webapp`; los números de página llegan como `int`.
+2. El controller pasa al service valores simples: el id de la Cuenta con sesión, textos, números, y archivos ya convertidos a [[ImageUpload]]. Nunca pasa `HttpServletRequest`, `BindingResult` ni `MultipartFile`.
+3. El service normaliza, decide y llama a los DAO con valores ya limpios, límites y offsets.
+4. El DAO liga parámetros y convierte columnas en modelos con un `RowMapper` estático.
+5. El service devuelve modelos o lanza una excepción de negocio. Lo que tiene que pasar después del commit (correo, log de éxito) se registra con [[TransactionCallbacks]].
+6. El controller arma el `ModelAndView` o traduce el error; la JSP lee getters con EL. Dos controllers devuelven JSON.
 
-Start the concrete traces at [[Landing flow]], then [[Post detail flow]], [[Publish flow]], [[Edit and delete flow]] and [[Contact flow]]. [[Inquiry and sale flow]] covers the inbox and the sale; [[Cover image flow]] traces upload and image responses; [[Search suggestions flow]] covers autocomplete. [[Legacy user flow]] describes routes removed from the implementation.
+## Reglas de capa
 
-## Account and inquiry boundaries
+| Regla | Dónde se ve |
+|---|---|
+| La lógica de negocio va entera en los services | El PR #48 sacó de los controllers el tope de direcciones, el orden por defecto y la validación de página |
+| Los controllers no llaman DAO | El módulo `webapp` no compila contra `persistence` |
+| `@Transactional` solo en métodos de service, con `readOnly = true` en las lecturas | Ningún DAO ni controller lo lleva |
+| Un DAO por tabla | La excepción deliberada: [[InquiryJdbcDao]] reutiliza los `RowMapper` de paquete de [[AddressJdbcDao]] y [[MessageJdbcDao]] para sus `JOIN` |
+| `java.sql.*` solo en `persistence` | [[DuplicatePostKeyException]] existe para que `services` no dependa de la excepción de Spring |
+| Spring Security solo en `webapp` | [[PasswordHasher]] adapta BCrypt para `services`; el rol de moderador llega al service como un `boolean` |
+| Modelos inmutables | Campos `final`, sin setters; las variantes se crean con métodos `with...` |
 
-Security stays in webapp. [[AuthenticatedUser]] adapts the domain User to UserDetails, and [[SecurityConfig]] adapts BCrypt through the [[PasswordHasher]] contract, which now verifies as well as hashes. Services receive account IDs and ordinary values rather than Spring Security objects. [[UserService]] owns registration, profile updates, password change and recovery; [[InquiryService]] owns contact persistence, grouped inboxes, seller authorization and sale transactions; [[PostService]] owns publishing, editing, deletion and paging.
+## Dependencias entre services
 
-[[Authentication flow]] · [[Profile flow]] · [[Password recovery flow]] · [[Inquiry and sale flow]] · [[Paginated listings]]
+```mermaid
+flowchart LR
+    Cart[CartService] --> Post[PostService]
+    Cart --> Inq[InquiryService]
+    Cart --> Addr[AddressService]
+    Cart --> User[UserService]
+    Inq --> Post
+    Inq --> User
+    Inq --> Addr
+    Inq --> Rev[ReviewService]
+    Inq --> Mail[EmailService]
+    Pub[PublicProfileService] --> User
+    Pub --> Post
+    Pub --> Rev
+    Post --> User
+    Post --> Artist[ArtistService]
+    Post --> Album[AlbumService]
+    Post --> Img[ImageService]
+    Addr --> User
+    User --> Mail
+    User --> Img
+```
+
+No hay ciclos entre services. Donde uno habría aparecido, el service usa el DAO de la otra tabla: [[UserServiceImpl]] y [[PostServiceImpl]] usan [[InquiryDao]] directamente porque `InquiryService` ya depende de ellos. [[PublicProfileServiceImpl]] y [[CartServiceImpl]] existen como services de composición por el mismo motivo.
+
+## Dónde seguir
+
+[[Startup and dependency injection]] explica cómo se arma todo al arrancar. [[Security and authorization]] cubre la capa de seguridad. Los recorridos por funcionalidad están en [[Feature map]].
+
+## Preguntas de defensa
+
+**¿Por qué hay módulos de contratos separados?**
+Para que cada capa compile solo contra interfaces. `services` no ve las clases JDBC y `webapp` no ve las implementaciones de los services.
+
+**¿Qué impide que un controller use un DAO?**
+El scope `runtime` de la dependencia: el DAO está en el WAR pero no en el classpath de compilación de `webapp`.
+
+**¿Por qué las reglas de validación están en `models`?**
+Porque las usan el formulario (en `webapp`) y el service (en `services`), y `models` es el único módulo que los dos ven.
+
+**¿Cómo evitan dependencias circulares entre services?**
+Usando el DAO de la otra tabla cuando el service correspondiente ya depende del que llama, o con un service de composición.
+
+## Evidencia de código
+
+Dependencias de `services`: compila contra los contratos y recibe `persistence` en `runtime`.
+
+Fuente exacta en `8929aea`: [services/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/pom.xml>), líneas 21–45.
+
+```xml
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>services-contracts</artifactId>
+      <version>${parent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>persistence-contracts</artifactId>
+      <version>${parent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>persistence</artifactId>
+      <version>${parent.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+```
+
+Dependencias de `webapp` sobre los módulos hermanos:
+
+Fuente exacta en `8929aea`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>), líneas 59–76.
+
+```xml
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>services</artifactId>
+      <version>${parent.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>persistence</artifactId>
+      <version>${parent.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>services-contracts</artifactId>
+      <version>${parent.version}</version>
+    </dependency>
+    <dependency>
+```
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

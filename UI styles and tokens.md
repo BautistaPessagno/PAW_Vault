@@ -4,23 +4,90 @@ categories: ["Web"]
 type: "guide"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: ["webapp/src/main/webapp/css/tokens.css", "webapp/src/main/webapp/css/components.css", "webapp/src/main/webapp/css/style.css"]
+sources: ["webapp/src/main/webapp/css/tokens.css", "webapp/src/main/webapp/css/components.css", "webapp/src/main/webapp/css/style.css", "webapp/src/main/webapp/WEB-INF/tags/head.tag"]
 ---
 
 # UI styles and tokens
 
-ui:head loads tokens.css, components.css and style.css in that order. Tokens now define a small room palette (background, surface, sunk, rule, foreground, dim, two accents, danger) mapped to semantic color aliases, color-mix soft accents, vinyl colors that stay dark in both themes, body/display/mono font stacks, a 90rem page width, radii, shadows and a focus ring. Dark mode still follows prefers-color-scheme by redefining the room palette.
+> [!summary] En una frase
+> Tres hojas de estilo CSS sin framework ni preprocesador: una define variables (colores, tipografías, radios, sombras), otra los componentes y otra el diseño de cada página; el modo oscuro sale de redefinir diez variables.
 
-components.css styles typography, buttons (including danger and danger-outline variants), icons, bound and unbound inputs, the segmented control, the JavaScript select picker, autocomplete listboxes, the brand, back link, site header and search, and vinyl cards with state chips. style.css owns page layouts: the catalog grid with its filter sidebar and results bar, the publish workspace and preview, the detail page, profile account rows, the inbox and its tab navigation, pagination, the confirmation dialog, notices and error pages.
+## Herramientas
 
-The catalog grid shows five columns on wide screens, three below 1100px and two below 600px. Below 1100px the publish preview also stacks under the form; below 900px the filter sidebar stacks above the results and form rows use two columns; at 860px the detail, contact and not-found layouts become single-column; the site header search wraps below 760px; below 700px form rows use one column; below 600px the page gutter shrinks and compact cards simplify. Reduced-motion rules remove button, back-link and card transitions. There is no JavaScript theme switch. Browser rendering, contrast and responsive layout were not tested in this documentation refresh.
+| Herramienta | Para qué |
+|---|---|
+| Propiedades personalizadas de CSS (`--nombre`) | Definir cada valor de diseño una sola vez |
+| `@media (prefers-color-scheme: dark)` | Modo oscuro según el sistema operativo |
+| `color-mix()` | Derivar tonos suaves, sombras y el anillo de foco a partir de los colores base |
+| Grid y Flexbox | Disposición de páginas y componentes |
+| `@media` por ancho | Adaptar a pantallas angostas |
+| `@media (prefers-reduced-motion)` | Quitar transiciones a quien las desactivó |
 
-## tokens.css
+No hay Bootstrap, Tailwind ni Sass. Los archivos se sirven tal cual, como recursos estáticos de `/css/**` ([[Startup and dependency injection]]).
 
-[webapp/src/main/webapp/css/tokens.css, lines 1–64](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/tokens.css>)
+## Los tres archivos
+
+| Archivo | Líneas | Qué contiene | Orden de carga |
+|---|---|---|---|
+| `tokens.css` | 64 | Variables: paleta, colores semánticos, tipografías, ancho máximo, radios, sombras, anillo de foco. Redefinición para modo oscuro | 1 |
+| `components.css` | 846 | Estilos de los componentes de [[UI components]]: texto, botones, campos, radios, autocompletado, tarjeta de vinilo, cabecera, marca | 2 |
+| `style.css` | 1985 | Diseño por página: catálogo, formularios, auth, carrito, bandejas, venta, conversación, ficha, avatar, perfil público y privado, diálogo de foto | 3 |
+
+`head.tag` los enlaza en ese orden en todas las páginas. El orden importa: a igual especificidad gana la regla que se declara después, así que una página puede ajustar un componente.
+
+## Cómo funcionan los tokens
+
+Hay dos niveles de variables:
+
+1. **Paleta** (`--room-*`): diez colores concretos. Es lo único que cambia entre tema claro y oscuro.
+2. **Semánticos** (`--color-*`): nombres por función (`--color-bg`, `--color-surface`, `--color-text`, `--color-accent`, `--color-danger`) que apuntan a la paleta. Los componentes usan solo estos.
+
+Como los componentes nunca nombran un color concreto, el modo oscuro es redefinir la paleta dentro de un `@media`; nada más cambia. Los tonos derivados (`--color-accent-soft`, sombras, foco) se calculan con `color-mix()` y se adaptan solos.
+
+Dos colores quedan fuera a propósito: `--color-vinyl` y `--color-vinyl-groove`. Un disco es negro en los dos temas.
+
+Tipografías: una de texto (`--font-body`), una serif para títulos (`--font-display`) y una monoespaciada (`--font-mono`), todas con fuentes del sistema; no se descarga ninguna.
+
+## Convención de nombres
+
+Las clases siguen el patrón bloque, elemento y modificador: `vinyl-card`, `vinyl-card__link`, `button--primary`, `text--muted`. Un componente es un bloque; sus partes llevan `__`; sus variantes, `--`. Así una clase dice a qué componente pertenece y no pisa a otra.
+
+## Decisiones y por qué
+
+| Decisión | Motivo | Fuente |
+|---|---|---|
+| CSS propio, sin framework | Control del diseño y cero dependencias de front | Estructura del código; inferencia |
+| Tokens separados de los componentes | Cambiar el tema sin tocar componentes | Estructura de `tokens.css` |
+| El disco no invierte color en modo oscuro | Un vinilo es negro en los dos temas | Comentario en `tokens.css` |
+| El estado no depende solo del color | Accesibilidad | Comentarios en `style.css` y en los tags de estado |
+| Componentes con `border-box` declarado | Que funcionen aunque se usen sin el resto de los estilos | Primer comentario de `components.css` |
+| El diálogo de la foto usa un velo liso, sin desenfoque | El velo toma el color del vinilo, que es negro en los dos temas | Comentario en `style.css` |
+
+## Límites conocidos
+
+- `style.css` tiene casi dos mil líneas en un solo archivo; las secciones se ubican por sus comentarios.
+- `color-mix()` y `100dvh` necesitan navegadores recientes.
+- No hay minificación ni versionado de los archivos: el navegador los cachea según las cabeceras por defecto del contenedor.
+
+## Preguntas de defensa
+
+**¿Usan algún framework de CSS?**
+No. Son tres hojas propias con variables de CSS.
+
+**¿Cómo hicieron el modo oscuro?**
+Los componentes usan variables semánticas; un `@media (prefers-color-scheme: dark)` redefine la paleta y todo lo demás se adapta.
+
+**¿Cómo se sirven los CSS?**
+Como recursos estáticos mapeados en `WebConfig`, enlazados desde `head.tag` con `c:url`.
+
+## Código
+
+### tokens.css
+
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/css/tokens.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/tokens.css>), líneas 1–63.
 
 ```css
 :root {
@@ -86,12 +153,11 @@ The catalog grid shows five columns on wide screens, three below 1100px and two 
         --room-danger: #ef5a48;
     }
 }
-
 ```
 
-## components.css
+### components.css
 
-[webapp/src/main/webapp/css/components.css, lines 1–771](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/components.css>)
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/css/components.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/components.css>), líneas 1–846.
 
 ```css
 /* Box model: la biblioteca asume border-box aunque se use sin demo.css. */
@@ -371,6 +437,51 @@ textarea.input-field__control {
     color: var(--color-danger);
     font-size: 0.82rem;
     margin: 0;
+}
+
+.star-rating {
+    border: 0;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.star-rating__stars {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.15rem;
+    justify-self: start;
+    position: relative;
+}
+
+.star-rating__star {
+    border-radius: var(--radius-sm);
+    color: color-mix(in srgb, var(--color-text-muted) 55%, var(--color-surface));
+    cursor: pointer;
+    font-size: 2rem;
+    line-height: 1;
+    padding: 0.1rem 0.15rem;
+    transition: color 150ms ease;
+}
+
+.star-rating__stars:has(.star-rating__input:checked) .star-rating__star {
+    color: var(--color-accent);
+}
+
+.star-rating__input:checked + .star-rating__star ~ .star-rating__star {
+    color: color-mix(in srgb, var(--color-text-muted) 55%, var(--color-surface));
+}
+
+.star-rating__stars:has(.star-rating__star:hover) .star-rating__star {
+    color: var(--color-accent);
+}
+
+.star-rating__stars .star-rating__star:hover ~ .star-rating__star {
+    color: color-mix(in srgb, var(--color-text-muted) 55%, var(--color-surface));
+}
+
+.star-rating__input:focus-visible + .star-rating__star {
+    box-shadow: var(--focus-ring);
 }
 
 /* Radio group shared by catalog filters and forms. */
@@ -789,11 +900,41 @@ textarea.input-field__control {
 }
 
 /* text-overflow no aplica a un contenedor flex: el recorte con puntos suspensivos
-   tiene que vivir en el span que envuelve el nombre. */
+   tiene que vivir en el span que envuelve el nombre. El line-height del boton es 1:
+   sin agrandarlo, el overflow corta las letras que bajan del renglon (g, j, p, q, y). */
 .account-nav__name {
+    line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* Aviso de cuenta sin verificar: una franja debajo de la cabecera, con el mismo ancho
+   maximo que el contenido y el boton de reenvio al final. */
+.verification-banner {
+    background: var(--color-secondary-soft);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-accent-secondary);
+}
+
+.verification-banner__inner {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    justify-content: space-between;
+    margin: 0 auto;
+    max-width: var(--page-max-width);
+    padding: 0.4rem 2rem;
+}
+
+.verification-banner__text {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.resend-verification {
+    margin: 0;
 }
 
 /* page-shell es un grid: sin esto el link de volver se estira a todo el ancho. */
@@ -867,9 +1008,9 @@ textarea.input-field__control {
 }
 ```
 
-## style.css
+### style.css
 
-[webapp/src/main/webapp/css/style.css, lines 1–1219](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/webapp/css/style.css>)
+Fuente exacta en `8929aea`: [webapp/src/main/webapp/css/style.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/style.css>), líneas 1–1985.
 
 ```css
 html {
@@ -1004,6 +1145,12 @@ body {
     display: grid;
     gap: 0.5rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* El error del rango va debajo de las dos columnas: el mismo aire que el gap del
+   formulario lo deja centrado entre los campos y el boton de aplicar. */
+.filter-group__range + .input-field__errors {
+    margin-top: 0.9rem;
 }
 
 .filters .input-field__control {
@@ -1173,14 +1320,6 @@ a.pagination__link:hover {
     user-select: none;
 }
 
-.pagination__ellipsis {
-    align-items: center;
-    color: var(--color-text-muted);
-    display: inline-flex;
-    height: 2.25rem;
-    padding: 0 0.25rem;
-}
-
 .hint {
     color: var(--color-text-muted);
     font-size: 0.82rem;
@@ -1271,6 +1410,38 @@ a.pagination__link:hover {
     margin: 0;
 }
 
+.publish-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.sale-review {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    max-width: 38rem;
+    padding: 1.25rem;
+}
+
+.publish-gallery__item {
+    cursor: pointer;
+    display: grid;
+    font-size: 0.78rem;
+    gap: 0.35rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    max-width: 5.5rem;
+}
+
+.publish-gallery__item img {
+    aspect-ratio: 1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    grid-column: 1 / -1;
+    object-fit: cover;
+    width: 100%;
+}
+
 /* Los formularios chicos (auth) quedan en una columna angosta y centrada. */
 .auth-shell {
     max-width: 34rem;
@@ -1332,6 +1503,108 @@ a.pagination__link:hover {
 .contact-layout .form-stack {
     max-width: none;
 }
+
+/* Carrito: un bloque por Publicante con sus vinilos en filas, como la bandeja. La
+   cabecera de cada fila reusa la de los grupos de la bandeja. */
+.cart {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.cart__seller {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.cart__item {
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    display: grid;
+    gap: 0.5rem 1rem;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding: 0.75rem 0;
+}
+
+.cart__item .inbox-group__post {
+    padding-bottom: 0;
+}
+
+/* Con muchos vinilos la lista es larga: la direccion y el boton de enviar se pegan debajo
+   del header sticky, como los filtros del catalogo. En una columna van despues de la lista. */
+.cart-layout > .form-stack {
+    position: sticky;
+    top: 5.25rem;
+}
+
+@media (max-width: 860px) {
+    .cart-layout > .form-stack {
+        position: static;
+    }
+}
+
+/* Total del carrito: el mismo precio de las cards, un poco mas chico, separado del
+   formulario por una linea fina. */
+.cart-total {
+    border-top: 1px solid var(--color-border);
+    display: grid;
+    gap: 0.15rem;
+    padding-top: 0.75rem;
+}
+
+.cart-total__label {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.cart-total__value {
+    font-size: 1.5rem;
+}
+
+.cart__price {
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+/* Carrito vacio: una card centrada con el icono, el texto y el camino de vuelta al catalogo. */
+.cart-empty {
+    display: grid;
+    gap: 0.75rem;
+    justify-items: center;
+    margin: clamp(1.5rem, 6vw, 4rem) auto 0;
+    max-width: 28rem;
+    text-align: center;
+}
+
+.cart-empty__icon {
+    align-items: center;
+    background: var(--color-accent-soft);
+    border-radius: 50%;
+    color: var(--color-accent);
+    display: inline-flex;
+    height: 3.5rem;
+    justify-content: center;
+    width: 3.5rem;
+}
+
+.cart-empty__icon .icon {
+    height: 1.5rem;
+    width: 1.5rem;
+}
+
+.cart-empty__text {
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+/* Eleccion de direccion de envio del formulario de contacto. Sin JavaScript: los
+   campos de una direccion nueva se ocultan con :has() mientras hay una guardada elegida. */
+.address-choice { border: 0; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+/* El legend queda fuera del grid del fieldset y no recibe el gap: su aire va aparte. */
+.address-choice > legend { margin-bottom: 0.75rem; }
+.address-choice__option { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem;
+    border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; }
+.address-choice__option:has(input:checked) { border-color: var(--color-accent); }
+.address-choice:has(.address-choice__option input[value=""]:not(:checked)) .address-choice__new { display: none; }
 
 /* Recibidas y enviadas son dos vistas: la sub-nav es lo que dice en cual estas y
    cuanto hay del otro lado. */
@@ -1465,16 +1738,19 @@ a.pagination__link:hover {
     border-bottom: 1px solid var(--color-border);
     display: grid;
     gap: 0.25rem 1.5rem;
+    grid-template-areas: "who msg end" ". address .";
     grid-template-columns: 10rem minmax(0, 1fr) auto;
     padding: 0.9rem 0 0.9rem 4.5rem;
 }
 
 .inbox-row__who {
     font-weight: 650;
+    grid-area: who;
     overflow-wrap: anywhere;
 }
 
 .inbox-row__msg {
+    grid-area: msg;
     line-height: 1.55;
     margin: 0;
     overflow-wrap: anywhere;
@@ -1485,9 +1761,30 @@ a.pagination__link:hover {
     font-style: italic;
 }
 
+/* Ultimo Mensaje de la Conversacion: dos lineas como mucho, el resto en el detalle. */
+.inbox-row__msg--clamp {
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+.inbox-row__author {
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+/* La direccion de envio de la consulta, debajo del mensaje: misma columna del medio. */
+.inbox-row__address {
+    grid-area: address;
+}
+
 .inbox-row__end {
+    align-items: center;
     display: flex;
     gap: 0.5rem;
+    grid-area: end;
     justify-content: flex-end;
     min-width: 12rem;
 }
@@ -1608,6 +1905,16 @@ a.pagination__link:hover {
     background: var(--color-secondary-soft);
 }
 
+.notice--warning {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+}
+
+.notice--error {
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+}
+
 .error {
     color: var(--color-danger);
 }
@@ -1615,6 +1922,130 @@ a.pagination__link:hover {
 .empty-state {
     color: var(--color-text-muted);
     background: var(--color-surface-muted);
+}
+
+/* Pagina de la Venta: el vinilo y sus datos a la izquierda, lo que toca hacer a la derecha. */
+.sale-layout {
+    align-items: start;
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* Sin tarjeta de pago queda una sola, con el ancho de la columna izquierda. */
+.sale-layout--single {
+    grid-template-columns: minmax(0, 40rem);
+}
+
+@media (max-width: 48rem) {
+    .sale-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.sale-summary__note {
+    color: var(--color-text-muted);
+    margin: 1.25rem 0 0;
+}
+
+/* Todas las acciones en una fila y del mismo tamanio; cancelar va aparte, al final. */
+.sale-summary__actions {
+    align-items: center;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+}
+
+.sale-summary__actions form {
+    margin: 0;
+}
+
+.sale-summary__cancel:not(:first-child) {
+    margin-left: auto;
+}
+
+.sale-facts {
+    display: grid;
+    gap: 0.5rem 1rem;
+    grid-template-columns: max-content 1fr;
+    margin: 1rem 0 0;
+}
+
+.sale-facts dt {
+    color: var(--color-text-muted);
+}
+
+.sale-facts dd {
+    margin: 0;
+}
+
+.sale-facts__copyable {
+    font-family: var(--font-mono);
+    user-select: all;
+    word-break: break-all;
+}
+
+/* Conversacion de la Consulta, debajo del resumen: los Mensajes propios a la derecha. */
+.conversation {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    max-width: 48rem;
+}
+
+.conversation__empty {
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.conversation__list {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.message {
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    justify-self: start;
+    max-width: min(36rem, 90%);
+    padding: 0.65rem 0.9rem;
+}
+
+.message--own {
+    background: var(--color-accent-soft);
+    justify-self: end;
+}
+
+.message__meta {
+    color: var(--color-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    gap: 0.5rem;
+    margin: 0 0 0.25rem;
+}
+
+.message__author {
+    font-weight: 650;
+}
+
+.message__body {
+    line-height: 1.55;
+    margin: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.conversation__form {
+    border-top: 1px solid var(--color-border);
+    padding-top: 1rem;
 }
 
 /* Ficha de la publicacion: portada grande a la izquierda, datos a la derecha. */
@@ -1631,6 +2062,42 @@ a.pagination__link:hover {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
     overflow: hidden;
+}
+
+.detail__gallery {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.detail__thumbnails {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.15rem;
+}
+
+.detail__thumbnail {
+    aspect-ratio: 1;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    flex: 0 0 4rem;
+    overflow: hidden;
+}
+
+.detail__thumbnail[aria-current="true"] {
+    border-color: var(--color-accent);
+}
+
+.detail__thumbnail:focus-visible {
+    box-shadow: var(--focus-ring);
+    outline: 0;
+}
+
+.detail__thumbnail img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
 }
 
 .detail__image {
@@ -1695,6 +2162,355 @@ a.pagination__link:hover {
     display: grid;
     gap: 0.5rem;
     justify-items: start;
+}
+
+/* Avatar de una Cuenta: la foto o, sin foto, la inicial del nombre. */
+.avatar {
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    display: inline-grid;
+    flex: none;
+    overflow: hidden;
+    place-items: center;
+}
+
+.avatar--sm { height: 2rem; width: 2rem; }
+.avatar--md { height: 2.75rem; width: 2.75rem; }
+.avatar--lg { height: 4.5rem; width: 4.5rem; }
+.avatar--xl { height: clamp(6rem, 12vw, 8.5rem); width: clamp(6rem, 12vw, 8.5rem); }
+
+.avatar > * {
+    grid-area: 1 / 1;
+}
+
+.avatar__image {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.avatar__image[hidden],
+.avatar__initial[hidden] {
+    display: none;
+}
+
+.avatar__initial {
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.avatar--sm .avatar__initial { font-size: 0.85rem; }
+.avatar--lg .avatar__initial { font-size: 1.9rem; }
+.avatar--xl .avatar__initial { font-size: clamp(2.6rem, 5vw, 3.6rem); }
+
+/* Ficha de la publicacion: quien vende, como firma debajo del artista. */
+.seller-byline {
+    align-items: center;
+    color: var(--color-text);
+    display: inline-flex;
+    gap: 0.55rem;
+    justify-self: start;
+    max-width: 100%;
+    text-decoration: none;
+}
+
+.seller-byline__name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.seller-byline:hover .seller-byline__name {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.seller-byline:focus-visible {
+    border-radius: var(--radius-pill);
+    box-shadow: var(--focus-ring);
+    outline: 0;
+}
+
+/* Perfil publico: cabecera editorial, sin tarjeta; una linea la separa de las publicaciones. */
+.profile-hero {
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 1.75rem;
+    padding: 1rem 0 2rem;
+}
+
+.profile-hero__body {
+    display: grid;
+    flex: 1 1 14rem;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.profile-hero__body .text-h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.profile-hero__rating {
+    align-items: center;
+    background: var(--color-accent-soft);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    display: inline-flex;
+    font-size: 0.9rem;
+    gap: 0.4rem;
+    justify-self: start;
+    margin: 0;
+    padding: 0.3rem 0.8rem;
+}
+
+.profile-hero__rating--empty {
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.profile-hero__star {
+    color: var(--color-accent);
+}
+
+.profile-hero__actions {
+    align-self: start;
+}
+
+.profile-reviews {
+    display: grid;
+    gap: 1rem;
+}
+
+.profile-reviews h2 {
+    margin: 0;
+}
+
+.profile-reviews__list {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.profile-reviews__item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: 0.6rem;
+    grid-template-rows: auto 1fr auto;
+    padding: 1.1rem 1.25rem;
+}
+
+.profile-reviews__stars {
+    color: var(--color-border);
+    letter-spacing: 0.08em;
+}
+
+.profile-reviews__star--filled {
+    color: var(--color-accent);
+}
+
+.profile-reviews__body {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.profile-reviews__author {
+    color: var(--color-text-muted);
+    font-size: 0.86rem;
+    justify-self: start;
+}
+
+.profile-reviews__author:hover {
+    color: var(--color-accent);
+}
+
+/* Perfil privado: el titulo y el acceso al perfil publico en la misma linea. */
+.profile-heading {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    justify-content: space-between;
+}
+
+.profile-heading .text-h1 {
+    margin: 0;
+}
+
+/* Fila de la foto de perfil: solo la foto; al tocarla abre el dialogo. */
+.avatar-row {
+    align-items: center;
+    display: flex;
+}
+
+.avatar-row__open {
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    padding: 0;
+}
+
+.avatar-row__open[hidden] {
+    display: none;
+}
+
+.avatar-row__open .avatar {
+    transition: opacity 190ms ease;
+}
+
+.avatar-row__open:hover .avatar {
+    opacity: 0.8;
+}
+
+.avatar-row__open:focus-visible {
+    box-shadow: var(--focus-ring);
+    outline: 0;
+}
+
+.avatar-row__fallback {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    margin: 0;
+}
+
+/* Con el dialogo listo, el JS oculta el form nativo. */
+.avatar-row__fallback[hidden] {
+    display: none;
+}
+
+/* Dialogo de la foto: zona para soltar o elegir la imagen. */
+.avatar-dialog {
+    max-width: 28rem;
+}
+
+/* Sin soporte de dialogos el navegador no lo oculta: queda el form nativo de la fila. */
+.avatar-dialog:not([open]) {
+    display: none;
+}
+
+/* Con el dialogo abierto la pagina de fondo no scrollea. El gutter reservado evita que el
+   contenido salte de costado cuando desaparece la barra de scroll. */
+html:has(.avatar-dialog[open]) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+}
+
+/* Velo oscuro liso, sin desenfoque: --color-vinyl es negro en los dos temas. */
+.avatar-dialog::backdrop {
+    backdrop-filter: none;
+    background: color-mix(in srgb, var(--color-vinyl) 62%, transparent);
+}
+
+.avatar-dialog__header {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.avatar-dialog__close {
+    align-items: center;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+}
+
+.avatar-dialog__close:hover {
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+.avatar-dialog__close:focus-visible {
+    box-shadow: var(--focus-ring);
+    outline: 0;
+}
+
+.avatar-dialog__input {
+    clip: rect(0, 0, 0, 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.avatar-dropzone {
+    align-items: center;
+    background: var(--color-surface-muted);
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: grid;
+    gap: 0.6rem;
+    justify-items: center;
+    padding: 1.75rem 1.25rem;
+    text-align: center;
+    transition: border-color 190ms ease, background-color 190ms ease;
+}
+
+.avatar-dropzone:hover,
+.avatar-dropzone--active {
+    border-color: var(--color-text-muted);
+}
+
+.avatar-dropzone--active {
+    background: var(--color-accent-soft);
+}
+
+.avatar-dialog__input:focus-within + .avatar-dropzone {
+    box-shadow: var(--focus-ring);
+}
+
+.avatar-dropzone__text {
+    max-width: 18rem;
+}
+
+.avatar-dropzone__text[hidden] {
+    display: none;
+}
+
+.avatar-dropzone .hint {
+    margin: 0;
+}
+
+.avatar-dialog [aria-busy="true"] .avatar-dropzone {
+    cursor: progress;
+    opacity: 0.7;
+}
+
+/* Quitar foto a la izquierda; Cancelar y Guardar a la derecha. */
+.avatar-dialog__actions [data-avatar-remove] {
+    margin-right: auto;
+}
+
+.avatar-dialog__actions [hidden] {
+    display: none;
 }
 
 /* Perfil: una columna. La tarjeta de la cuenta tiene filas con el mismo ritmo (1rem a cada
@@ -1765,6 +2581,13 @@ a.pagination__link:hover {
     overflow-wrap: anywhere;
 }
 
+.account-row__value--truncate {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .account-row__edit {
     align-items: center;
     border: 1px solid transparent;
@@ -1826,6 +2649,66 @@ a.pagination__link:hover {
 .account-row__hint {
     flex-basis: 100%;
     margin: 0;
+}
+
+.account-row__secondary {
+    color: var(--color-text-muted);
+    display: block;
+}
+
+.account-row__empty {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.account-row__subheading {
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* En la fila de direcciones, el listado y el formulario ocupan cada uno una linea entera. */
+.account-row__form > .address-list,
+.account-row__form > .form-stack {
+    flex-basis: 100%;
+}
+
+.address {
+    display: grid;
+    gap: 0.125rem;
+}
+
+.address__line--muted {
+    color: var(--color-text-muted);
+}
+
+.address-list {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+}
+
+.address-list__item {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.address-list__actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.address-list__actions form {
+    margin: 0;
+}
+
+.address-fields {
+    display: grid;
+    gap: 0.75rem 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
 .profile-account__footer {
@@ -2076,6 +2959,30 @@ a.pagination__link:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .account-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .account-row__summary,
+    .account-row--static .account-row__summary {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        row-gap: 0.35rem;
+    }
+
+    .account-row__summary .account-row__label {
+        grid-column: 1 / -1;
+    }
+
+    .account-row__summary .account-row__edit {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .account-row__avatar-actions,
+    .account-row__form {
+        grid-column: 1;
+    }
+
     .not-found__intro .text-h1 {
         font-size: clamp(1.95rem, 8vw, 2.6rem);
     }
@@ -2093,4 +3000,11 @@ a.pagination__link:hover {
 }
 ```
 
-[[UI components]] · [[Views and assets]]
+## Archivos para seguir el flujo
+
+- [webapp/src/main/webapp/css/tokens.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/tokens.css>)
+- [webapp/src/main/webapp/css/components.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/components.css>)
+- [webapp/src/main/webapp/css/style.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/style.css>)
+- [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>)
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

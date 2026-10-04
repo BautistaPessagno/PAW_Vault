@@ -4,25 +4,33 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java"]
 ---
 
 # ImageController
 
-GET /covers/{id} accepts decimal digits, loads [[Image]] through [[ImageService]] and returns its byte array with stored Content-Type and public max-age of 365 days. A missing image raises [[ImageNotFoundException]] and the local handler returns 404. There is no authentication, replacement route or ETag logic in this controller; an edited photo gets a new ID instead. See [[Cover image flow]].
+Sirve imágenes desde el recurso al que pertenecen (post, usuario, álbum) con caché de un año; 404 sin cuerpo si no corresponde. Ver [[Cover image flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Image]], [[ImageNotFoundException]], [[ImageService]].
+Datos y dependencias declaradas: `CACHE_DAYS`, `imageService`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `postImage`, `userAvatar`, `albumCover`, `imageResponse`, `imageNotFound`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java, lines 1–46](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>)
+Referencias estáticas a tipos del proyecto: [[Image]], [[ImageNotFoundException]], [[ImageService]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>), líneas 1–62.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
@@ -57,9 +65,25 @@ public class ImageController {
         this.imageService = imageService;
     }
 
-    @RequestMapping(value = "/covers/{id:\\d+}", method = RequestMethod.GET)
-    public ResponseEntity<byte[]> cover(@PathVariable("id") final long id) {
-        final Image image = imageService.findById(id).orElseThrow(ImageNotFoundException::new);
+    @RequestMapping(value = "/post/{postId:\\d+}/images/{imageId:\\d+}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> postImage(@PathVariable("postId") final long postId,
+                                           @PathVariable("imageId") final long imageId) {
+        return imageResponse(imageService.findPostImage(postId, imageId).orElseThrow(ImageNotFoundException::new));
+    }
+
+    @RequestMapping(value = "/users/{userId:\\d+}/avatar/{imageId:\\d+}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> userAvatar(@PathVariable("userId") final long userId,
+                                            @PathVariable("imageId") final long imageId) {
+        return imageResponse(imageService.findUserAvatar(userId, imageId).orElseThrow(ImageNotFoundException::new));
+    }
+
+    @RequestMapping(value = "/albums/{albumId:\\d+}/cover/{imageId:\\d+}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> albumCover(@PathVariable("albumId") final long albumId,
+                                            @PathVariable("imageId") final long imageId) {
+        return imageResponse(imageService.findAlbumCover(albumId, imageId).orElseThrow(ImageNotFoundException::new));
+    }
+
+    private static ResponseEntity<byte[]> imageResponse(final Image image) {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.getContentType()))
                 .cacheControl(CacheControl.maxAge(CACHE_DAYS, TimeUnit.DAYS).cachePublic())
@@ -72,7 +96,3 @@ public class ImageController {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

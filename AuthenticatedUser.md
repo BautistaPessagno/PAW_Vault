@@ -4,69 +4,102 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUser.java"]
 ---
 
 # AuthenticatedUser
 
-Immutable UserDetails adapter. getUsername returns the login email, getDisplayName returns the chosen name, and getId/getEmail supply trusted publication/contact identity. ADMIN receives both authorities; enabled mirrors the account. Expiry and account-lock flags otherwise return true. [[ProfileController]] builds a fresh instance after a username change to refresh the session principal.
+El principal de la sesión: adapta la Cuenta a `UserDetails`. Authorities `ROLE_USER`, `ROLE_ADMIN` y `VERIFIED`; `isEnabled` siempre verdadero para que una Cuenta sin verificar pueda entrar; `equals` por id para que el registro de sesiones agrupe bien. Ver [[Authentication flow]].
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[User]], [[UserRole]].
+Datos y dependencias declaradas: `VERIFIED`, `ROLE_USER`, `ROLE_ADMIN`, `VERIFIED_AUTHORITY`, `id`, `username`, `email`, `passwordHash`, `authorities`.
 
-Referenced by: [[AuthenticatedUserDetailsService]], [[InquiryController]], [[PostContactController]], [[ProfileController]], [[PublishController]].
+Operaciones para localizar en la fuente: `authoritiesFor`, `idOf`, `getId`, `isAdmin`, `getDisplayName`, `getEmail`, `isVerified`, `getAuthorities`, `getPassword`, `getUsername`, `isAccountNonExpired`, `isAccountNonLocked`, `isCredentialsNonExpired`, `isEnabled`, `equals`, `hashCode`.
 
-## Exact source
+## Conexiones
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUser.java, lines 1–87](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUser.java>)
+Referencias estáticas a tipos del proyecto: [[User]], [[UserRole]].
+
+Referenciado por: [[AddressAccessHandler]], [[AuthenticatedUserDetailsService]], [[AuthenticationController]], [[AuthenticationSessions]], [[CartController]], [[CartCountAdvice]], [[InquiryAccessHandler]], [[InquiryController]], [[PostAccessHandler]], [[PostContactController]], [[PostController]], [[ProfileController]], [[PublishController]], [[SecurityConfig]], [[VerificationAccessDeniedHandler]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUser.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUser.java>), líneas 1–130.
 
 ```java
 package ar.edu.itba.paw.webapp.security;
 
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.models.UserRole;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public final class AuthenticatedUser implements UserDetails {
 
+    // La authority que exigen las URLs de publicar, consultar y operar sobre una consulta.
+    public static final String VERIFIED = "VERIFIED";
+
     private static final GrantedAuthority ROLE_USER = new SimpleGrantedAuthority("ROLE_USER");
     private static final GrantedAuthority ROLE_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final GrantedAuthority VERIFIED_AUTHORITY = new SimpleGrantedAuthority(VERIFIED);
 
     private final long id;
     private final String username;
     private final String email;
     private final String passwordHash;
     private final List<GrantedAuthority> authorities;
-    private final boolean enabled;
 
     public AuthenticatedUser(final User user) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.email = user.getEmail();
         this.passwordHash = user.getPasswordHash();
-        this.authorities = authoritiesFor(user.getRole());
-        this.enabled = user.isEnabled();
+        this.authorities = authoritiesFor(user);
     }
 
     // El administrador conserva lo que puede hacer una cuenta comun y le suma administracion.
-    private static List<GrantedAuthority> authoritiesFor(final UserRole role) {
-        return role == UserRole.ADMIN ? List.of(ROLE_ADMIN, ROLE_USER) : List.of(ROLE_USER);
+    private static List<GrantedAuthority> authoritiesFor(final User user) {
+        final List<GrantedAuthority> granted = new ArrayList<>();
+        if (user.getRole() == UserRole.ADMIN) {
+            granted.add(ROLE_ADMIN);
+        }
+        granted.add(ROLE_USER);
+        if (user.isVerified()) {
+            granted.add(VERIFIED_AUTHORITY);
+        }
+        return List.copyOf(granted);
+    }
+
+    // Para los access handlers de @PreAuthorize: el id de la Cuenta con sesion, si la hay.
+    public static Optional<Long> idOf(final Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof AuthenticatedUser user) {
+            return Optional.of(user.getId());
+        }
+        return Optional.empty();
     }
 
     public long getId() {
         return id;
     }
 
-    // El nombre que la persona eligio al verificar la cuenta, para mostrar en la cabecera.
+    public boolean isAdmin() {
+        return authorities.contains(ROLE_ADMIN);
+    }
+
+    // El nombre que la persona eligio al registrarse, para mostrar en la cabecera.
     public String getDisplayName() {
         return username;
     }
@@ -74,6 +107,10 @@ public final class AuthenticatedUser implements UserDetails {
     // El correo con el que responder la consulta, para no volver a buscar al comprador en la base.
     public String getEmail() {
         return email;
+    }
+
+    public boolean isVerified() {
+        return authorities.contains(VERIFIED_AUTHORITY);
     }
 
     @Override
@@ -107,13 +144,23 @@ public final class AuthenticatedUser implements UserDetails {
         return true;
     }
 
+    // Una cuenta sin verificar tambien inicia sesion: lo que no puede hacer lo decide la
+    // authority VERIFIED en SecurityConfig, no el login.
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return true;
+    }
+
+    // El SessionRegistry agrupa las sesiones por principal: dos principals de la misma cuenta,
+    // aunque uno se haya refrescado despues de verificar, tienen que ser el mismo.
+    @Override
+    public boolean equals(final Object other) {
+        return this == other || (other instanceof AuthenticatedUser user && id == user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(id);
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

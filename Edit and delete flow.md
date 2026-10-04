@@ -1,110 +1,204 @@
 ---
 title: "Edit and delete flow"
-categories: ["Flows", "Web", "Services"]
+categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
-sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java", "webapp/src/main/webapp/js/confirm-action.js"]
+sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java", "models/src/main/java/ar/edu/itba/paw/models/PostDetail.java", "webapp/src/main/webapp/js/confirm-action.js"]
 ---
 
 # Edit and delete flow
 
-The owner of an AVAILABLE publication can edit it at /post/{id}/edit or delete it with POST /post/{id}/delete. Both routes require a session. The service locks the post, verifies ownership and requires AVAILABLE status, so a sold exemplar is frozen as the record of its sale.
+> [!summary] En una frase
+> El publicante, o un administrador, edita o elimina una publicación mientras siga disponible; eliminar no borra las consultas: las desengancha del post y rechaza las pendientes.
 
-## Flow diagram
+## Qué resuelve
 
-The sequence follows the controller, service and DAO calls at `f12af08`. Error handling and transaction limits are explained below; this is a source trace, not a runtime test.
+`GET` y `POST /post/{id}/edit` y `POST /post/{id}/delete`. Con el PR #46 un administrador también modera publicaciones ajenas, en reemplazo del panel `/admin` eliminado.
 
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant C as PublishController
-    participant S as PostServiceImpl
-    participant R as Artist and Album services
-    participant D as PostJdbcDao
-    participant I as InquiryJdbcDao
-    participant M as ImageServiceImpl
-    alt Edit
-        B->>C: GET /post/id/edit
-        C->>S: findEditableById(id, principal ID)
-        S-->>C: Owner's AVAILABLE PostSummary
-        C-->>B: Prefilled publish/index with current cover
-        B->>C: POST /post/id/edit multipart with CSRF
-        C->>S: update(id, principal ID, fields, MIME, bytes)
-        S->>D: findByIdForUpdate(id)
-        S->>S: requireOwner, requireAvailable
-        S->>R: resolveForEdit(artist), resolveForEdit(album)
-        opt New photo
-            S->>M: create(MIME, bytes)
-        end
-        S->>D: update or updateWithImage
-        S-->>C: Updated PostSummary
-        C-->>B: Redirect /post/id with postUpdated
-    else Delete
-        B->>B: confirm-action.js dialog
-        B->>C: POST /post/id/delete with CSRF
-        C->>S: delete(id, principal ID)
-        S->>D: findByIdForUpdate(id)
-        S->>S: requireOwner, requireAvailable
-        S->>D: findOwnImageId(id)
-        S->>I: detachFromPost(id)
-        S->>D: delete(id)
-        opt Own photo exists
-            S->>M: delete(imageId)
-        end
-        C-->>B: Redirect to the profile posts section with postDeleted
-    end
+## Herramientas
+
+| Herramienta | Para qué se usa acá |
+|---|---|
+| `@PreAuthorize` con `hasRole('ADMIN') or @postAccess.isPublisher(...)` | Quién puede editar o eliminar |
+| `SELECT ... FOR UPDATE` | Que la edición o el borrado no se crucen con una consulta o una venta |
+| `ON DELETE CASCADE` en `post_images` | Las filas de la galería se van con el post |
+| `UPDATE` de desenganche | Conservar las consultas de un post eliminado |
+| `confirm-action.js` + `ui:confirm-dialog` | Confirmación antes de eliminar |
+| Mismo formulario y validador que publicar | [[PublishForm]], [[PublishFormValidator]] |
+
+## Recorrido paso a paso
+
+### Editar
+
+1. `GET /post/{id}/edit`: `VERIFIED` por URL y `CAN_MODERATE_POST` por recurso. `findEditableById` exige `AVAILABLE`; si no, 409. El formulario se precarga con los datos actuales; la vista recibe las fotos propias y la portada de respaldo del álbum.
+2. `POST /post/{id}/edit` → `PostServiceImpl.update`:
+   - Reglas numéricas.
+   - `findByIdForUpdate` bloquea el post y exige `AVAILABLE`.
+   - Las fotos a quitar (`removedImageIds`) tienen que ser fotos propias de ese post; si no, `InvalidImageException`.
+   - El tope de 5 cuenta las que se conservan más las nuevas. El validador del formulario no puede saberlo; por eso lo informa el service y el controller lo muestra en el campo.
+   - `resolveForEdit` de artista y álbum: busca o crea por identidad y, si el nombre visible o el género difieren, **actualiza el registro compartido**.
+   - Crea las fotos nuevas, actualiza el post (con `image_id` si cambió la galería), reemplaza `post_images` y borra las imágenes retiradas.
+3. Éxito: aviso `postUpdated` y redirección a la ficha.
+
+### Eliminar
+
+`POST /post/{id}/delete` → `PostServiceImpl.delete`:
+
+1. Bloquea el post y exige `AVAILABLE`.
+2. Lee los ids de sus fotos propias.
+3. `inquiryDao.detachFromPost`: en un `UPDATE`, cada consulta copia `album_id` y `seller_id` del post, pone `post_id = NULL` y, si estaba `PENDING`, pasa a `REJECTED`.
+4. Borra el post. Las filas de `post_images` se van por `ON DELETE CASCADE`.
+5. Borra las imágenes (cada borrado solo procede si nada más la referencia).
+6. Loguea cuántas consultas desenganchó y cuántas imágenes borró.
+
+El controller redirige a `/profile#posts`, o a `/` si quien eliminó es administrador.
+
+## Decisiones y por qué
+
+| Decisión | Alternativa | Motivo | Fuente |
+|---|---|---|---|
+| Solo se edita o elimina lo `AVAILABLE` | Permitirlo siempre | "Un ejemplar vendido es el registro de la compra"; uno reservado tiene una venta en curso | Comentario en [[PostServiceImpl]] |
+| Las consultas sobreviven desenganchadas | Borrarlas en cascada | El comprador sigue viendo qué preguntó y que la publicación ya no existe | Comentario en [[PostServiceImpl]]; migración V1 |
+| Desenganchar antes de borrar | Borrar primero | Hay FK de `inquiries.post_id` a `posts` | Orden en `delete` |
+| Borrar imágenes después del post | Antes | Las referencias tienen que desaparecer primero | Comentario en [[PostServiceImpl]] |
+| La portada del álbum no se borra | Borrarla con el post | "Es del álbum y queda" | Comentario en [[PostServiceImpl]] |
+| Pertenencia en `@PreAuthorize`, estado en el service | Las dos cosas en el service | Regla por capa del PR #43 y #46 | Comentario en [[PostService]] |
+| El administrador modera desde la ficha | Panel `/admin` | El panel estaba vacío; se quitó | Commits `60480b55`, `e462c468` |
+| Un post inexistente pasa el handler | Devolver `false` | Que el service responda 404 y no un 403 engañoso | Comentario en [[PostAccessHandler]] |
+
+## Concurrencia y casos borde
+
+- Editar mientras alguien consulta: los dos bloquean el post y se ordenan.
+- Eliminar mientras el publicante acepta una consulta desde otra pestaña: quien llegue segundo ve el post reservado (409) o inexistente (404 o 409).
+- Quitar todas las fotos: el post queda sin imagen propia y se muestra la portada heredada o el placeholder.
+- `removedImageIds` con un id que no es una foto propia del post: `InvalidImageException`, que el controller muestra como error del campo de fotos.
+
+## Límites conocidos
+
+- **Editar reescribe datos compartidos.** `resolveForEdit` cambia el nombre visible del artista y el título o género del álbum, que también usan publicaciones de otras Cuentas.
+- **La pertenencia no se vuelve a chequear en el service** (ver [[Security and authorization]]).
+- Eliminar rechaza las consultas pendientes **sin correo** a esos compradores.
+- No hay historial de cambios de una publicación.
+
+## Preguntas de defensa
+
+**¿Qué pasa con las consultas si borro la publicación?**
+Quedan en la bandeja del comprador con el álbum y el vendedor copiados; las pendientes pasan a rechazadas.
+
+**¿Por qué no puedo editar una publicación reservada?**
+Porque hay una venta en curso con un precio y un ejemplar pactados. Solo se toca lo que sigue disponible.
+
+**¿Cómo modera un administrador?**
+La misma expresión de `@PreAuthorize` lo deja pasar por rol; la ficha le muestra los botones (`PostDetail.isEditable`).
+
+**¿Qué diferencia hay entre 403, 404 y 409 acá?**
+403 si no es tuya ni sos administrador; 404 si no existe; 409 si existe y es tuya pero ya no está disponible.
+
+## Evidencia de código
+
+Expresión de moderación y endpoint de borrado:
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 38–40.
+
+```java
+    // Editar y eliminar: el Publicante o un administrador. Que el post siga a la venta lo exige el service.
+    private static final String CAN_MODERATE_POST =
+            "hasRole('ADMIN') or @postAccess.isPublisher(authentication, #postId)";
 ```
 
-## Editing
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 115–154.
 
-[[PublishController]] reuses publish/index with `editing=true`, the edit action URL and a cancel link back to the detail page. GET prefills [[PublishForm]] from the summary and passes the current cover ID for the preview. A failed validation or business error rebuilds the same edit view after checking ownership again.
+```java
+    /*
+     * El validador revisa las fotos nuevas una por una; el tope de la galeria cuenta tambien las
+     * que se conservan, y eso lo sabe recien PostService: lo informa con InvalidImageException.
+     */
+    @PreAuthorize(CAN_MODERATE_POST)
+    @RequestMapping(value = "/post/{postId:[0-9]+}/edit", method = RequestMethod.POST)
+    public ModelAndView edit(@PathVariable("postId") final long postId,
+                             @Valid @ModelAttribute("publishForm") final PublishForm form,
+                             final BindingResult bindingResult,
+                             final RedirectAttributes redirectAttributes) throws IOException {
+        if (bindingResult.hasErrors()) {
+            return editView(postId);
+        }
 
-[[PostServiceImpl]].update locks the post with FOR UPDATE, requires the owner and AVAILABLE status, and resolves the catalog identity through resolveForEdit. That path differs from publishing: [[ArtistServiceImpl]] rewrites the shared artist display name, and [[AlbumServiceImpl]] rewrites the shared album title casing and genre, whenever the owner's typed values differ from the stored ones. An edit therefore changes how that artist or album appears on every other publication. If the edit points the post at a different album that the same owner already published, the unique key surfaces as DuplicatePostException.
+        try {
+            postService.update(postId, form.getTitle(), form.getArtistName(),
+                    form.getReleaseYear(), form.getGenre(), form.getPrice(), form.getDescription(),
+                    form.getCondition(), form.getPressingYear(), form.getZone(),
+                    form.toImageUploads(), form.getRemovedImageIds());
+            redirectAttributes.addFlashAttribute("postUpdated", true);
+            return new ModelAndView("redirect:/post/" + postId);
+        } catch (final InvalidImageException e) {
+            bindingResult.rejectValue("covers", "publish.cover.invalid");
+        } catch (final DuplicatePostException e) {
+            bindingResult.reject("publish.duplicate");
+        } catch (final ConcurrentPublishException e) {
+            bindingResult.reject("publish.concurrent");
+        }
+        return editView(postId);
+    }
 
-An empty file input keeps the current image through update; a new file is validated and stored as a new image row, and updateWithImage points the post at it. The previous image row is not deleted. An oversized upload redirects back to /post/{id}/edit?coverTooLarge.
+    @PreAuthorize(CAN_MODERATE_POST)
+    @RequestMapping(value = "/post/{postId:[0-9]+}/delete", method = RequestMethod.POST)
+    public ModelAndView delete(@PathVariable("postId") final long postId,
+                               @AuthenticationPrincipal final AuthenticatedUser currentUser,
+                               final RedirectAttributes redirectAttributes) {
+        postService.delete(postId);
+        redirectAttributes.addFlashAttribute("postDeleted", true);
+        return new ModelAndView(currentUser.isAdmin() ? "redirect:/" : "redirect:/profile#posts");
+    }
+```
 
-## Deleting
+Edición:
 
-The detail page's delete form asks for confirmation through ui:confirm-dialog. [[PostServiceImpl]].delete locks and checks the post, reads its own image ID, and calls [[InquiryJdbcDao]].detachFromPost before deleting the row. Detaching copies album_id and seller_id onto each inquiry, clears post_id and turns PENDING inquiries into REJECTED, because inquiries.post_id has a foreign key to posts. Buyers keep seeing those inquiries under a deleted marker, grouped by album and seller. No email tells them the publication disappeared.
-
-After the post row is gone, the service deletes the post's own photo, never the album fallback cover, and logs the IDs and the number of detached inquiries. The controller redirects to the profile's publication list with a `postDeleted` notice.
-
-Missing posts map to 404, another owner's post to 403, and a SOLD post to 409, for both GET and POST routes. Security requires authentication for /post/*/edit and /post/*/delete; ownership remains a service rule.
-
-[[Post detail flow]] · [[Profile flow]] · [[Cover image flow]] · [[Inquiry and sale flow]] · [[Transactions and concurrency]]
-
-## Code snippets
-
-### Update under lock
-
-Both checks run on the locked row before any catalog or image write. See [[PostServiceImpl]] for the complete class.
-
-[services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, lines 174–200](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>)
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 270–316.
 
 ```java
     @Override
     @Transactional
-    public PostSummary update(final long postId, final long publisherId, final String title,
+    public PostSummary update(final long postId, final String title,
                               final String artistName, final int releaseYear, final Genre genre, final int price,
                               final String description, final Condition condition, final Integer pressingYear,
-                              final String zone, final String coverContentType, final byte[] coverData) {
-        requireAvailable(requireOwner(
-                postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new), publisherId));
+                              final String zone, final List<ImageUpload> images,
+                              final List<Long> removedImageIds) {
+        requireValidPostData(releaseYear, price, pressingYear);
+        requireAvailable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new));
+        final List<Long> oldImageIds = findUploadedImageIds(postId);
+        final Set<Long> removed = removedImageIds == null ? Set.of() : new HashSet<>(removedImageIds);
+        if (!oldImageIds.containsAll(removed)) {
+            throw new InvalidImageException();
+        }
+        final List<Long> imageIds = new ArrayList<>();
+        for (final Long imageId : oldImageIds) {
+            if (!removed.contains(imageId)) {
+                imageIds.add(imageId);
+            }
+        }
+        requireGallerySize(imageIds.size() + (images == null ? 0 : images.size()));
         try {
             final Artist artist = artistService.resolveForEdit(artistName);
             final Album album = albumService.resolveForEdit(title, artist.getId(), releaseYear, genre);
-            final boolean updated = coverData == null || coverData.length == 0
-                    ? postDao.update(postId, album.getId(), price, blankToNull(description), condition,
-                            pressingYear, blankToNull(zone))
-                    : postDao.updateWithImage(postId, album.getId(), price, blankToNull(description), condition,
-                            pressingYear, blankToNull(zone),
-                            imageService.create(coverContentType, coverData).getId());
+            imageIds.addAll(createImages(images));
+            final boolean galleryChanged = !removed.isEmpty() || images != null && !images.isEmpty();
+            final boolean updated = galleryChanged
+                    ? postDao.updateWithImage(postId, album.getId(), price, blankToNull(description), condition,
+                            pressingYear, blankToNull(zone), imageIds.isEmpty() ? null : imageIds.get(0))
+                    : postDao.update(postId, album.getId(), price, blankToNull(description), condition,
+                            pressingYear, blankToNull(zone));
             if (!updated) {
                 throw new PostNotFoundException();
+            }
+            if (galleryChanged) {
+                imageService.replaceGallery(postId, extrasOf(imageIds));
+                for (final Long removedId : removed) {
+                    imageService.delete(removedId);
+                }
             }
             return postDao.findById(postId).orElseThrow(PostNotFoundException::new);
         } catch (final DuplicatePostKeyException e) {
@@ -115,38 +209,41 @@ Both checks run on the locked row before any catalog or image write. See [[PostS
     }
 ```
 
-### Delete with detached inquiries
+Borrado:
 
-Detaching must precede deletion because of the inquiry foreign key; the own image goes last. See [[PostServiceImpl]] for the complete class.
-
-[services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, lines 206–221](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>)
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 318–338.
 
 ```java
+    // Solo se elimina lo que todavia esta a la venta: un ejemplar vendido es el registro de
+    // la compra. Las consultas sobreviven desenganchadas del post para que el comprador
+    // siga viendo que pregunto y que la publicacion ya no existe. La foto propia de la
+    // publicacion se va con ella; la portada del album es del album y queda.
     @Override
     @Transactional
-    public void delete(final long postId, final long publisherId) {
-        requireAvailable(requireOwner(
-                postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new), publisherId));
-        final Long ownImageId = postDao.findOwnImageId(postId).orElse(null);
+    public int delete(final long postId) {
+        requireAvailable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new));
+        final List<Long> uploadedImageIds = findUploadedImageIds(postId);
         final int detached = inquiryDao.detachFromPost(postId);
         if (!postDao.delete(postId)) {
             throw new PostNotFoundException();
         }
-        if (ownImageId != null) {
-            imageService.delete(ownImageId);
+        // Las filas de la galeria se van con el post (ON DELETE CASCADE): recien ahi se pueden borrar las fotos.
+        for (final Long imageId : uploadedImageIds) {
+            imageService.delete(imageId);
         }
-        LOGGER.info("Deleted post postId={} publisherId={} detachedInquiries={} ownImageId={}",
-                postId, publisherId, detached, ownImageId);
+        LOGGER.info("Deleted post postId={} detachedInquiries={} deletedImages={}",
+                postId, detached, uploadedImageIds.size());
+        return detached;
     }
 ```
 
-### Detach before delete
+Desenganche de consultas:
 
-One UPDATE copies the post's album and seller with correlated subqueries and closes pending inquiries. See [[InquiryJdbcDao]] for the complete class.
-
-[persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java, lines 205–213](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>)
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>), líneas 362–372.
 
 ```java
+    // Antes de borrar la publicacion, cada consulta se queda con su album y su vendedor y
+    // deja de apuntar al post. Las pendientes se cierran: ya no hay nada que aceptar.
     @Override
     public int detachFromPost(final long postId) {
         return jdbcTemplate.update("UPDATE inquiries SET "
@@ -158,11 +255,34 @@ One UPDATE copies the post's album and seller with correlated subqueries and clo
     }
 ```
 
-### Shared catalog rewrite on edit
+Handler de pertenencia:
 
-When the typed title or genre differs from the stored album, the album itself is updated. See [[AlbumServiceImpl]] for the complete class.
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java>), líneas 6–23.
 
-[services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java, lines 31–42](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java>)
+```java
+// Regla de @PreAuthorize para editar y eliminar una publicacion; el administrador entra por su rol
+// en la misma expresion. Un post inexistente pasa: el service responde 404 en vez de un 403 enganioso.
+public final class PostAccessHandler {
+
+    private final PostService postService;
+
+    public PostAccessHandler(final PostService postService) {
+        this.postService = postService;
+    }
+
+    public boolean isPublisher(final Authentication authentication, final long postId) {
+        return AuthenticatedUser.idOf(authentication)
+                .map(userId -> postService.findPublisherId(postId)
+                        .map(userId::equals)
+                        .orElse(true))
+                .orElse(false);
+    }
+}
+```
+
+Reescritura de datos compartidos:
+
+Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java>), líneas 31–42.
 
 ```java
     @Override
@@ -178,3 +298,19 @@ When the typed title or genre differs from the stored album, the album itself is
         return albumDao.updateMetadata(album.getId(), trimmedTitle, genre);
     }
 ```
+
+## Archivos para seguir el flujo
+
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>) · [[PublishController]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java>) · [[PostAccessHandler]]
+- [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>) · [[PostServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>) · [[ArtistServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java>) · [[AlbumServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>) · [[ImageServiceImpl]]
+- [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>) · [[PostJdbcDao]]
+- [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>) · [[InquiryJdbcDao]]
+- [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>) · [[ImageJdbcDao]]
+- [models/src/main/java/ar/edu/itba/paw/models/PostDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostDetail.java>) · [[PostDetail]]
+- [webapp/src/main/webapp/js/confirm-action.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/confirm-action.js>)
+
+Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

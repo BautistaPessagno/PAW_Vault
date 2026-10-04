@@ -4,30 +4,41 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java"]
 ---
 
 # UserJdbcDao
 
-Normalizes email with trim and Locale.ROOT lowercasing, maps role, enabled and preferred_locale, and creates disabled accounts. Activation uses WHERE enabled = FALSE. updateUsername and updatePassword rewrite one row and reread it; updatePasswordIfMatches also requires the current hash, so a stale form cannot overwrite a password chosen later.
+Cuentas con Spring JDBC. Normaliza el correo al buscar y al crear. Los `UPDATE` condicionales (`WHERE password_hash IS NULL`, `WHERE verified = FALSE`, `WHERE password_hash = ?`) hacen que el pedido que pierde una carrera no pise al que ganó. `FOR UPDATE` para los bloqueos de fila.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[User]], [[UserDao]], [[UserRole]].
+Datos y dependencias declaradas: `ROW_MAPPER`, `PUBLIC_PROFILE_MAPPER`, `USER_SELECT`, `PUBLIC_PROFILE_SELECT`, `jdbcTemplate`, `jdbcInsert`.
 
-Referenced by: none.
+Operaciones para localizar en la fuente: `findById`, `findPublicProfileById`, `findAccountAppearanceById`, `findAccountAppearanceByIdForUpdate`, `updateAvatarImageId`, `findByIdForUpdate`, `findByEmail`, `create`, `completePending`, `markVerified`, `updateUsername`, `updatePasswordIfMatches`, `updatePassword`, `updatePaymentInfo`.
 
-## Exact source
+## Conexiones
 
-[persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java, lines 1–118](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java>)
+Referencias estáticas a tipos del proyecto: [[EmailRules]], [[PaymentInfo]], [[PublicUserProfile]], [[User]], [[UserDao]], [[UserRole]].
+
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java>), líneas 1–170.
 
 ```java
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.EmailRules;
+import ar.edu.itba.paw.models.PaymentInfo;
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.models.PublicUserProfile;
 import ar.edu.itba.paw.models.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -37,7 +48,6 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -50,14 +60,23 @@ public class UserJdbcDao implements UserDao {
             resultSet.getString("user_email"),
             resultSet.getString("user_password_hash"),
             UserRole.valueOf(resultSet.getString("user_role")),
-            resultSet.getBoolean("user_enabled"),
-            resultSet.getString("user_preferred_locale")
+            resultSet.getBoolean("user_verified"),
+            resultSet.getString("user_preferred_locale"),
+            new PaymentInfo(resultSet.getString("user_cbu"), resultSet.getString("user_alias"))
     );
+
+    private static final RowMapper<PublicUserProfile> PUBLIC_PROFILE_MAPPER = (resultSet, rowNum) -> {
+        final Number avatarImageId = (Number) resultSet.getObject("avatar_image_id");
+        return new PublicUserProfile(resultSet.getLong("id"), resultSet.getString("username"),
+                avatarImageId == null ? null : avatarImageId.longValue());
+    };
 
     private static final String USER_SELECT =
             "SELECT id AS user_id, username AS user_username, email AS user_email, " +
-                    "password_hash AS user_password_hash, role AS user_role, enabled AS user_enabled, "
-                    + "preferred_locale AS user_preferred_locale FROM users ";
+                    "password_hash AS user_password_hash, role AS user_role, verified AS user_verified, "
+                    + "preferred_locale AS user_preferred_locale, cbu AS user_cbu, alias AS user_alias FROM users ";
+
+    private static final String PUBLIC_PROFILE_SELECT = "SELECT id, username, avatar_image_id FROM users ";
 
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert jdbcInsert;
@@ -78,8 +97,39 @@ public class UserJdbcDao implements UserDao {
     }
 
     @Override
+    public Optional<PublicUserProfile> findPublicProfileById(final long id) {
+        return jdbcTemplate.query(PUBLIC_PROFILE_SELECT + "WHERE id = ? AND verified = TRUE",
+                        PUBLIC_PROFILE_MAPPER, id)
+                .stream().findAny();
+    }
+
+    @Override
+    public Optional<PublicUserProfile> findAccountAppearanceById(final long id) {
+        return jdbcTemplate.query(PUBLIC_PROFILE_SELECT + "WHERE id = ?",
+                PUBLIC_PROFILE_MAPPER, id).stream().findAny();
+    }
+
+    @Override
+    public Optional<PublicUserProfile> findAccountAppearanceByIdForUpdate(final long id) {
+        return jdbcTemplate.query(PUBLIC_PROFILE_SELECT + "WHERE id = ? FOR UPDATE",
+                PUBLIC_PROFILE_MAPPER, id).stream().findAny();
+    }
+
+    @Override
+    public boolean updateAvatarImageId(final long id, final Long imageId) {
+        return jdbcTemplate.update("UPDATE users SET avatar_image_id = ? WHERE id = ?", imageId, id) == 1;
+    }
+
+    @Override
+    public Optional<User> findByIdForUpdate(final long id) {
+        return jdbcTemplate.query(USER_SELECT + "WHERE id = ? FOR UPDATE", ROW_MAPPER, id)
+                .stream()
+                .findAny();
+    }
+
+    @Override
     public Optional<User> findByEmail(final String email) {
-        return jdbcTemplate.query(USER_SELECT + "WHERE email = ?", ROW_MAPPER, normalize(email))
+        return jdbcTemplate.query(USER_SELECT + "WHERE email = ?", ROW_MAPPER, EmailRules.normalize(email))
                 .stream()
                 .findAny();
     }
@@ -87,13 +137,13 @@ public class UserJdbcDao implements UserDao {
     @Override
     public User create(final String username, final String email, final String passwordHash, final UserRole role,
                        final String preferredLocale) {
-        final String normalizedEmail = normalize(email);
+        final String normalizedEmail = EmailRules.normalize(email);
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("username", username);
         parameters.put("email", normalizedEmail);
         parameters.put("password_hash", passwordHash);
         parameters.put("role", role.name());
-        parameters.put("enabled", false);
+        parameters.put("verified", false);
         parameters.put("preferred_locale", preferredLocale);
 
         final Number id = jdbcInsert.executeAndReturnKey(parameters);
@@ -101,11 +151,16 @@ public class UserJdbcDao implements UserDao {
     }
 
     @Override
-    public boolean activateIfPending(final long id, final String username, final String passwordHash) {
-        // El UPDATE condicional es lo que hace que la activacion sea de un solo uso:
-        // la segunda vez la fila ya esta enabled y no actualiza ninguna.
-        return jdbcTemplate.update("UPDATE users SET username = ?, password_hash = ?, enabled = TRUE "
-                        + "WHERE id = ? AND enabled = FALSE", username, passwordHash, id) == 1;
+    public boolean completePending(final long id, final String username, final String passwordHash) {
+        // El UPDATE condicional hace que solo el primer registro complete la cuenta pendiente:
+        // despues la fila ya tiene clave y un segundo registro no la pisa.
+        return jdbcTemplate.update("UPDATE users SET username = ?, password_hash = ? "
+                        + "WHERE id = ? AND password_hash IS NULL", username, passwordHash, id) == 1;
+    }
+
+    @Override
+    public boolean markVerified(final long id) {
+        return jdbcTemplate.update("UPDATE users SET verified = TRUE WHERE id = ? AND verified = FALSE", id) == 1;
     }
 
     @Override
@@ -139,12 +194,13 @@ public class UserJdbcDao implements UserDao {
         return findById(id);
     }
 
-    private static String normalize(final String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
+    @Override
+    public Optional<User> updatePaymentInfo(final long id, final PaymentInfo paymentInfo) {
+        if (jdbcTemplate.update("UPDATE users SET cbu = ?, alias = ? WHERE id = ?",
+                paymentInfo.getCbu(), paymentInfo.getAlias(), id) != 1) {
+            return Optional.empty();
+        }
+        return findById(id);
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

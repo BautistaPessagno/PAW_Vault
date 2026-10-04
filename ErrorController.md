@@ -4,25 +4,31 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java"]
 ---
 
 # ErrorController
 
-Renders HTTP 403 and 404 pages for all enumerated request verbs. web.xml forwards unmatched-route 404s here so MVC supplies view and locale resolution. Controllers map their own business exceptions to the error/400, 403, 404 and 409 views.
+Vistas de 403 y 404 a las que hacen forward Spring Security y el contenedor. Pasar por un controller hace que el error use el mismo view resolver y el mismo `Locale` que el resto.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: none.
+Operaciones para localizar en la fuente: `notFound`, `forbidden`.
 
-Referenced by: none.
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: ninguna.
 
-[webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java, lines 1–38](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java>)
+Referenciado por: sin referencias léxicas desde otros archivos Java.
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java>), líneas 1–38.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
@@ -64,7 +70,3 @@ public class ErrorController {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

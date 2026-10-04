@@ -1,20 +1,26 @@
 ---
 title: "PostJdbcDaoTest"
-categories: ["Testing"]
+categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java"]
 ---
 
 # PostJdbcDaoTest
 
-HSQLDB DAO tests using the Spring test context and SQL fixtures. Source evidence for [[PostJdbcDao]]; no new Maven execution is claimed.
+Tests de `PostJdbcDao` en `persistence`: 65 casos declarados. Cubre: búsqueda con filtros, órdenes, comodines literales, conteo, sugerencias, bloqueo, cambio de estado con guarda, edición y borrado. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
-Test methods in this revision:
+## Guía de lectura
+
+Datos y dependencias declaradas: `USERS_TABLE`, `ARTISTS_TABLE`, `ALBUMS_TABLE`, `POSTS_TABLE`, `CART_ITEMS_TABLE`, `POST_ID`, `USER_ID`, `PUBLISHER_EMAIL`, `PUBLISHER_LOCALE`, `ALBUM_ID`, `ALBUM_TITLE`, `ARTIST_NAME`, `RELEASE_YEAR`, `GENRE`, `COVER_IMAGE_ID`, `PRICE`, `DETAILED_POST_ID`, `DETAILED_USER_ID`, `DETAILED_PRICE`, `DETAILED_DESCRIPTION`, `DETAILED_CONDITION`, `DETAILED_PRESSING_YEAR`, `DETAILED_ZONE`, `LIMIT`, `OTHER_POST_ID`, `SOLD_POST_ID`, `OTHER_ALBUM_ID`, `AVAILABLE_PAGE_SIZE`, `postDao`, `dataSource`, `jdbcTemplate`.
+
+Operaciones para localizar en la fuente: `setUp`, `assertSuggestion`, `criteria`, `ids`.
+
+Casos declarados: 65.
 
 - `testFindFeaturedWhenPostsExistReturnsNewestByPublishDateWithMappedDetails`
 - `testFindFeaturedWhenLimitIsSmallerThanPostsReturnsOnlyFirstOnes`
@@ -40,16 +46,21 @@ Test methods in this revision:
 - `testCreateWhenConditionIsUnknownThrowsDataIntegrityViolationWithoutPersistingPost`
 - `testUpdateWhenPostExistsReturnsTrueAndPersistsEditableFields`
 - `testUpdateWithoutImageWhenAlbumHasCoverPreservesPostImageId`
+- `testUpdateWithNullImageWhenOwnPhotoIsRemovedReturnsNoOwnImage`
 - `testUpdateWhenPostDoesNotExistReturnsFalse`
 - `testUpdateWhenConditionIsNullThrowsDataIntegrityViolationWithoutChangingPost`
-- `testMarkSoldIfAvailableWhenPostIsAvailableReturnsTrueAndSellsIt`
-- `testMarkSoldIfAvailableWhenPostIsAlreadySoldReturnsFalse`
+- `testUpdateStatusWhenPostIsInExpectedStateReturnsTrue`
+- `testUpdateStatusWhenPostIsInAnotherStateReturnsFalse`
+- `testSearchWhenPostIsReservedReturnsWithoutIt`
 - `testFindFeaturedWhenAPostIsSoldReturnsOnlyTheAvailableOnes`
 - `testFindByIdForUpdateWhenPostExistsReturnsPost`
-- `testSearchWhenQueryMatchesAlbumTitleIgnoringCaseReturnsNewestFirst`
+- `testFindByIdsForUpdateWhenOneIdDoesNotExistReturnsTheOthersOrderedById`
+- `testSearchWhenQueryMatchesPartOfAlbumTitleReturnsNewestFirst`
 - `testSearchWhenSortIsPriceDescReturnsMatchesOrderedByPrice`
 - `testSearchWhenQueryMatchesArtistNameReturnsPosts`
+- `testSearchWhenQueryOmitsSpacesReturnsArtistPosts`
 - `testSearchWhenLimitIsSmallerThanMatchesReturnsOnlyNewest`
+- `testCountSearchWhenFilterMatchesSomePostsReturnsTheirCount`
 - `testSearchWhenQueryMatchesNothingReturnsEmpty`
 - `testSearchWhenQueryContainsWildcardsReturnsEmptyInsteadOfMatchingEverything`
 - `testSearchWhenGenreIsGivenReturnsOnlyMatchingPosts`
@@ -62,24 +73,32 @@ Test methods in this revision:
 - `testFindSearchSuggestionsWhenQueryMatchesWordStartReturnsAlbumAndArtist`
 - `testFindSearchSuggestionsWhenOnlySoldPostsMatchReturnsEmptyList`
 - `testFindByPublisherIdWhenPostsExistReturnsRequestedOwnersSliceWithAllStatusesNewestFirst`
+- `testFindAvailableByPublisherIdWhenFirstPageReturnsNewestAvailablePost`
+- `testFindAvailableByPublisherIdWhenSecondPageReturnsOlderAvailablePostSkippingSold`
+- `testFindAvailableByPublisherIdWhenPageIsPastTheLastOneReturnsEmptyList`
+- `testCountAvailableByPublisherIdWhenOwnerHasSoldPostReturnsOnlyAvailable`
 - `testFindByPublisherIdWhenUserHasNoPostsReturnsEmptyList`
 - `testCountByPublisherIdWhenUserHasPostsReturnsTotal`
 - `testCountByPublisherIdWhenUserHasNoPostsReturnsZero`
 - `testFindSearchSuggestionsWhenLimitIsBelowMatchCountReturnsBestRanked`
 - `testFindOwnImageIdWhenPostHasOwnImageReturnsImageId`
 - `testFindOwnImageIdWhenPostOnlyHasAlbumCoverReturnsEmpty`
+- `testFindAlbumCoverImageIdWhenAlbumHasCoverReturnsFallbackImage`
 - `testDeleteWhenPostExistsReturnsTrueAndRemovesRow`
+- `testDeleteWhenPostIsInACartReturnsTrueAndRemovesItsCartItems`
 - `testDeleteWhenPostDoesNotExistReturnsFalse`
 
-## Connections
+## Conexiones
 
-Project types referenced: [[Condition]], [[DuplicatePostKeyException]], [[Genre]], [[Post]], [[PostDao]], [[PostSearchCriteria]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[SearchSuggestion]], [[SearchSuggestionType]], [[TestConfiguration]].
+Referencias estáticas a tipos del proyecto: [[Condition]], [[DuplicatePostKeyException]], [[Genre]], [[Post]], [[PostDao]], [[PostSearchCriteria]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[SearchSuggestion]], [[SearchSuggestionType]], [[TestConfiguration]].
 
-Referenced by: none.
+Referenciado por: sin referencias léxicas desde otros archivos Java.
 
-## Exact source
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
-[persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java, lines 1–851](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java>)
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java>), líneas 1–1001.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -122,6 +141,7 @@ public class PostJdbcDaoTest {
     private static final String ARTISTS_TABLE = "artists";
     private static final String ALBUMS_TABLE = "albums";
     private static final String POSTS_TABLE = "posts";
+    private static final String CART_ITEMS_TABLE = "cart_items";
     private static final long POST_ID = 1;
     private static final long USER_ID = 1;
     private static final String PUBLISHER_EMAIL = "bpessagno@itba.edu.ar";
@@ -145,6 +165,8 @@ public class PostJdbcDaoTest {
     private static final long OTHER_POST_ID = 3;
     private static final long SOLD_POST_ID = 4;
     private static final long OTHER_ALBUM_ID = 2;
+    // Una publicacion por pagina: las dos disponibles del usuario 1 ocupan dos paginas.
+    private static final int AVAILABLE_PAGE_SIZE = 1;
 
     @Autowired
     private PostDao postDao;
@@ -385,8 +407,8 @@ public class PostJdbcDaoTest {
 
         // 3. Assert
         Assertions.assertThrows(DuplicatePostKeyException.class, create);
-        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
-        Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, USERS_TABLE));
+        Assertions.assertEquals(7, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+        Assertions.assertEquals(7, JdbcTestUtils.countRowsInTable(jdbcTemplate, USERS_TABLE));
         Assertions.assertEquals(4, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
         Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
     }
@@ -422,7 +444,7 @@ public class PostJdbcDaoTest {
                         " AND zone = '" + DETAILED_ZONE + "'" +
                         " AND stock = 1 AND image_id = " + COVER_IMAGE_ID +
                         " AND status = 'AVAILABLE'"));
-        Assertions.assertEquals(6, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+        Assertions.assertEquals(8, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
         Assertions.assertEquals(4, JdbcTestUtils.countRowsInTable(jdbcTemplate, ARTISTS_TABLE));
         Assertions.assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, ALBUMS_TABLE));
     }
@@ -461,7 +483,7 @@ public class PostJdbcDaoTest {
 
         // 3. Assert
         Assertions.assertThrows(DataIntegrityViolationException.class, create);
-        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+        Assertions.assertEquals(7, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
     }
 
     @Test
@@ -475,7 +497,7 @@ public class PostJdbcDaoTest {
 
         // 3. Assert
         Assertions.assertThrows(DataIntegrityViolationException.class, create);
-        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+        Assertions.assertEquals(7, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
     }
 
     @Test
@@ -484,13 +506,15 @@ public class PostJdbcDaoTest {
         final long userId = 3;
 
         // 2. Exercise
+        // El enum Condition impide que el DAO mande un valor desconocido: el INSERT directo prueba
+        // que el CHECK de la migracion lo rechaza igual si alguien escribe por fuera de la app.
         final Executable create = () -> jdbcTemplate.update(
                 "INSERT INTO posts (user_id, album_id, price, item_condition) VALUES (?, ?, ?, ?)",
                 userId, ALBUM_ID, DETAILED_PRICE, "UNKNOWN");
 
         // 3. Assert
         Assertions.assertThrows(DataIntegrityViolationException.class, create);
-        Assertions.assertEquals(5, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
+        Assertions.assertEquals(7, JdbcTestUtils.countRowsInTable(jdbcTemplate, POSTS_TABLE));
     }
 
     @Test
@@ -533,6 +557,21 @@ public class PostJdbcDaoTest {
     }
 
     @Test
+    public void testUpdateWithNullImageWhenOwnPhotoIsRemovedReturnsNoOwnImage() {
+        // 1. Arrange
+        final long postId = 5;
+
+        // 2. Exercise
+        final boolean updated = postDao.updateWithImage(postId, 3, PRICE,
+                null, Condition.USED, null, null, null);
+
+        // 3. Assert
+        Assertions.assertTrue(updated);
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, POSTS_TABLE,
+                "id = " + postId + " AND image_id IS NULL"));
+    }
+
+    @Test
     public void testUpdateWhenPostDoesNotExistReturnsFalse() {
         // 1. Arrange
         final long missingPostId = 999;
@@ -560,29 +599,43 @@ public class PostJdbcDaoTest {
     }
 
     @Test
-    public void testMarkSoldIfAvailableWhenPostIsAvailableReturnsTrueAndSellsIt() {
+    public void testUpdateStatusWhenPostIsInExpectedStateReturnsTrue() {
         // 1. Arrange
+        final long reservedPostId = 6;
 
         // 2. Exercise
-        final boolean result = postDao.markSoldIfAvailable(POST_ID);
+        final boolean result = postDao.updateStatus(reservedPostId, PostStatus.RESERVED, PostStatus.SOLD);
 
         // 3. Assert
         Assertions.assertTrue(result);
         Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, POSTS_TABLE,
-                "id = " + POST_ID + " AND status = 'SOLD'"));
+                "id = 6 AND status = 'SOLD'"));
     }
 
     @Test
-    public void testMarkSoldIfAvailableWhenPostIsAlreadySoldReturnsFalse() {
+    public void testUpdateStatusWhenPostIsInAnotherStateReturnsFalse() {
         // 1. Arrange
+        final long soldPostId = SOLD_POST_ID;
 
         // 2. Exercise
-        final boolean result = postDao.markSoldIfAvailable(SOLD_POST_ID);
+        final boolean result = postDao.updateStatus(soldPostId, PostStatus.AVAILABLE, PostStatus.RESERVED);
 
         // 3. Assert
         Assertions.assertFalse(result);
         Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, POSTS_TABLE,
                 "id = " + SOLD_POST_ID + " AND status = 'SOLD'"));
+    }
+
+    @Test
+    public void testSearchWhenPostIsReservedReturnsWithoutIt() {
+        // 1. Arrange
+        final PostSearchCriteria criteria = criteria(null, PostSort.NEWEST);
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.search(criteria, LIMIT, 0);
+
+        // 3. Assert
+        Assertions.assertFalse(ids(result).contains(6L));
     }
 
     @Test
@@ -609,9 +662,22 @@ public class PostJdbcDaoTest {
     }
 
     @Test
-    public void testSearchWhenQueryMatchesAlbumTitleIgnoringCaseReturnsNewestFirst() {
+    public void testFindByIdsForUpdateWhenOneIdDoesNotExistReturnsTheOthersOrderedById() {
         // 1. Arrange
-        final String query = "VERS";
+        final List<Long> ids = List.of(6L, 999L, 1L);
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.findByIdsForUpdate(ids);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(1L, 6L), result.stream().map(PostSummary::getId).toList());
+        Assertions.assertEquals(PostStatus.RESERVED, result.get(1).getStatus());
+    }
+
+    @Test
+    public void testSearchWhenQueryMatchesPartOfAlbumTitleReturnsNewestFirst() {
+        // 1. Arrange
+        final String query = "vers";
 
         // 2. Exercise
         final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT, 0);
@@ -647,6 +713,18 @@ public class PostJdbcDaoTest {
     }
 
     @Test
+    public void testSearchWhenQueryOmitsSpacesReturnsArtistPosts() {
+        // 1. Arrange
+        final String query = "sodastereo";
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT, 0);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(OTHER_POST_ID), ids(result));
+    }
+
+    @Test
     public void testSearchWhenLimitIsSmallerThanMatchesReturnsOnlyNewest() {
         // 1. Arrange
         final String query = "versus";
@@ -659,9 +737,22 @@ public class PostJdbcDaoTest {
     }
 
     @Test
+    public void testCountSearchWhenFilterMatchesSomePostsReturnsTheirCount() {
+        // 1. Arrange
+        final PostSearchCriteria criteria = new PostSearchCriteria(
+                "versus", PostSort.NEWEST, null, null, null, null, 40_000, null);
+
+        // 2. Exercise
+        final int result = postDao.countSearch(criteria);
+
+        // 3. Assert
+        Assertions.assertEquals(1, result);
+    }
+
+    @Test
     public void testSearchWhenQueryMatchesNothingReturnsEmpty() {
         // 1. Arrange
-        final String query = "pink floyd";
+        final String query = "pinkfloyd";
 
         // 2. Exercise
         final List<PostSummary> result = postDao.search(criteria(query, PostSort.NEWEST), LIMIT, 0);
@@ -820,6 +911,58 @@ public class PostJdbcDaoTest {
     }
 
     @Test
+    public void testFindAvailableByPublisherIdWhenFirstPageReturnsNewestAvailablePost() {
+        // 1. Arrange
+        final int firstPageOffset = 0;
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.findAvailableByPublisherId(USER_ID, AVAILABLE_PAGE_SIZE,
+                firstPageOffset);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(OTHER_POST_ID), ids(result));
+    }
+
+    @Test
+    public void testFindAvailableByPublisherIdWhenSecondPageReturnsOlderAvailablePostSkippingSold() {
+        // 1. Arrange
+        final int secondPageOffset = AVAILABLE_PAGE_SIZE;
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.findAvailableByPublisherId(USER_ID, AVAILABLE_PAGE_SIZE,
+                secondPageOffset);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(POST_ID), ids(result));
+        Assertions.assertEquals(PostStatus.AVAILABLE, result.get(0).getStatus());
+    }
+
+    @Test
+    public void testFindAvailableByPublisherIdWhenPageIsPastTheLastOneReturnsEmptyList() {
+        // 1. Arrange
+        final int thirdPageOffset = 2 * AVAILABLE_PAGE_SIZE;
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.findAvailableByPublisherId(USER_ID, AVAILABLE_PAGE_SIZE,
+                thirdPageOffset);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testCountAvailableByPublisherIdWhenOwnerHasSoldPostReturnsOnlyAvailable() {
+        // 1. Arrange
+        // El usuario 1 publico 1, 3 y 5; la 5 esta vendida.
+
+        // 2. Exercise
+        final int total = postDao.countAvailableByPublisherId(USER_ID);
+
+        // 3. Assert
+        Assertions.assertEquals(2, total);
+    }
+
+    @Test
     public void testFindByPublisherIdWhenUserHasNoPostsReturnsEmptyList() {
         // 1. Arrange
         final long userWithoutPosts = 999;
@@ -905,6 +1048,18 @@ public class PostJdbcDaoTest {
     }
 
     @Test
+    public void testFindAlbumCoverImageIdWhenAlbumHasCoverReturnsFallbackImage() {
+        // 1. Arrange
+        // El post 1 usa el album 1, cuya portada es la imagen 1.
+
+        // 2. Exercise
+        final Optional<Long> result = postDao.findAlbumCoverImageId(POST_ID);
+
+        // 3. Assert
+        Assertions.assertEquals(Optional.of(COVER_IMAGE_ID), result);
+    }
+
+    @Test
     public void testDeleteWhenPostExistsReturnsTrueAndRemovesRow() {
         // 1. Arrange
         final long postId = 5;
@@ -915,6 +1070,20 @@ public class PostJdbcDaoTest {
         // 3. Assert
         Assertions.assertTrue(result);
         Assertions.assertEquals(0, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, POSTS_TABLE, "id = " + postId));
+    }
+
+    @Test
+    public void testDeleteWhenPostIsInACartReturnsTrueAndRemovesItsCartItems() {
+        // 1. Arrange
+        final long postId = 5;
+
+        // 2. Exercise
+        final boolean result = postDao.delete(postId);
+
+        // 3. Assert
+        Assertions.assertTrue(result);
+        Assertions.assertEquals(0, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, CART_ITEMS_TABLE,
+                "post_id = " + postId));
     }
 
     @Test
@@ -934,7 +1103,3 @@ public class PostJdbcDaoTest {
     }
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]

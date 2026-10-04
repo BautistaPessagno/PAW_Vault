@@ -4,25 +4,31 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-09-22"
-commit: "f12af080cf6a27101160f005102a20f436574cf7"
+snapshot: "2026-10-04"
+commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java"]
 ---
 
 # ImageDao
 
-Persistence contract for findById, create and delete of [[Image]]. create accepts a content type and bytes validated earlier by [[ImageServiceImpl]]; delete removes one row and reports whether it existed. The application deletes images only when a publication with its own photo is deleted.
+Contrato de imágenes: crear, borrar si nadie la referencia y buscar exigiendo pertenencia a un post, un usuario o un álbum.
 
-## Connections
+## Guía de lectura
 
-Project types referenced: [[Image]].
+Operaciones para localizar en la fuente: `findById`, `findPostImage`, `findUserAvatar`, `findAlbumCover`, `create`, `delete`.
 
-Referenced by: [[ImageJdbcDao]], [[ImageJdbcDaoTest]], [[ImageServiceImpl]], [[ImageServiceImplTest]].
+## Conexiones
 
-## Exact source
+Referencias estáticas a tipos del proyecto: [[Image]].
 
-[persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java, lines 1–14](<file:///Users/bautistapessagno/Desktop/ITBA/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java>)
+Referenciado por: [[ImageJdbcDao]], [[ImageJdbcDaoTest]], [[ImageServiceImpl]], [[ImageServiceImplTest]].
+
+Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
+
+## Fuente completa
+
+Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java>), líneas 1–23.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -35,12 +41,17 @@ public interface ImageDao {
 
     Optional<Image> findById(long id);
 
+    /** Own photos and the associated album cover, including the editing fallback. */
+    Optional<Image> findPostImage(long postId, long imageId);
+
+    /** The current avatar of a verified account. */
+    Optional<Image> findUserAvatar(long userId, long imageId);
+
+    Optional<Image> findAlbumCover(long albumId, long imageId);
+
     Image create(String contentType, byte[] data);
 
+    /** Deletes an existing image only when no album or post references it. */
     boolean delete(long id);
 }
 ```
-
-## Context
-
-[[Architecture]] · [[Source inventory]] · [[Testing and evidence]]
