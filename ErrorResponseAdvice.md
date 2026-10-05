@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java"]
 ---
 
 # ErrorResponseAdvice
 
-Único lugar donde las excepciones de negocio se vuelven respuestas: no encontrado → 404, ajeno → 403, dato que saltea la validación o parámetro mal tipado → 400. Ver [[Security and authorization]].
+Único lugar donde las excepciones de negocio se vuelven respuestas: no encontrado → 404, ajeno → 403, dato que saltea la validación (imagen, reseña, datos del post o de cobro) o parámetro mal tipado → 400. Ver [[Security and authorization]] y [[Validation and errors]].
 
 ## Guía de lectura
 
@@ -20,7 +20,7 @@ Operaciones para localizar en la fuente: `notFound`, `forbidden`, `badRequest`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[AddressNotFoundException]], [[ForbiddenOperationException]], [[InquiryNotFoundException]], [[InvalidImageException]], [[InvalidReviewException]], [[PageNotFoundException]], [[PostNotFoundException]], [[ReceiptNotFoundException]], [[UserNotFoundException]].
+Referencias estáticas a tipos del proyecto: [[AddressNotFoundException]], [[ForbiddenOperationException]], [[InquiryNotFoundException]], [[InvalidImageException]], [[InvalidPaymentInfoException]], [[InvalidPostDataException]], [[InvalidReviewException]], [[PageNotFoundException]], [[PostNotFoundException]], [[ReceiptNotFoundException]], [[UserNotFoundException]].
 
 Referenciado por: sin referencias léxicas desde otros archivos Java.
 
@@ -28,7 +28,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java>), líneas 1–50.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java>), líneas 1–52.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
@@ -37,6 +37,8 @@ import ar.edu.itba.paw.services.AddressNotFoundException;
 import ar.edu.itba.paw.services.ForbiddenOperationException;
 import ar.edu.itba.paw.services.InquiryNotFoundException;
 import ar.edu.itba.paw.services.InvalidImageException;
+import ar.edu.itba.paw.services.InvalidPaymentInfoException;
+import ar.edu.itba.paw.services.InvalidPostDataException;
 import ar.edu.itba.paw.services.InvalidReviewException;
 import ar.edu.itba.paw.services.PageNotFoundException;
 import ar.edu.itba.paw.services.PostNotFoundException;
@@ -71,11 +73,11 @@ public class ErrorResponseAdvice {
         return new ModelAndView("error/403");
     }
 
-    // Los formularios aplican las mismas ImageRules y ReviewRules: solo llega aca un POST que se
-    // salteo la validacion. Un parametro de la URL que no es del tipo esperado (una pagina que no
-    // es un numero, un origin desconocido) tambien es un pedido mal armado.
-    @ExceptionHandler({InvalidImageException.class, InvalidReviewException.class,
-            MethodArgumentTypeMismatchException.class})
+    // Los formularios aplican las mismas ImageRules, ReviewRules, VinylInputRules y PaymentInfoRules:
+    // solo llega aca un POST que se salteo la validacion. Un parametro de la URL que no es del tipo
+    // esperado (una pagina que no es un numero, un origin desconocido) tambien es un pedido mal armado.
+    @ExceptionHandler({InvalidImageException.class, InvalidReviewException.class, InvalidPostDataException.class,
+            InvalidPaymentInfoException.class, MethodArgumentTypeMismatchException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ModelAndView badRequest() {
         return new ModelAndView("error/400");

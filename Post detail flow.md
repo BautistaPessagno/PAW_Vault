@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostOrigin.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "models/src/main/java/ar/edu/itba/paw/models/PostDetail.java", "models/src/main/java/ar/edu/itba/paw/models/PostView.java", "models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java", "models/src/main/java/ar/edu/itba/paw/models/ContactState.java", "services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ContactRules.java", "models/src/main/java/ar/edu/itba/paw/models/PostSummary.java", "models/src/main/java/ar/edu/itba/paw/models/PublicUserProfile.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "webapp/src/main/webapp/WEB-INF/views/post/detail.jsp", "webapp/src/main/webapp/WEB-INF/tags/back-link.tag"]
 ---
@@ -23,7 +23,8 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController
 | [[PostDetail]] | La ficha y si quien mira puede editarla |
 | [[PostView]] + [[PostContactOptions]] | La ficha más lo que se le ofrece para consultarla, ya resuelto por `CartService` |
 | [[ContactRules]] | La misma regla de contactabilidad que usan el contacto y el carrito |
-| Conversión de enum por Spring MVC | `origin` llega como texto y se convierte a [[PostOrigin]] |
+| `PostOrigin.fromParameter` | `origin` llega como texto y se traduce a [[PostOrigin]]; un valor desconocido da `null` en vez de un error |
+| `user-byline.tag` | Foto y nombre del publicante con enlace a su perfil público |
 | `URLEncoder` en el listado | Pasar la búsqueda de origen como un parámetro |
 
 ## Recorrido paso a paso
@@ -45,8 +46,34 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController
    - Contactable: "Consultar" y, al lado, "Agregar al carrito" (un POST con CSRF) o "En el carrito".
 5. **Volver.** Tres orígenes posibles:
    - Desde el catálogo: `from` trae la query string del listado, codificada. La ficha arma el enlace solo detrás de `/?`.
-   - Desde un perfil público: `origin=PUBLIC_PROFILE` y `originPage`.
-   - Desde el perfil propio: `origin=PRIVATE_PROFILE`, aceptado solo si quien mira es el publicante.
+   - Desde un perfil público: `origin=PUBLIC_PROFILE` (o `public-profile`) y `originPage`.
+   - Desde el perfil propio: `origin=PRIVATE_PROFILE` (o `private-profile`), aceptado solo si quien mira es el publicante. Si "Mis publicaciones" estaba filtrada, llega también `postStatus` y el enlace de volver (`back-link.tag`) lo repite, así se vuelve a la misma página del mismo filtro (PR #61, [[Status filters flow]]).
+   - `origin`, `originPage` y `postStatus` llegan como `String`. `PostOrigin.fromParameter` devuelve `null` ante un valor desconocido, `returnPage` convierte la página con `Math.max(1, ...)`, o 1 si no es un número, y `returnStatus` devuelve `null` si el estado no existe. Son contexto de navegación: un valor viejo o mal formado solo pierde el enlace de regreso, nunca impide abrir la ficha (PR #50).
+
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant C as PostController
+    participant K as CartServiceImpl
+    participant P as PostServiceImpl
+    participant I as InquiryService
+    B->>C: GET /post/42
+    C->>K: findPostView(42, viewerId, moderator)
+    K->>P: findDetail
+    P->>P: findById (404 si no existe), perfil público, fotos
+    alt sin sesión
+        K->>K: ContactRules.stateForAnonymous
+    else con sesión
+        K->>I: findOpenInquiryId
+        K->>K: ContactRules.stateOf
+        opt CONTACTABLE
+            K->>K: cartItemDao.contains
+        end
+    end
+    K-->>C: PostView (detalle + PostContactOptions)
+    C->>C: PostOrigin.fromParameter(origin), returnPage(originPage), returnStatus(postStatus)
+    C-->>B: post/detail (botones según estado y origen)
+```
 
 ## Decisiones y por qué
 
@@ -54,15 +81,17 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController
 |---|---|---|
 | La ficha es pública y el contacto no | Mirar no requiere Cuenta; comprar sí | Comentario en [[PostController]] |
 | Las reglas de botones viven en el modelo | La vista no repite lógica y el service usa la misma regla de estado | Comentario en [[PostDetail]] |
-| Lo que se ofrece para consultar lo resuelve `CartService`, con o sin sesión | Que la JSP combine estado, dueño y carrito | "La vista solo lo muestra"; el contacto anónimo se resolvía en la vista hasta el commit `412f61ab` | Comentario en `detail.jsp` y en [[CartService]] |
+| Lo que se ofrece para consultar lo resuelve `CartService`, con o sin sesión | "La vista solo lo muestra"; el contacto anónimo se resolvía en la vista hasta el commit `412f61ab`. Alternativa descartada: que la JSP combine estado, dueño y carrito | Comentario en `detail.jsp` y en [[CartService]] |
 | El rol de moderador lo resuelve la capa web | `services` no conoce Spring Security | Comentario en [[PostDetail]] |
-| `origin` es un enum | Un texto libre abriría una redirección a cualquier ruta | Comentario en [[PostController]] |
+| `origin` se traduce a un enum | Un texto libre abriría una redirección a cualquier ruta | Comentario en [[PostController]] |
+| Parámetros de regreso tolerantes | Hasta `8929aea` Spring los convertía y un valor inválido daba 400: se perdía una ficha válida por un dato opcional | Comentario en [[PostController]]; commit `ca06676c` |
 | `from` solo se usa detrás de `/?` | No puede sacar al usuario de la aplicación | Comentario en [[PostController]] |
 | El perfil del vendedor puede faltar | Una Cuenta sin verificar no tiene perfil público | Comentario en [[PostDetail]] |
 
 ## Casos borde
 
-- `origin` con un valor desconocido u `originPage` no numérico: 400 por [[ErrorResponseAdvice]].
+- `origin` con un valor desconocido u `originPage` no numérico: la ficha abre igual, sin enlace de regreso o con página 1. Hasta `8929aea` daban 400 por [[ErrorResponseAdvice]].
+- `postStatus` desconocido: la ficha abre y el regreso va al perfil sin filtro. En cambio, el mismo valor en `/profile?postStatus=` da 400, porque ahí es el filtro del listado y no contexto de regreso.
 - Publicación vendida: se ve, con su marca de estado y sin acciones.
 - Cuenta sin verificar: ve el botón de consultar; al tocarlo llega a `/verify/required`.
 
@@ -82,7 +111,7 @@ El catálogo le pasa su query string codificada en `from` y la ficha la reusa en
 
 ## Evidencia de código
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java>), líneas 16–58.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostController.java>), líneas 17–82.
 
 ```java
 // La ficha de la publicacion es publica: el contacto sigue pidiendo sesion en su propio controller.
@@ -99,8 +128,9 @@ public class PostController {
     @RequestMapping(value = "/post/{postId:[0-9]+}", method = RequestMethod.GET)
     public ModelAndView detail(@PathVariable("postId") final long postId,
                                @RequestParam(value = "from", required = false) final String returnQuery,
-                               @RequestParam(value = "origin", required = false) final PostOrigin origin,
-                               @RequestParam(value = "originPage", defaultValue = "1") final int originPage,
+                               @RequestParam(value = "origin", required = false) final String origin,
+                               @RequestParam(value = "originPage", defaultValue = "1") final String originPage,
+                               @RequestParam(value = "postStatus", required = false) final String originStatus,
                                @AuthenticationPrincipal final AuthenticatedUser currentUser) {
         final ModelAndView modelAndView = new ModelAndView("post/detail");
         final PostView view = cartService.findPostView(postId, currentUser == null ? null : currentUser.getId(),
@@ -109,15 +139,38 @@ public class PostController {
         modelAndView.addObject("detail", detail);
         modelAndView.addObject("contact", view.getContact());
         modelAndView.addObject("post", detail.getPost());
-        final String profilePath = returnProfilePath(origin, detail);
+        final String profilePath = returnProfilePath(PostOrigin.fromParameter(origin), detail);
         if (profilePath != null) {
             modelAndView.addObject("returnProfilePath", profilePath);
-            modelAndView.addObject("returnProfilePage", originPage);
+            modelAndView.addObject("returnProfilePage", returnPage(originPage));
+            modelAndView.addObject("returnPostStatus", returnStatus(originStatus));
         }
         // Query string del listado de origen. Solo se usa detras de "/?", asi que no puede
         // sacar al usuario de la aplicacion.
         modelAndView.addObject("returnQuery", returnQuery);
         return modelAndView;
+    }
+
+    // Es contexto de navegacion opcional, no el parametro page del listado: un valor
+    // viejo o mal formado no debe impedir abrir una publicacion valida.
+    private static int returnPage(final String value) {
+        try {
+            return Math.max(1, Integer.parseInt(value));
+        } catch (final NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    // Mismo criterio que returnPage: un filtro desconocido vuelve al listado sin filtrar.
+    private static PostStatus returnStatus(final String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return PostStatus.valueOf(value);
+        } catch (final IllegalArgumentException e) {
+            return null;
+        }
     }
 
     // Solo se vuelve a un perfil conocido: el publico del Publicante, o el propio si el mismo Publicante abre su Post.
@@ -127,10 +180,9 @@ public class PostController {
         }
         return origin == PostOrigin.PRIVATE_PROFILE && detail.isOwnedByViewer() ? "/profile" : null;
     }
-}
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 112–120.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 114–122.
 
 ```java
     @Override
@@ -144,7 +196,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
     }
 ```
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PostDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostDetail.java>), líneas 5–41.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/PostDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostDetail.java>), líneas 5–41.
 
 ```java
 /*
@@ -188,7 +240,7 @@ public final class PostDetail {
 
 Qué se le ofrece a quien mira:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 116–130.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 118–132.
 
 ```java
     @Override
@@ -208,7 +260,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Car
     }
 ```
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java>), líneas 5–23.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java>), líneas 5–23.
 
 ```java
 // Lo que la ficha de un Post le ofrece a quien la mira, ya resuelto por CartService.
@@ -238,15 +290,15 @@ public final class PostContactOptions {
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostOrigin.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostOrigin.java>) · [[PostOrigin]]
 - [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>) · [[PostServiceImpl]]
 - [models/src/main/java/ar/edu/itba/paw/models/PostDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostDetail.java>) · [[PostDetail]]
-- [models/src/main/java/ar/edu/itba/paw/models/PostView.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostView.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/ContactState.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ContactState.java>)
-- [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>)
-- [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>)
+- [models/src/main/java/ar/edu/itba/paw/models/PostView.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostView.java>) · [[PostView]]
+- [models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostContactOptions.java>) · [[PostContactOptions]]
+- [models/src/main/java/ar/edu/itba/paw/models/ContactState.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ContactState.java>) · [[ContactState]]
+- [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>) · [[CartServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>) · [[ContactRules]]
 - [models/src/main/java/ar/edu/itba/paw/models/PostSummary.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSummary.java>) · [[PostSummary]]
 - [models/src/main/java/ar/edu/itba/paw/models/PublicUserProfile.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PublicUserProfile.java>) · [[PublicUserProfile]]
 - [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>) · [[PostJdbcDao]]
 - [webapp/src/main/webapp/WEB-INF/views/post/detail.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/detail.jsp>)
 - [webapp/src/main/webapp/WEB-INF/tags/back-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/back-link.tag>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

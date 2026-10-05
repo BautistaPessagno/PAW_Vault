@@ -34,7 +34,7 @@ flowchart LR
 | Artista | [[Artist]] | El nombre normalizado | Se crea la primera vez que alguien publica un álbum suyo |
 | Álbum | [[Album]] | Artista, título normalizado y año | La obra, no una edición ni un ejemplar. La tapa no forma parte de la identidad |
 | Post | [[Post]] | Su id; además, una Cuenta no puede tener dos Posts del mismo Álbum | El ejemplar que alguien vende: precio, estado, descripción, año de prensado, zona, fotos |
-| Consulta | [[Inquiry]] | Su id; un comprador tiene a lo sumo una Consulta abierta por Post | Nace con comprador, dirección y precio congelado. La venta es una etapa suya, no otra entidad |
+| Consulta | [[Inquiry]] | Su id; un comprador tiene a lo sumo una Consulta abierta por Post | Nace con comprador y dirección; el precio de la venta se fija al aceptar (ADR 0004). La venta es una etapa suya, no otra entidad |
 | Mensaje | [[Message]] | Su id | Pertenece a una Consulta |
 | Comprobante | [[Receipt]] | La Consulta | Uno por Consulta; subir otro lo reemplaza |
 | Dirección | [[Address]] | Su id | No se edita ni se borra: se archiva y se crea otra |
@@ -98,7 +98,7 @@ Las proyecciones existen para evitar el N+1: un listado trae en una sola consult
 | Verificación separada del rol | Una Cuenta sin verificar tiene que poder iniciar sesión | `CONTEXT.md`, comentario de V6 |
 | Modelos inmutables con ids en vez de objetos | Regla de la etapa JDBC; las entidades con referencias llegan con JPA | `CLAUDE.md` del repo |
 | Un Post es un ejemplar único | No hay stock: reservar o vender afecta a la publicación entera | `docs/issues/selling-flow/02` |
-| Precio congelado en la Consulta | El monto a transferir no cambia si el vendedor edita el Post | Comentario de V5 |
+| Precio fijado en la Consulta al aceptar | El monto a transferir no cambia si el vendedor edita el Post después de aceptar; mientras la Consulta está pendiente, sigue el precio publicado | Comentario de V5; ADR 0004 |
 
 ## Preguntas de defensa
 

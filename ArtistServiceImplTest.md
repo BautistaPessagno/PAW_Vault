@@ -4,8 +4,8 @@ categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java"]
 ---
@@ -22,9 +22,9 @@ Casos declarados: 6.
 
 - `testFindOrCreateWhenNameHasOuterSpacesReturnsTrimmedArtist`
 - `testFindOrCreateWhenNameHasDifferentSeparatorsReturnsExistingArtist`
-- `testFindOrCreateWhenNameHasAccentsPreservesLettersInNormalizedIdentity`
+- `testFindOrCreateWhenNameHasAccentsReturnsArtistMatchingItsNormalizedIdentity`
 - `testResolveForEditWhenDisplayNameChangesReturnsUpdatedArtist`
-- `testFindSuggestionsWhenQueryHasAccentsAndSeparatorsSearchesWithNormalizedText`
+- `testFindSuggestionsWhenQueryHasAccentsAndSeparatorsReturnsSuggestionsForNormalizedText`
 - `testFindSuggestionsWhenQueryHasNoLettersOrDigitsReturnsEmptyList`
 
 ## Conexiones
@@ -37,7 +37,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java>), líneas 1–119.
+Fuente exacta en `c3e2a4c`: [services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ArtistServiceImplTest.java>), líneas 1–119.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -98,7 +98,7 @@ public class ArtistServiceImplTest {
     }
 
     @Test
-    public void testFindOrCreateWhenNameHasAccentsPreservesLettersInNormalizedIdentity() {
+    public void testFindOrCreateWhenNameHasAccentsReturnsArtistMatchingItsNormalizedIdentity() {
         // 1. Arrange
         final String name = "  Charly-García  ";
         final String displayName = "Charly-García";
@@ -135,7 +135,7 @@ public class ArtistServiceImplTest {
     }
 
     @Test
-    public void testFindSuggestionsWhenQueryHasAccentsAndSeparatorsSearchesWithNormalizedText() {
+    public void testFindSuggestionsWhenQueryHasAccentsAndSeparatorsReturnsSuggestionsForNormalizedText() {
         // 1. Arrange
         final List<Artist> expected = List.of(new Artist(2, "Charly García"));
         Mockito.when(artistDao.findSuggestions("charlygarcia", 5)).thenReturn(expected);

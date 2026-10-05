@@ -82,10 +82,10 @@ Tres detalles que suelen preguntarse:
 |---|---|---|
 | Consulta y venta | Sí: `requireSeller`, `requireBuyer`, `requireParty`, y `lockConfirmedSale` para reseñas | [[InquiryServiceImpl]] |
 | Dirección | Sí: `archiveOwned` compara el dueño | [[AddressServiceImpl]] |
-| Publicación (editar, eliminar) | **No.** `PostService.update` y `delete` no reciben quién opera; solo exigen que el post siga disponible | [[PostServiceImpl]] |
+| Publicación (editar, eliminar) | Sí, desde el PR #51: `findEditableById`, `update` y `delete` reciben el id de quien actúa y `requireEditable` exige publicante o rol `ADMIN` antes de exigir `AVAILABLE` | [[PostServiceImpl]] |
 | Consultar un post propio | Sí: `validateContactable` lanza `ForbiddenOperationException` | [[InquiryServiceImpl]] |
 
-Para las publicaciones la pertenencia vive únicamente en `@PreAuthorize`. Es coherente con el comentario de [[SecurityConfig]] ("los services vuelven a chequear la pertenencia de la Venta y de la libreta"), pero significa que un llamador nuevo de `PostService.update` que no pase por [[PublishController]] no tendría ese control.
+Hasta `8929aea` las publicaciones eran la excepción: la pertenencia vivía solo en `@PreAuthorize`. El commit `563f7020` la llevó también al service y el comentario de [[SecurityConfig]] pasó a decir "los services vuelven a chequear la pertenencia de Posts, Venta y libreta". Ver [[Edit and delete flow]].
 
 ## Cómo se convierte una denegación en respuesta
 
@@ -97,7 +97,7 @@ Para las publicaciones la pertenencia vive únicamente en `@PreAuthorize`. Es co
 | `ForbiddenOperationException` desde un service | [[ErrorResponseAdvice]] | Vista `error/403` con estado 403 |
 | `*NotFoundException`, `PageNotFoundException` | [[ErrorResponseAdvice]] | Vista `error/404` con estado 404 |
 | Ruta que no existe | `<error-page>` de `web.xml` → [[ErrorController]] | 404 con el mismo view resolver y locale |
-| `InvalidImageException`, `InvalidReviewException`, parámetro de tipo incorrecto | [[ErrorResponseAdvice]] | 400 |
+| `InvalidImageException`, `InvalidReviewException`, `InvalidPostDataException`, `InvalidPaymentInfoException`, parámetro de tipo incorrecto | [[ErrorResponseAdvice]] | 400 |
 | `InvalidInquiryStateException`, `PostUnavailableException` | Handler del controller correspondiente | 409 |
 | Sesión expirada por cambio de clave | Filtro de sesiones concurrentes | Redirección a `/login?sessionExpired` |
 | Casos esperables del carrito (post propio, no disponible, repetido, lleno, dirección archivada, nada para enviar) | [[CartExceptionAdvice]], solo para [[CartController]] y con prioridad sobre [[ErrorResponseAdvice]] | Redirección a la pantalla de origen con un aviso, no una página de error |
@@ -107,7 +107,7 @@ Política: lo que no existe es 404, lo que existe y es ajeno es 403, lo que exis
 
 {{code:webapp/src/main/java/ar/edu/itba/paw/webapp/security/VerificationAccessDeniedHandler.java:15-47}}
 
-{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java:19-50}}
+{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java:21-52}}
 
 ## Sesiones
 
@@ -170,7 +170,7 @@ Cómo se sirven:
 
 {{code:persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java:47-68}}
 
-{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java:212-236}}
+{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java:237-261}}
 
 ## Privacidad
 

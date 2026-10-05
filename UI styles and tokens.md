@@ -4,8 +4,8 @@ categories: ["Web"]
 type: "guide"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/webapp/css/tokens.css", "webapp/src/main/webapp/css/components.css", "webapp/src/main/webapp/css/style.css", "webapp/src/main/webapp/WEB-INF/tags/head.tag"]
 ---
@@ -87,7 +87,7 @@ Como recursos estáticos mapeados en `WebConfig`, enlazados desde `head.tag` con
 
 ### tokens.css
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/css/tokens.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/tokens.css>), líneas 1–63.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/css/tokens.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/tokens.css>), líneas 1–63.
 
 ```css
 :root {
@@ -157,7 +157,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/css/tokens.css](</Users/baut
 
 ### components.css
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/css/components.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/components.css>), líneas 1–846.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/css/components.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/components.css>), líneas 1–849.
 
 ```css
 /* Box model: la biblioteca asume border-box aunque se use sin demo.css. */
@@ -1006,11 +1006,14 @@ textarea.input-field__control {
         transition: none;
     }
 }
+.rating { display: inline-flex; gap: 0.08em; color: var(--color-border); }
+.rating__star { position: relative; }
+.rating__fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: var(--color-accent); }
 ```
 
 ### style.css
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/css/style.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/style.css>), líneas 1–1985.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/css/style.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/style.css>), líneas 1–2062.
 
 ```css
 html {
@@ -1418,28 +1421,73 @@ a.pagination__link:hover {
 
 .sale-review {
     display: grid;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    max-width: 38rem;
-    padding: 1.25rem;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto;
 }
+.sale-review > h2, .sale-review > .notice, .sale-review__published { grid-column: 1 / -1; }
+.sale-review__editor[open] { grid-column: 1 / -1; }
+.sale-review__remove { align-self: start; margin: 0; }
+.sale-review__editor > summary { justify-self: start; }
+.sale-review__editor[open] > summary { display: none; }
+.sale-review:has(.sale-review__editor[open]) > .sale-review__published,
+.sale-review:has(.sale-review__editor[open]) > .sale-review__remove { display: none; }
 
 .publish-gallery__item {
-    cursor: pointer;
-    display: grid;
-    font-size: 0.78rem;
-    gap: 0.35rem;
-    grid-template-columns: auto minmax(0, 1fr);
     max-width: 5.5rem;
+    position: relative;
 }
 
 .publish-gallery__item img {
     aspect-ratio: 1;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    grid-column: 1 / -1;
+    display: block;
     object-fit: cover;
     width: 100%;
+}
+
+/* El checkbox sigue siendo el campo real del form; solo se ve su label, como una X. */
+.publish-gallery__remove-input {
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+}
+
+.publish-gallery__remove {
+    align-items: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    height: 1.5rem;
+    justify-content: center;
+    line-height: 1;
+    position: absolute;
+    right: -0.4rem;
+    top: -0.4rem;
+    width: 1.5rem;
+}
+
+.publish-gallery__remove:hover,
+.publish-gallery__remove-input:focus-visible ~ .publish-gallery__remove {
+    background: var(--color-accent);
+    color: var(--color-text-on-accent);
+}
+
+/* Una foto marcada para borrar queda atenuada y la X pasa a restaurarla. */
+.publish-gallery__item:has(.publish-gallery__remove-input:checked) img {
+    opacity: 0.35;
+}
+
+.publish-gallery__restore-icon,
+.publish-gallery__remove-input:checked ~ .publish-gallery__remove .publish-gallery__remove-icon {
+    display: none;
+}
+
+.publish-gallery__remove-input:checked ~ .publish-gallery__remove .publish-gallery__restore-icon {
+    display: inline;
 }
 
 /* Los formularios chicos (auth) quedan en una columna angosta y centrada. */
@@ -1642,6 +1690,49 @@ a.pagination__link:hover {
 
 .inquiry-nav__count {
     font-weight: 600;
+    opacity: 0.7;
+}
+
+/* Filtros de un listado: mas chicos que la sub-nav para no competir con ella. Neutros, sin
+   color por estado; el activo se marca igual que la pestana abierta. */
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.filter-chips__chip {
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    display: inline-flex;
+    font-size: 0.86rem;
+    font-weight: 600;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    text-decoration: none;
+    transition: background 190ms ease, border-color 190ms ease, color 190ms ease;
+}
+
+.filter-chips__chip:hover {
+    border-color: color-mix(in srgb, var(--color-accent) 38%, var(--color-border));
+    color: var(--color-text);
+}
+
+.filter-chips__chip:focus-visible {
+    box-shadow: var(--focus-ring);
+    outline: 0;
+}
+
+.filter-chips__chip--active {
+    background: var(--color-accent-soft);
+    border-color: color-mix(in srgb, var(--color-accent) 38%, var(--color-border));
+    color: var(--color-accent);
+}
+
+.filter-chips__count {
+    font-variant-numeric: tabular-nums;
     opacity: 0.7;
 }
 
@@ -1924,23 +2015,27 @@ a.pagination__link:hover {
     background: var(--color-surface-muted);
 }
 
-/* Pagina de la Venta: el vinilo y sus datos a la izquierda, lo que toca hacer a la derecha. */
+/* Una pagina continua: conversacion a la izquierda, datos y acciones a la derecha. */
+.sale-page { gap: 1rem; overflow-wrap: anywhere; }
+.sale-page h1 { margin: 0; }
 .sale-layout {
     align-items: start;
     display: grid;
     gap: 1.5rem;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
 }
+.sale-sidebar { display: grid; gap: 1rem; min-width: 0; border-left: 1px solid var(--color-border); padding-left: 1.5rem; }
+.sale-sidebar > section + section { border-top: 1px solid var(--color-border); padding-top: 1rem; }
+.sale-sidebar .inbox-group-header { min-width: 0; }
+.sale-sidebar h2 { margin: 0; }
 
-/* Sin tarjeta de pago queda una sola, con el ancho de la columna izquierda. */
-.sale-layout--single {
-    grid-template-columns: minmax(0, 40rem);
-}
-
-@media (max-width: 48rem) {
-    .sale-layout {
-        grid-template-columns: minmax(0, 1fr);
-    }
+@media (max-width: 900px) {
+    .sale-layout { grid-template-columns: minmax(0, 1fr); }
+    .sale-sidebar { display: contents; }
+    .sale-summary { order: 1; }
+    .conversation { order: 2; }
+    .sale-decision, .sale-payment { order: 3; }
+    .sale-review { order: 4; }
 }
 
 .sale-summary__note {
@@ -1970,7 +2065,7 @@ a.pagination__link:hover {
 .sale-facts {
     display: grid;
     gap: 0.5rem 1rem;
-    grid-template-columns: max-content 1fr;
+    grid-template-columns: max-content minmax(0, 1fr);
     margin: 1rem 0 0;
 }
 
@@ -1979,6 +2074,8 @@ a.pagination__link:hover {
 }
 
 .sale-facts dd {
+    overflow-wrap: anywhere;
+    min-width: 0;
     margin: 0;
 }
 
@@ -1988,14 +2085,18 @@ a.pagination__link:hover {
     word-break: break-all;
 }
 
-/* Conversacion de la Consulta, debajo del resumen: los Mensajes propios a la derecha. */
+/* Cabecera, historial y editor: solo el historial desplaza mensajes. */
 .conversation {
     display: grid;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    max-width: 48rem;
+    gap: 0.75rem;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: var(--conversation-height, 70dvh);
+    min-height: 18rem;
+    min-width: 0;
 }
-
+.conversation__header { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; border-bottom: 1px solid var(--color-border); padding-bottom: 0.75rem; }
+.conversation__history { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.25rem; }
+.conversation__history:focus-visible { outline: 0; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
 .conversation__empty {
     color: var(--color-text-muted);
     margin: 0;
@@ -2044,8 +2145,21 @@ a.pagination__link:hover {
 }
 
 .conversation__form {
+    --conversation-editor-height: 3.5rem;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.75rem;
     border-top: 1px solid var(--color-border);
     padding-top: 1rem;
+}
+
+.conversation__form textarea { height: var(--conversation-editor-height); min-height: 0; resize: none; overflow-y: auto; }
+.conversation__form .button { min-height: var(--conversation-editor-height); }
+.conversation__form .form-stack__actions { margin: 0; }
+@media (max-width: 900px) {
+    .conversation { height: auto; min-height: 0; grid-template-rows: auto auto auto; }
+    .conversation__history { max-height: 55dvh; }
 }
 
 /* Ficha de la publicacion: portada grande a la izquierda, datos a la derecha. */
@@ -2208,8 +2322,8 @@ a.pagination__link:hover {
 .avatar--lg .avatar__initial { font-size: 1.9rem; }
 .avatar--xl .avatar__initial { font-size: clamp(2.6rem, 5vw, 3.6rem); }
 
-/* Ficha de la publicacion: quien vende, como firma debajo del artista. */
-.seller-byline {
+/* Firma de una Cuenta (avatar + nombre): el vendedor en la ficha, el autor en las reseñas. */
+.user-byline {
     align-items: center;
     color: var(--color-text);
     display: inline-flex;
@@ -2219,19 +2333,19 @@ a.pagination__link:hover {
     text-decoration: none;
 }
 
-.seller-byline__name {
+.user-byline__name {
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.seller-byline:hover .seller-byline__name {
+.user-byline:hover .user-byline__name {
     text-decoration: underline;
     text-underline-offset: 0.2em;
 }
 
-.seller-byline:focus-visible {
+.user-byline:focus-visible {
     border-radius: var(--radius-pill);
     box-shadow: var(--focus-ring);
     outline: 0;
@@ -2260,29 +2374,6 @@ a.pagination__link:hover {
     overflow-wrap: anywhere;
 }
 
-.profile-hero__rating {
-    align-items: center;
-    background: var(--color-accent-soft);
-    border-radius: var(--radius-pill);
-    color: var(--color-text);
-    display: inline-flex;
-    font-size: 0.9rem;
-    gap: 0.4rem;
-    justify-self: start;
-    margin: 0;
-    padding: 0.3rem 0.8rem;
-}
-
-.profile-hero__rating--empty {
-    background: transparent;
-    border: 1px dashed var(--color-border);
-    color: var(--color-text-muted);
-}
-
-.profile-hero__star {
-    color: var(--color-accent);
-}
-
 .profile-hero__actions {
     align-self: start;
 }
@@ -2295,6 +2386,11 @@ a.pagination__link:hover {
 .profile-reviews h2 {
     margin: 0;
 }
+
+.profile-reviews__header,
+.profile-reviews__filter { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.profile-reviews__filter.is-enhanced > .button { display: none; }
+.profile-reputation { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0; }
 
 .profile-reviews__list {
     display: grid;
@@ -2315,29 +2411,13 @@ a.pagination__link:hover {
     padding: 1.1rem 1.25rem;
 }
 
-.profile-reviews__stars {
-    color: var(--color-border);
-    letter-spacing: 0.08em;
-}
-
-.profile-reviews__star--filled {
-    color: var(--color-accent);
-}
-
 .profile-reviews__body {
     margin: 0;
     overflow-wrap: anywhere;
 }
 
-.profile-reviews__author {
-    color: var(--color-text-muted);
-    font-size: 0.86rem;
-    justify-self: start;
-}
-
-.profile-reviews__author:hover {
-    color: var(--color-accent);
-}
+.review-content { display: grid; gap: 0.6rem; min-width: 0; }
+.review-content > .rating { font-size: 2rem; justify-self: center; }
 
 /* Perfil privado: el titulo y el acceso al perfil publico en la misma linea. */
 .profile-heading {
@@ -3007,4 +3087,4 @@ html:has(.avatar-dialog[open]) {
 - [webapp/src/main/webapp/css/style.css](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/css/style.css>)
 - [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

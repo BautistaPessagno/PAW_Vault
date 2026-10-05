@@ -4,8 +4,8 @@ categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java"]
 ---
@@ -27,7 +27,7 @@ Casos declarados: 11.
 - `testFindOrCreateWhenNameDiffersOnlyInSeparatorsReturnsExistingArtist`
 - `testFindOrCreateWhenArtistIsNewReturnsPersistedArtist`
 - `testUpdateDisplayNameWhenArtistExistsReturnsPersistedArtist`
-- `testUpdateDisplayNameWhenArtistDoesNotExistThrowsIllegalStateException`
+- `testUpdateDisplayNameWhenArtistDoesNotExistReturnsIllegalStateException`
 - `testFindSuggestionsWhenQueryOmitsAccentReturnsMatch`
 - `testFindSuggestionsWhenQueryMatchesWordStartReturnsMatch`
 - `testFindSuggestionsWhenSeveralArtistsSharePrefixReturnsAlphabeticalOrder`
@@ -44,7 +44,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java>), líneas 1–192.
+Fuente exacta en `c3e2a4c`: [persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ArtistJdbcDaoTest.java>), líneas 1–192.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -163,7 +163,7 @@ public class ArtistJdbcDaoTest {
     }
 
     @Test
-    public void testUpdateDisplayNameWhenArtistDoesNotExistThrowsIllegalStateException() {
+    public void testUpdateDisplayNameWhenArtistDoesNotExistReturnsIllegalStateException() {
         // 1. Arrange
         final long missingArtistId = 999;
 

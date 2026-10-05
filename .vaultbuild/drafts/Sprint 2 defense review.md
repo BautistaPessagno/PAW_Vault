@@ -4,7 +4,7 @@
 @files: docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md, webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java, services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java, models/src/main/java/ar/edu/itba/paw/models/Post.java, models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java, webapp/src/main/webapp/js/autocomplete.js, webapp/src/main/webapp/js/submit-once.js, webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java
 
 > [!summary] En una frase
-> Qué se observó en la defensa del sprint 2 (23 de septiembre) y en qué estado está cada punto en `8929aea`: la mayoría está resuelta, y quedan pendientes el tipo de dato del dinero, el plazo para el comprobante y tres puntos de seguridad que conviene poder explicar.
+> Qué se observó en la defensa del sprint 2 (23 de septiembre) y en qué estado está cada punto en `c3e2a4c`: la mayoría está resuelta, y quedan pendientes el tipo de dato del dinero, el plazo para el comprobante y tres puntos de seguridad que conviene poder explicar.
 
 ## Fuentes
 
@@ -14,7 +14,7 @@
 | `docs/issues/observaciones-sprint-2/` en el repositorio | Las cuatro observaciones que el equipo formalizó y cómo decidió resolverlas | Cubre solo cuenta, búsqueda vacía, sugerencias y autorización |
 | [[TODO cambios]] | Apuntes personales tomados después de la defensa | Muy breves |
 
-El estado de cada punto sale de leer el código en `8929aea`. Nada se verificó en ejecución.
+El estado de cada punto sale de leer el código en `c3e2a4c`. Nada se verificó en ejecución.
 
 ## Cuenta y verificación
 
@@ -41,7 +41,7 @@ El estado de cada punto sale de leer el código en `8929aea`. Nada se verificó 
 | Usar `BigDecimal` para el dinero, en base, modelo y cliente | **Pendiente** | El precio es `int` en los modelos e `INTEGER` en `posts` e `inquiries`. No hay ningún uso de `BigDecimal` en el repositorio | [[Database schema]] |
 | Base, modelo y cliente deben manejar la misma precisión | **Coincide, sin decimales** | Las tres capas usan pesos enteros, de 1 a 99.999.999 ([[VinylInputRules]]) | [[Publish flow]] |
 
-El resumen de la reunión registra como decisión que "se usará BigDecimal para todo el manejo de dinero". En `8929aea` no está aplicado. Con precios enteros no hay pérdida de precisión, que era el riesgo que se señaló, pero si se vuelve a preguntar hay que poder decir cuál de las dos cosas se eligió y por qué.
+El resumen de la reunión registra como decisión que "se usará BigDecimal para todo el manejo de dinero". En `c3e2a4c` no está aplicado. Con precios enteros no hay pérdida de precisión, que era el riesgo que se señaló, pero si se vuelve a preguntar hay que poder decir cuál de las dos cosas se eligió y por qué.
 
 ## Búsqueda, autocompletado y validaciones
 

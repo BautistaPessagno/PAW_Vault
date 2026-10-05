@@ -4,8 +4,8 @@ categories: ["Operations", "History"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["AGENTS.md", "CLAUDE.md", ".claude/hooks/commit-gate.py", ".claude/hooks/db-server-guard.py", ".claude/hooks/i18n-parity-posttool.py", ".claude/hooks/skill-autolaunch.py", ".claude/skills/README.md", ".claude/skills/PROJECT.md", ".agents/skills/README.md", ".gitignore", ".worktreeinclude"]
 ---
@@ -66,4 +66,4 @@ Las tres colecciones de procedimientos son copias de un mismo contenido para tre
 - [.gitignore](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.gitignore>)
 - [.worktreeinclude](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/.worktreeinclude>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

@@ -4,8 +4,8 @@ categories: ["Operations", "Architecture"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["pom.xml", "models/pom.xml", "persistence-contracts/pom.xml", "persistence/pom.xml", "services-contracts/pom.xml", "services/pom.xml", "webapp/pom.xml"]
 ---
@@ -109,7 +109,7 @@ Para que esté en el classpath al ejecutar y en los tests, pero el código de `s
 
 ### Versiones
 
-Fuente exacta en `8929aea`: [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>), líneas 16–39.
+Fuente exacta en `c3e2a4c`: [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>), líneas 16–39.
 
 ```xml
   <properties>
@@ -140,7 +140,7 @@ Fuente exacta en `8929aea`: [pom.xml](</Users/bautistapessagno/Desktop/proyectos
 
 ### Perfil `pampero`
 
-Fuente exacta en `8929aea`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>), líneas 173–221.
+Fuente exacta en `c3e2a4c`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>), líneas 173–221.
 
 ```xml
     <profile>
@@ -204,4 +204,4 @@ Fuente exacta en `8929aea`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/pr
 - [services/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/pom.xml>)
 - [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

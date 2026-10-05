@@ -207,11 +207,11 @@ Armado del mensaje MIME:
 
 Cómo lo registra un service (consulta nueva, con el idioma del publicante):
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:110-133}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:112-135}}
 
 El mismo aviso desde el carrito, agrupado por publicante:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:135-164}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:137-166}}
 
 Un vinilo o varios en el mismo correo:
 

@@ -36,10 +36,12 @@ Consecuencia que conviene conocer: una llamada a un método del **mismo** objeto
 
 | Qué se bloquea | Quién | Para qué |
 |---|---|---|
-| La fila del **post** | `InquiryServiceImpl.submit` y las transiciones de la venta, vía `PostService.lockById` | Que dos consultas, o una consulta y una aceptación, sobre el mismo ejemplar se ordenen entre sí |
+| La fila del **post** | `InquiryServiceImpl.submit`, las transiciones de la venta y `CartServiceImpl.add`, vía `PostService.lockById`; editar y eliminar, vía `PostDao.findByIdForUpdate` | Que dos consultas, una consulta y una aceptación, o un agregado al carrito y una venta sobre el mismo ejemplar se ordenen entre sí |
 | Varios posts, **en orden de id** | `CartServiceImpl` al enviar el carrito, vía `PostService.lockByIds` | Lo mismo para muchos; el orden fijo evita interbloqueos entre dos carritos con posts en común |
 | La fila de la **cuenta** | `AddressServiceImpl` (tope de tres direcciones), `CartServiceImpl.add` (tope de veinte), `InquiryServiceImpl` al aceptar (datos de cobro) | Serializar por cuenta un "contar y después insertar" |
 | La fila de la **consulta** | `InquiryServiceImpl.lockConfirmedSale`, vía `InquiryDao.findByIdForUpdate` | Que dos guardados o quitados de reseña de la misma parte se ordenen entre sí ([[Reviews flow]]) |
+
+**Orden entre tablas.** Cuando una transacción toma el post y la Cuenta, siempre toma primero el post: contacto, aceptación, envío del carrito y, desde el PR #52 (`e12c0e39`), también agregar al carrito. Hasta `8929aea` `CartServiceImpl.add` bloqueaba solo la Cuenta y después insertaba la clave foránea al post, el orden inverso; dos transacciones con órdenes opuestos pueden esperarse mutuamente.
 
 Los métodos que bloquean llevan `Propagation.MANDATORY`: fuera de una transacción el bloqueo se soltaría apenas vuelve el método y no protegería nada. Que falle es mejor que simular protección.
 
@@ -70,6 +72,7 @@ Si no hay transacción activa (por ejemplo, en un test con mocks), la acción co
 | `MANDATORY` en los métodos que bloquean o transicionan | Sin transacción externa el bloqueo no protege | Comentarios en [[PostServiceImpl]], [[UserServiceImpl]], [[ReviewServiceImpl]] |
 | Bloquear la fila del post, no una fila por consulta | Es el recurso por el que compiten todas las consultas del mismo ejemplar | Comentario en [[PostServiceImpl]] |
 | Bloqueo en orden de id en el carrito | Evitar interbloqueos | Comentario en [[PostJdbcDao]] |
+| Siempre post antes que Cuenta | Un orden único entre tablas evita interbloqueos entre contacto, carrito y venta | Comentario en [[CartServiceImpl]]; commit `e12c0e39` |
 | Savepoint en `findOrCreate` | PostgreSQL inutiliza la transacción tras una violación de unicidad | Comentario en [[ArtistJdbcDao]] |
 | Correo después del commit | No avisar algo que se revirtió | Estructura de [[TransactionCallbacks]]; inferencia |
 | Nivel de aislamiento por defecto (`READ COMMITTED` en PostgreSQL) | No se configura otro; los bloqueos explícitos cubren los casos críticos | Ausencia de configuración; inferencia |
@@ -105,11 +108,11 @@ Porque en PostgreSQL un error dentro de la transacción la deja inutilizable; el
 
 ### Bloqueos y transiciones del post
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:79-110}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:81-112}}
 
 ### Bloqueo de varios posts en orden
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:270-291}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:297-318}}
 
 ### Savepoint en `findOrCreate`
 
@@ -117,7 +120,7 @@ Porque en PostgreSQL un error dentro de la transacción la deja inutilizable; el
 
 ### Traducción del choque al publicar
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:260-268}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:273-281}}
 
 ### Después del commit
 

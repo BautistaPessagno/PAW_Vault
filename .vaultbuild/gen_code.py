@@ -8,7 +8,7 @@ HOME = build.HOME; REPO = build.REPO; VAULT = build.VAULT
 ABS = build.ABS
 COMMIT = build.COMMIT; SHORT = COMMIT[:7]; SNAPSHOT = build.SNAPSHOT
 # Commit anterior del vault: las clases que existian ahi y ya no existen quedan como notas historicas.
-OLD = os.environ.get('PAW_OLD_COMMIT', '41c32af61ff7926fd4e3b07446c84837851a063f')
+OLD = os.environ.get('PAW_OLD_COMMIT', '8929aeaa59b250e6c7119212f96437e153e815ac')
 KEYWORDS = {'if', 'for', 'while', 'switch', 'return', 'new', 'catch', 'throw', 'else', 'super', 'this', 'try', 'do', 'case', 'assert', 'synchronized'}
 
 def git(*args):

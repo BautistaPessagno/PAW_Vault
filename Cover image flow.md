@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ImageFiles.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java", "models/src/main/java/ar/edu/itba/paw/models/ImageRules.java", "models/src/main/java/ar/edu/itba/paw/models/Image.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/ImageService.java", "persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ImageDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java", "webapp/src/main/webapp/WEB-INF/web.xml"]
 ---
@@ -39,6 +39,34 @@ El transversal de "manejo de imágenes": subida, validación, almacenamiento y e
 5. El controller convierte a [[ImageUpload]] y el service llama a `ImageService.create`, que normaliza el tipo, valida **de nuevo** y guarda. Un rechazo se loguea como `WARN` con tipo y tamaño.
 
 Reglas: PNG, JPEG o WEBP; el tipo que declara el navegador tiene que coincidir con los primeros bytes del archivo; entre 1 byte y 5 MiB.
+
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant F as MultipartFilter
+    participant H as MultipartExceptionHandlerFilter
+    participant C as Controller
+    participant S as ImageServiceImpl
+    participant D as ImageDao
+    B->>F: POST multipart (publicar, editar, comprobante o avatar)
+    alt request de más de 26 MiB
+        F-->>H: MaxUploadSizeExceededException
+        H-->>B: 302 ?coverTooLarge / ?receiptTooLarge / ?avatarTooLarge
+    end
+    F->>C: partes parseadas
+    C->>C: ImageFiles.isValid (tamaño, después ImageRules)
+    C->>S: create(contentType, bytes)
+    S->>S: normalizar y validar de nuevo
+    alt rechazada
+        S-->>C: InvalidImageException (log WARN)
+    else válida
+        S->>D: create
+    end
+    B->>C: GET /post/{postId}/images/{imageId}
+    C->>S: findPostImage
+    S->>D: SELECT con chequeo de pertenencia
+    C-->>B: 200 Cache-Control 365 días, o 404 sin cuerpo
+```
 
 ## Entrega
 
@@ -98,7 +126,7 @@ No: la consulta exige que esa imagen pertenezca al post, usuario o álbum de la 
 
 Reglas:
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/ImageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ImageRules.java>), líneas 9–77.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/ImageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ImageRules.java>), líneas 9–77.
 
 ```java
 public final class ImageRules {
@@ -174,7 +202,7 @@ public final class ImageRules {
 
 Guardado:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>), líneas 48–65.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java>), líneas 48–65.
 
 ```java
     @Override
@@ -199,7 +227,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Ima
 
 Entrega:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>), líneas 20–62.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ImageController.java>), líneas 20–62.
 
 ```java
 @Controller
@@ -249,7 +277,7 @@ public class ImageController {
 
 Pertenencia y borrado condicional:
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>), líneas 47–87.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>), líneas 47–87.
 
 ```java
     @Override
@@ -297,7 +325,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 Resolver:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 115–127.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 115–127.
 
 ```java
   /*
@@ -329,4 +357,4 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/
 - [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>) · [[ImageJdbcDao]]
 - [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

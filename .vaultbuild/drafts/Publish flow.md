@@ -31,17 +31,54 @@
    - Título y artista obligatorios, hasta 255. Año de lanzamiento, género, precio y condición obligatorios. Zona hasta 100, descripción hasta 1000.
    - [[PublishFormValidator]]: años entre 1000 y 9999 y no futuros; precio entre 1 y 99.999.999; prensado no anterior al lanzamiento; hasta 5 fotos, cada una válida según [[ImageRules]].
 4. `PostServiceImpl.publish`, en una transacción:
-   - Repite las reglas numéricas (`requireValidPostData`) y el tope de fotos: un POST que saltee el formulario no entra.
+   - Repite las reglas numéricas (`requireValidPostData`) y el tope de fotos: un POST que saltee el formulario no entra. La regla numérica rota es `InvalidPostDataException`, que desde el PR #62 se responde con 400 en lugar de un 500.
    - `artistService.findOrCreate`: identidad = el nombre en minúsculas solo con letras y dígitos. "Soda Stereo" y "soda-stereo" son el mismo artista.
    - `albumService.findOrCreate`: identidad = artista, título en minúsculas y año.
    - Si el publicante ya tiene un Post de ese álbum, `DuplicatePostException`.
    - Crea las imágenes (cada una se valida de nuevo en `ImageService.create`).
    - Crea el Post con la primera foto como principal (`posts.image_id`) y estado `AVAILABLE`.
    - Si hay más fotos, `replaceGallery` las guarda en `post_images` con orden 1 a 4.
+   - Loguea `Published post postId=... publisherId=... albumId=... images=...` (PR #62). El log sale antes del commit ([[Logging]]).
 5. Errores traducidos:
    - `DuplicatePostKeyException` (la restricción `UNIQUE (user_id, album_id)` detectó una carrera) → `DuplicatePostException` → error global `publish.duplicate`.
    - Otra `DataIntegrityViolationException` (dos publicaciones simultáneas crearon el mismo álbum) → `ConcurrentPublishException` → `publish.concurrent`, que invita a reintentar.
 6. Éxito: aviso flash `postCreated` y redirección a la ficha `/post/{id}`.
+
+```mermaid
+sequenceDiagram
+    participant V as Publicante
+    participant F as MultipartFilter
+    participant C as PublishController
+    participant S as PostServiceImpl
+    participant A as Artist/AlbumService
+    participant I as ImageService
+    participant P as PostDao
+    V->>F: POST /publish (multipart)
+    alt supera 26 MiB
+        F-->>V: 302 /publish?coverTooLarge
+    end
+    F->>C: partes leídas, CSRF verificado
+    C->>C: @Valid PublishForm + PublishFormValidator
+    C->>S: publish(...)
+    S->>S: requireValidPostData, requireGallerySize
+    alt POST que saltea el formulario
+        S-->>C: InvalidPostDataException (400)
+    end
+    S->>A: findOrCreate artista y álbum
+    S->>P: existsByUserIdAndAlbumId
+    alt ya publicó ese álbum
+        S-->>C: DuplicatePostException
+        C-->>V: formulario con publish.duplicate
+    end
+    S->>I: create (una por foto)
+    S->>P: create (AVAILABLE, image_id = primera)
+    S->>I: replaceGallery (orden 1 a 4)
+    S->>S: LOGGER.info Published post
+    alt carrera en UNIQUE o álbum duplicado
+        S-->>C: DuplicatePostException / ConcurrentPublishException
+    end
+    C-->>V: 302 /post/{id}
+```
 
 ## Datos
 
@@ -104,11 +141,11 @@ Controller:
 
 Service:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:237-268}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:248-281}}
 
 Reglas repetidas en el service:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:350-380}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:364-402}}
 
 Savepoint del artista:
 

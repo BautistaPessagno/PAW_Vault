@@ -4,8 +4,8 @@ categories: ["Services", "Flows"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java", "services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java", "services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryUpdateNotification.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/MessageNotification.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryEvent.java", "webapp/src/main/resources/mail.properties.example", "services/src/main/resources/mail/welcome.html", "services/src/main/resources/mail/email-verification.html", "services/src/main/resources/mail/post-interest.html", "services/src/main/resources/mail/inquiry-update.html", "services/src/main/resources/mail/inquiry-message.html", "services/src/main/resources/mail/password-changed.html", "services/src/main/resources/mail/password-reset.html", "services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java"]
 ---
@@ -116,7 +116,7 @@ El motivo está escrito en la interfaz: dentro del hilo `mail-N` no hay request,
 
 Pool de hilos:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 59–80.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 59–80.
 
 ```java
   /*
@@ -150,7 +150,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/
 
 Remitente SMTP y motor de plantillas:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 145–184.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 145–184.
 
 ```java
   @Bean
@@ -197,7 +197,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/
 
 Propiedades esperadas (ejemplo versionado; el archivo real no se commitea):
 
-Fuente exacta en `8929aea`: [webapp/src/main/resources/mail.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/mail.properties.example>), líneas 1–16.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/resources/mail.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/mail.properties.example>), líneas 1–16.
 
 ```properties
 mail.host=smtp.gmail.com
@@ -284,7 +284,7 @@ De `app.base-url`, configurada con el context path. No se puede deducir del requ
 
 El gancho de commit:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java>), líneas 1–24.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java>), líneas 1–24.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -315,7 +315,7 @@ final class TransactionCallbacks {
 
 Contrato, con el motivo del `Locale` explícito:
 
-Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java>), líneas 7–26.
+Fuente exacta en `c3e2a4c`: [services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/EmailService.java>), líneas 7–26.
 
 ```java
 public interface EmailService {
@@ -342,7 +342,7 @@ public interface EmailService {
 
 Constructor (URL base) y un envío simple:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 43–89.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 43–89.
 
 ```java
     @Autowired
@@ -396,7 +396,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Ema
 
 Un template para todos los eventos de la consulta:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 126–156.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 126–156.
 
 ```java
     /*
@@ -434,7 +434,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Ema
 
 Armado del mensaje MIME:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 214–234.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 214–234.
 
 ```java
     private String inquiryUrl(final long inquiryId) {
@@ -462,7 +462,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Ema
 
 Cómo lo registra un service (consulta nueva, con el idioma del publicante):
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 110–133.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 112–135.
 
 ```java
     // El texto opcional es el primer Mensaje. No dispara el mail de Mensaje nuevo: ya viaja en
@@ -493,7 +493,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Inq
 
 El mismo aviso desde el carrito, agrupado por publicante:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 135–164.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 137–166.
 
 ```java
     // Los posts llegan bloqueados y validados por CartService; MANDATORY porque sin su
@@ -530,7 +530,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Inq
 
 Un vinilo o varios en el mismo correo:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 91–124.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 91–124.
 
 ```java
     /*
@@ -571,7 +571,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Ema
 
 Normalización de idiomas:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java>), líneas 11–35.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/SupportedLocales.java>), líneas 11–35.
 
 ```java
 final class SupportedLocales {
@@ -605,7 +605,7 @@ final class SupportedLocales {
 
 ### email-verification
 
-Fuente exacta en `8929aea`: [services/src/main/resources/mail/email-verification.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/email-verification.html>), líneas 1–21.
+Fuente exacta en `c3e2a4c`: [services/src/main/resources/mail/email-verification.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/email-verification.html>), líneas 1–21.
 
 ```html
 <!DOCTYPE html>
@@ -633,7 +633,7 @@ Fuente exacta en `8929aea`: [services/src/main/resources/mail/email-verification
 
 ### inquiry-update
 
-Fuente exacta en `8929aea`: [services/src/main/resources/mail/inquiry-update.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/inquiry-update.html>), líneas 1–27.
+Fuente exacta en `c3e2a4c`: [services/src/main/resources/mail/inquiry-update.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/inquiry-update.html>), líneas 1–27.
 
 ```html
 <!DOCTYPE html>
@@ -667,7 +667,7 @@ Fuente exacta en `8929aea`: [services/src/main/resources/mail/inquiry-update.htm
 
 ### inquiry-message
 
-Fuente exacta en `8929aea`: [services/src/main/resources/mail/inquiry-message.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/inquiry-message.html>), líneas 1–30.
+Fuente exacta en `c3e2a4c`: [services/src/main/resources/mail/inquiry-message.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/inquiry-message.html>), líneas 1–30.
 
 ```html
 <!DOCTYPE html>
@@ -704,7 +704,7 @@ Fuente exacta en `8929aea`: [services/src/main/resources/mail/inquiry-message.ht
 
 ### post-interest
 
-Fuente exacta en `8929aea`: [services/src/main/resources/mail/post-interest.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/post-interest.html>), líneas 1–50.
+Fuente exacta en `c3e2a4c`: [services/src/main/resources/mail/post-interest.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/post-interest.html>), líneas 1–50.
 
 ```html
 <!DOCTYPE html>
@@ -761,7 +761,7 @@ Fuente exacta en `8929aea`: [services/src/main/resources/mail/post-interest.html
 
 ### password-reset
 
-Fuente exacta en `8929aea`: [services/src/main/resources/mail/password-reset.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/password-reset.html>), líneas 1–23.
+Fuente exacta en `c3e2a4c`: [services/src/main/resources/mail/password-reset.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/password-reset.html>), líneas 1–23.
 
 ```html
 <!DOCTYPE html>
@@ -791,7 +791,7 @@ Fuente exacta en `8929aea`: [services/src/main/resources/mail/password-reset.htm
 
 ### password-changed
 
-Fuente exacta en `8929aea`: [services/src/main/resources/mail/password-changed.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/password-changed.html>), líneas 1–20.
+Fuente exacta en `c3e2a4c`: [services/src/main/resources/mail/password-changed.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/password-changed.html>), líneas 1–20.
 
 ```html
 <!DOCTYPE html>
@@ -818,7 +818,7 @@ Fuente exacta en `8929aea`: [services/src/main/resources/mail/password-changed.h
 
 ### welcome
 
-Fuente exacta en `8929aea`: [services/src/main/resources/mail/welcome.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/welcome.html>), líneas 1–21.
+Fuente exacta en `c3e2a4c`: [services/src/main/resources/mail/welcome.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/welcome.html>), líneas 1–21.
 
 ```html
 <!DOCTYPE html>
@@ -865,4 +865,4 @@ Fuente exacta en `8929aea`: [services/src/main/resources/mail/welcome.html](</Us
 - [services/src/main/resources/mail/password-reset.html](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/resources/mail/password-reset.html>)
 - [services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>) · [[EmailServiceImplTest]]
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

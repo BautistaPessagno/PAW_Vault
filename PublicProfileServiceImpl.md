@@ -4,15 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/PublicProfileServiceImpl.java"]
 ---
 
 # PublicProfileServiceImpl
 
-Compone el perfil público con la Cuenta verificada, sus publicaciones disponibles y sus reseñas. Vive aparte porque [[PostService]] ya depende de [[UserService]]. Ver [[Public profile flow]].
+Compone el perfil público con la Cuenta verificada, sus publicaciones disponibles y una página de sus reseñas para el rol pedido. Vive aparte porque [[PostService]] ya depende de [[UserService]]. Ver [[Public profile flow]].
 
 ## Guía de lectura
 
@@ -22,7 +22,7 @@ Operaciones para localizar en la fuente: `findByUserId`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[PostService]], [[PublicProfile]], [[PublicProfileService]], [[PublicUserProfile]], [[ReviewService]], [[UserNotFoundException]], [[UserService]].
+Referencias estáticas a tipos del proyecto: [[PostService]], [[PublicProfile]], [[PublicProfileService]], [[PublicUserProfile]], [[ReviewService]], [[ReviewSubjectRole]], [[UserNotFoundException]], [[UserService]].
 
 Referenciado por: [[PublicProfileServiceImplTest]].
 
@@ -30,13 +30,14 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PublicProfileServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PublicProfileServiceImpl.java>), líneas 1–36.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PublicProfileServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PublicProfileServiceImpl.java>), líneas 1–38.
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.PublicProfile;
 import ar.edu.itba.paw.models.PublicUserProfile;
+import ar.edu.itba.paw.models.ReviewSubjectRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,11 +63,12 @@ public class PublicProfileServiceImpl implements PublicProfileService {
 
     @Override
     @Transactional(readOnly = true)
-    public PublicProfile findByUserId(final long userId, final int pageNumber) {
+    public PublicProfile findByUserId(final long userId, final int pageNumber,
+                                     final ReviewSubjectRole reviewRole, final int reviewPageNumber) {
         final PublicUserProfile user = userService.findPublicProfileById(userId)
                 .orElseThrow(UserNotFoundException::new);
         return new PublicProfile(user, postService.findAvailableByPublisherId(userId, pageNumber),
-                reviewService.statsForUser(userId), reviewService.findRecentForUser(userId));
+                reviewService.findPageForUser(userId, reviewRole, reviewPageNumber));
     }
 }
 ```

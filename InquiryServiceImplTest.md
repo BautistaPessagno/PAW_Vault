@@ -4,23 +4,23 @@ categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/InquiryServiceImplTest.java"]
 ---
 
 # InquiryServiceImplTest
 
-Tests de `InquiryServiceImpl` en `services`: 86 casos declarados. Cubre: contactabilidad, alta, bandejas, cada transición de la venta con sus estados inválidos, direcciones parciales, mensajes, reseñas, alta en lote y avisos después del commit. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
+Tests de `InquiryServiceImpl` en `services`: 92 casos declarados. Cubre: contactabilidad, alta, bandejas (también filtradas), cada transición de la venta con sus estados inválidos (incluida una aceptación cuya transición falla), direcciones parciales, mensajes, reseñas, alta en lote, venta a la que volver y avisos después del commit. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
 ## Guía de lectura
 
-Datos y dependencias declaradas: `POST_ID`, `INQUIRY_ID`, `SELLER_ID`, `BUYER_ID`, `ADDRESS_ID`, `OUTSIDER_ID`, `BUYER_USERNAME`, `BUYER_EMAIL`, `SELLER_EMAIL`, `SELLER_LOCALE`, `RECEIPT`, `inquiryDao`, `messageDao`, `postService`, `userService`, `addressService`, `reviewService`, `emailService`, `inquiryService`, `notification`, `locale`, `updates`, `updateLocales`, `messages`, `messageLocales`.
+Datos y dependencias declaradas: `POST_ID`, `INQUIRY_ID`, `SELLER_ID`, `ALL_STATUSES`, `BUYER_ID`, `ADDRESS_ID`, `OUTSIDER_ID`, `BUYER_USERNAME`, `BUYER_EMAIL`, `SELLER_EMAIL`, `SELLER_LOCALE`, `RECEIPT`, `inquiryDao`, `messageDao`, `postService`, `userService`, `addressService`, `reviewService`, `emailService`, `inquiryService`, `notification`, `locale`, `updates`, `updateLocales`, `messages`, `messageLocales`.
 
 Operaciones para localizar en la fuente: `setUp`, `tearDown`, `address`, `stubLock`, `confirmedSale`, `review`, `sale`, `stubSale`, `commitTransaction`, `post`, `inquiry`, `message`, `pendingOnAvailablePost`, `summary`, `seller`, `buyer`, `sendPostInterestEmail`, `sendInquiryUpdateEmail`, `sendMessageEmail`.
 
-Casos declarados: 86.
+Casos declarados: 92.
 
 - `testFindContactablePostWhenPostIsAvailableReturnsPost`
 - `testFindContactablePostWhenPostDoesNotExistReturnsPostNotFoundException`
@@ -48,6 +48,7 @@ Casos declarados: 86.
 - `testSendMessageWhenBodyExceedsTheLimitReturnsInvalidMessageException`
 - `testSendMessageWhenInquiryIsRejectedAndBodyIsBlankReturnsInvalidInquiryStateException`
 - `testAcceptWhenSellerHasPaymentInfoReturnsAwaitingPaymentAndNotifiesBuyer`
+- `testAcceptWhenTransitionFailsReturnsConflictWithoutNotification`
 - `testAcceptWhenSellerHasNoPaymentInfoReturnsMissingPaymentInfoException`
 - `testAcceptWhenPostIsAlreadyReservedReturnsInvalidInquiryStateException`
 - `testAcceptWhenInquiryWasRejectedAndSellerHasNoPaymentInfoReturnsInvalidInquiryStateException`
@@ -98,8 +99,13 @@ Casos declarados: 86.
 - `testFindReceiptWhenNothingWasUploadedReturnsReceiptNotFoundException`
 - `testFindReceiptWhenUserIsNotAPartyReturnsForbiddenOperationException`
 - `testFindReceiptWhenInquiryDoesNotExistReturnsInquiryNotFoundException`
+- `testFindSaleToResumeWhenUserIsSellerReturnsInquiryId`
+- `testFindSaleToResumeWhenUserIsBuyerReturnsEmpty`
+- `testFindSaleToResumeWhenInquiryDoesNotExistReturnsEmpty`
 - `testFindReceivedGroupedByPostWhenSecondPageOfSevenGroupsReturnsGroupedPage`
 - `testFindReceivedGroupedByPostWhenInquiryIsPendingReturnsCityAndProvinceOnly`
+- `testFindReceivedGroupedByPostWhenFilteringPendingReturnsPendingWithCityAndProvinceOnly`
+- `testFindSentGroupedByPostWhenFilteringClosedReturnsRejectedAndCancelledPage`
 - `testFindReceivedGroupedByPostWhenInquiryIsAcceptedReturnsFullAddress`
 - `testFindReceivedGroupedByPostWhenInquiryAwaitsPaymentReturnsFullAddress`
 - `testFindReceivedGroupedByPostWhenSaleWasCancelledReturnsCityAndProvinceOnly`
@@ -111,7 +117,7 @@ Casos declarados: 86.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Address]], [[AddressNotFoundException]], [[AddressService]], [[Condition]], [[EmailService]], [[ForbiddenOperationException]], [[Inquiry]], [[InquiryDao]], [[InquiryDetail]], [[InquiryEvent]], [[InquiryGroup]], [[InquiryNotFoundException]], [[InquiryPage]], [[InquiryParties]], [[InquiryServiceImpl]], [[InquiryStatus]], [[InquirySummary]], [[InquiryUpdateNotification]], [[InvalidInquiryStateException]], [[InvalidMessageException]], [[InvalidReceiptException]], [[Message]], [[MessageDao]], [[MessageNotification]], [[MessageRules]], [[MissingPaymentInfoException]], [[OpenInquiryExistsException]], [[PageNotFoundException]], [[PaymentInfo]], [[PostInterestNotification]], [[PostNotFoundException]], [[PostService]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[Province]], [[ReceiptNotFoundException]], [[ReceiptRules]], [[Review]], [[ReviewService]], [[User]], [[UserRole]], [[UserService]].
+Referencias estáticas a tipos del proyecto: [[Address]], [[AddressNotFoundException]], [[AddressService]], [[Condition]], [[EmailService]], [[ForbiddenOperationException]], [[Inquiry]], [[InquiryDao]], [[InquiryDetail]], [[InquiryEvent]], [[InquiryGroup]], [[InquiryNotFoundException]], [[InquiryPage]], [[InquiryParties]], [[InquiryServiceImpl]], [[InquiryStatus]], [[InquiryStatusFilter]], [[InquirySummary]], [[InquiryUpdateNotification]], [[InvalidInquiryStateException]], [[InvalidMessageException]], [[InvalidReceiptException]], [[Message]], [[MessageDao]], [[MessageNotification]], [[MessageRules]], [[MissingPaymentInfoException]], [[OpenInquiryExistsException]], [[PageNotFoundException]], [[PaymentInfo]], [[PostInterestNotification]], [[PostNotFoundException]], [[PostService]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[Province]], [[ReceiptNotFoundException]], [[ReceiptRules]], [[Review]], [[ReviewService]], [[User]], [[UserRole]], [[UserService]].
 
 Referenciado por: sin referencias léxicas desde otros archivos Java.
 
@@ -119,7 +125,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/InquiryServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/InquiryServiceImplTest.java>), líneas 1–1526.
+Fuente exacta en `c3e2a4c`: [services/src/test/java/ar/edu/itba/paw/services/InquiryServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/InquiryServiceImplTest.java>), líneas 1–1619.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -132,6 +138,7 @@ import ar.edu.itba.paw.models.InquiryGroup;
 import ar.edu.itba.paw.models.InquiryPage;
 import ar.edu.itba.paw.models.InquiryParties;
 import ar.edu.itba.paw.models.InquiryStatus;
+import ar.edu.itba.paw.models.InquiryStatusFilter;
 import ar.edu.itba.paw.models.InquirySummary;
 import ar.edu.itba.paw.models.Message;
 import ar.edu.itba.paw.models.MessageRules;
@@ -171,6 +178,7 @@ public class InquiryServiceImplTest {
     private static final long POST_ID = 7;
     private static final long INQUIRY_ID = 9;
     private static final long SELLER_ID = 1;
+    private static final List<InquiryStatus> ALL_STATUSES = List.of(InquiryStatus.values());
     private static final long BUYER_ID = 2;
     private static final long ADDRESS_ID = 4;
     private static final long OUTSIDER_ID = 99;
@@ -617,11 +625,14 @@ public class InquiryServiceImplTest {
     public void testAcceptWhenSellerHasPaymentInfoReturnsAwaitingPaymentAndNotifiesBuyer() {
         // 1. Arrange
         Mockito.when(inquiryDao.findSummaryById(INQUIRY_ID))
-                .thenReturn(Optional.of(sale(InquiryStatus.PENDING, false, null, "vende.discos")));
+                .thenReturn(Optional.of(new InquirySummary(INQUIRY_ID, POST_ID, 3L, BUYER_ID, SELLER_ID,
+                        BUYER_USERNAME, BUYER_EMAIL, "en", "seller", new PaymentInfo(null, "vende.discos"),
+                        "Versus", "IKV", null, 39000, null, InquiryStatus.PENDING,
+                        PostStatus.AVAILABLE, null, false, null, null)));
         Mockito.when(postService.lockById(POST_ID)).thenReturn(post(SELLER_ID, PostStatus.AVAILABLE));
         Mockito.when(userService.lockById(SELLER_ID)).thenReturn(seller("vende.discos"));
         Mockito.when(postService.reserve(POST_ID)).thenReturn(true);
-        Mockito.when(inquiryDao.updateStatus(INQUIRY_ID, InquiryStatus.PENDING, InquiryStatus.AWAITING_PAYMENT))
+        Mockito.when(inquiryDao.startSale(INQUIRY_ID, 45000))
                 .thenReturn(true);
 
         // 2. Exercise
@@ -635,6 +646,24 @@ public class InquiryServiceImplTest {
         Assertions.assertEquals(InquiryEvent.ACCEPTED, emailService.updates.get(0).getEvent());
         Assertions.assertEquals(BUYER_EMAIL, emailService.updates.get(0).getRecipientEmail());
         Assertions.assertEquals("en", emailService.updateLocales.get(0).getLanguage());
+    }
+
+    @Test
+    public void testAcceptWhenTransitionFailsReturnsConflictWithoutNotification() {
+        // 1. Arrange
+        Mockito.when(inquiryDao.findSummaryById(INQUIRY_ID))
+                .thenReturn(Optional.of(sale(InquiryStatus.PENDING, false, null, "vende.discos")));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(SELLER_ID, PostStatus.AVAILABLE));
+        Mockito.when(userService.lockById(SELLER_ID)).thenReturn(seller("vende.discos"));
+        Mockito.when(postService.reserve(POST_ID)).thenReturn(true);
+        Mockito.when(inquiryDao.startSale(INQUIRY_ID, 45000)).thenReturn(false);
+
+        // 2. Exercise
+        final Executable accept = () -> inquiryService.accept(INQUIRY_ID, SELLER_ID);
+
+        // 3. Assert
+        Assertions.assertThrows(InvalidInquiryStateException.class, accept);
+        Assertions.assertTrue(emailService.updates.isEmpty());
     }
 
     @Test
@@ -698,7 +727,7 @@ public class InquiryServiceImplTest {
         // 1. Arrange
         final InquirySummary orphan = new InquirySummary(INQUIRY_ID, null, 3L, BUYER_ID, SELLER_ID, BUYER_USERNAME,
                 BUYER_EMAIL, "en", "seller", PaymentInfo.NONE, "Versus", "IKV", null, null, null, InquiryStatus.PENDING,
-                null, null, false);
+                null, null, false, null, null);
         Mockito.when(inquiryDao.findSummaryById(INQUIRY_ID)).thenReturn(Optional.of(orphan));
 
         // 2. Exercise
@@ -714,7 +743,7 @@ public class InquiryServiceImplTest {
         Mockito.when(inquiryDao.findSummaryById(INQUIRY_ID)).thenReturn(Optional.of(
                 new InquirySummary(INQUIRY_ID, null, 3L, BUYER_ID, SELLER_ID, BUYER_USERNAME, BUYER_EMAIL,
                         "en", "seller", new PaymentInfo(null, "vende.discos"), "Versus", "IKV", null, 45000, null,
-                        InquiryStatus.PENDING, null, null, false)));
+                        InquiryStatus.PENDING, null, null, false, null, null)));
 
         // 2. Exercise
         final Executable accept = () -> inquiryService.accept(INQUIRY_ID, SELLER_ID);
@@ -889,7 +918,7 @@ public class InquiryServiceImplTest {
         Mockito.when(postService.markSold(POST_ID)).thenReturn(true);
         final InquirySummary waiting = new InquirySummary(11L, POST_ID, 3L, 8L, SELLER_ID, "other",
                 "other@example.com", "es", "seller", PaymentInfo.NONE, "Versus", "IKV", null, 45000, null,
-                InquiryStatus.PENDING, PostStatus.RESERVED, null, false);
+                InquiryStatus.PENDING, PostStatus.RESERVED, null, false, null, null);
         Mockito.when(inquiryDao.findPendingByPostId(POST_ID)).thenReturn(List.of(waiting));
         Mockito.when(inquiryDao.rejectOtherPending(POST_ID, INQUIRY_ID)).thenReturn(1);
 
@@ -1361,17 +1390,55 @@ public class InquiryServiceImplTest {
     }
 
     @Test
+    public void testFindSaleToResumeWhenUserIsSellerReturnsInquiryId() {
+        // 1. Arrange
+        Mockito.when(inquiryDao.findPartiesById(INQUIRY_ID))
+                .thenReturn(Optional.of(new InquiryParties(BUYER_ID, SELLER_ID)));
+
+        // 2. Exercise
+        final Optional<Long> result = inquiryService.findSaleToResume(INQUIRY_ID, SELLER_ID);
+
+        // 3. Assert
+        Assertions.assertEquals(Optional.of(INQUIRY_ID), result);
+    }
+
+    @Test
+    public void testFindSaleToResumeWhenUserIsBuyerReturnsEmpty() {
+        // 1. Arrange
+        Mockito.when(inquiryDao.findPartiesById(INQUIRY_ID))
+                .thenReturn(Optional.of(new InquiryParties(BUYER_ID, SELLER_ID)));
+
+        // 2. Exercise
+        final Optional<Long> result = inquiryService.findSaleToResume(INQUIRY_ID, BUYER_ID);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testFindSaleToResumeWhenInquiryDoesNotExistReturnsEmpty() {
+        // 1. Arrange
+        Mockito.when(inquiryDao.findPartiesById(INQUIRY_ID)).thenReturn(Optional.empty());
+
+        // 2. Exercise
+        final Optional<Long> result = inquiryService.findSaleToResume(INQUIRY_ID, SELLER_ID);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
     public void testFindReceivedGroupedByPostWhenSecondPageOfSevenGroupsReturnsGroupedPage() {
         // 1. Arrange
         final List<InquirySummary> rows = List.of(
                 summary(3, 20, InquiryStatus.PENDING),
                 summary(2, 20, InquiryStatus.REJECTED),
                 summary(1, 10, InquiryStatus.ACCEPTED));
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(7);
-        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, 5, 5)).thenReturn(rows);
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(7);
+        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, ALL_STATUSES, 5, 5)).thenReturn(rows);
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, 2);
+        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 2);
 
         // 3. Assert
         Assertions.assertEquals(2, result.getPageNumber());
@@ -1388,12 +1455,12 @@ public class InquiryServiceImplTest {
     @Test
     public void testFindReceivedGroupedByPostWhenInquiryIsPendingReturnsCityAndProvinceOnly() {
         // 1. Arrange
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(1);
-        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, 5, 0))
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(1);
+        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, ALL_STATUSES, 5, 0))
                 .thenReturn(List.of(summary(3, 20, InquiryStatus.PENDING).withAddress(address())));
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, 1);
+        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 1);
 
         // 3. Assert
         final Address shown = result.getGroups().get(0).getInquiries().get(0).getAddress();
@@ -1405,14 +1472,46 @@ public class InquiryServiceImplTest {
     }
 
     @Test
+    public void testFindReceivedGroupedByPostWhenFilteringPendingReturnsPendingWithCityAndProvinceOnly() {
+        // 1. Arrange
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, List.of(InquiryStatus.PENDING))).thenReturn(1);
+        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, List.of(InquiryStatus.PENDING), 5, 0))
+                .thenReturn(List.of(summary(3, 20, InquiryStatus.PENDING).withAddress(address())));
+
+        // 2. Exercise
+        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, InquiryStatusFilter.PENDING, 1);
+
+        // 3. Assert
+        final InquirySummary shown = result.getGroups().get(0).getInquiries().get(0);
+        Assertions.assertEquals(3, shown.getId());
+        Assertions.assertTrue(shown.getAddress().isCityAndProvinceOnly());
+    }
+
+    @Test
+    public void testFindSentGroupedByPostWhenFilteringClosedReturnsRejectedAndCancelledPage() {
+        // 1. Arrange
+        final List<InquiryStatus> closed = List.of(InquiryStatus.REJECTED, InquiryStatus.CANCELLED);
+        Mockito.when(inquiryDao.countGroupsByBuyerId(BUYER_ID, closed)).thenReturn(1);
+        Mockito.when(inquiryDao.findByBuyerId(BUYER_ID, closed, 5, 0))
+                .thenReturn(List.of(summary(4, 20, InquiryStatus.REJECTED)));
+
+        // 2. Exercise
+        final InquiryPage result = inquiryService.findSentGroupedByPost(BUYER_ID, InquiryStatusFilter.CLOSED, 1);
+
+        // 3. Assert
+        Assertions.assertEquals(1, result.getGroups().size());
+        Assertions.assertEquals(InquiryStatus.REJECTED, result.getGroups().get(0).getInquiries().get(0).getStatus());
+    }
+
+    @Test
     public void testFindReceivedGroupedByPostWhenInquiryIsAcceptedReturnsFullAddress() {
         // 1. Arrange
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(1);
-        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, 5, 0))
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(1);
+        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, ALL_STATUSES, 5, 0))
                 .thenReturn(List.of(summary(3, 20, InquiryStatus.ACCEPTED).withAddress(address())));
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, 1);
+        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 1);
 
         // 3. Assert
         final Address shown = result.getGroups().get(0).getInquiries().get(0).getAddress();
@@ -1423,12 +1522,12 @@ public class InquiryServiceImplTest {
     @Test
     public void testFindReceivedGroupedByPostWhenInquiryAwaitsPaymentReturnsFullAddress() {
         // 1. Arrange
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(1);
-        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, 5, 0))
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(1);
+        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, ALL_STATUSES, 5, 0))
                 .thenReturn(List.of(summary(3, 20, InquiryStatus.AWAITING_PAYMENT).withAddress(address())));
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, 1);
+        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 1);
 
         // 3. Assert
         Assertions.assertEquals("Av. Madero", result.getGroups().get(0).getInquiries().get(0).getAddress().getStreet());
@@ -1437,12 +1536,12 @@ public class InquiryServiceImplTest {
     @Test
     public void testFindReceivedGroupedByPostWhenSaleWasCancelledReturnsCityAndProvinceOnly() {
         // 1. Arrange
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(1);
-        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, 5, 0))
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(1);
+        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, ALL_STATUSES, 5, 0))
                 .thenReturn(List.of(summary(3, 20, InquiryStatus.CANCELLED).withAddress(address())));
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, 1);
+        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 1);
 
         // 3. Assert
         Assertions.assertTrue(result.getGroups().get(0).getInquiries().get(0).getAddress().isCityAndProvinceOnly());
@@ -1451,10 +1550,10 @@ public class InquiryServiceImplTest {
     @Test
     public void testFindReceivedGroupedByPostWhenPageIsPastTheLastOneReturnsPageNotFoundException() {
         // 1. Arrange
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(7);
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(7);
 
         // 2. Exercise
-        final Executable findPage = () -> inquiryService.findReceivedGroupedByPost(SELLER_ID, 3);
+        final Executable findPage = () -> inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 3);
 
         // 3. Assert
         Assertions.assertThrows(PageNotFoundException.class, findPage);
@@ -1463,10 +1562,10 @@ public class InquiryServiceImplTest {
     @Test
     public void testFindReceivedGroupedByPostWhenPageIsBelowOneReturnsPageNotFoundException() {
         // 1. Arrange
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(7);
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(7);
 
         // 2. Exercise
-        final Executable findPage = () -> inquiryService.findReceivedGroupedByPost(SELLER_ID, 0);
+        final Executable findPage = () -> inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 0);
 
         // 3. Assert
         Assertions.assertThrows(PageNotFoundException.class, findPage);
@@ -1475,11 +1574,11 @@ public class InquiryServiceImplTest {
     @Test
     public void testFindReceivedGroupedByPostWhenSellerHasNoInquiriesReturnsEmptyFirstPage() {
         // 1. Arrange
-        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID)).thenReturn(0);
-        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, 5, 0)).thenReturn(List.of());
+        Mockito.when(inquiryDao.countGroupsBySellerId(SELLER_ID, ALL_STATUSES)).thenReturn(0);
+        Mockito.when(inquiryDao.findBySellerId(SELLER_ID, ALL_STATUSES, 5, 0)).thenReturn(List.of());
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, 1);
+        final InquiryPage result = inquiryService.findReceivedGroupedByPost(SELLER_ID, null, 1);
 
         // 3. Assert
         Assertions.assertTrue(result.getGroups().isEmpty());
@@ -1493,11 +1592,11 @@ public class InquiryServiceImplTest {
         final List<InquirySummary> rows = List.of(
                 summary(5, 30, InquiryStatus.PENDING),
                 summary(6, 30, InquiryStatus.PENDING));
-        Mockito.when(inquiryDao.countGroupsByBuyerId(BUYER_ID)).thenReturn(1);
-        Mockito.when(inquiryDao.findByBuyerId(BUYER_ID, 5, 0)).thenReturn(rows);
+        Mockito.when(inquiryDao.countGroupsByBuyerId(BUYER_ID, ALL_STATUSES)).thenReturn(1);
+        Mockito.when(inquiryDao.findByBuyerId(BUYER_ID, ALL_STATUSES, 5, 0)).thenReturn(rows);
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findSentGroupedByPost(BUYER_ID, 1);
+        final InquiryPage result = inquiryService.findSentGroupedByPost(BUYER_ID, null, 1);
 
         // 3. Assert
         Assertions.assertEquals(1, result.getGroups().size());
@@ -1513,15 +1612,15 @@ public class InquiryServiceImplTest {
         // Mismo titulo, artista y vendedor pero otro album (distinto anio): son dos vinilos.
         final InquirySummary original = new InquirySummary(INQUIRY_ID, null, 1L, BUYER_ID, SELLER_ID,
                 BUYER_USERNAME, null, null, "seller", PaymentInfo.NONE, "Versus", "IKV", null, null, null,
-                InquiryStatus.REJECTED, null, null, false);
+                InquiryStatus.REJECTED, null, null, false, null, null);
         final InquirySummary reissue = new InquirySummary(10L, null, 2L, BUYER_ID, SELLER_ID,
                 BUYER_USERNAME, null, null, "seller", PaymentInfo.NONE, "Versus", "IKV", null, null, null,
-                InquiryStatus.REJECTED, null, null, false);
-        Mockito.when(inquiryDao.countGroupsByBuyerId(BUYER_ID)).thenReturn(2);
-        Mockito.when(inquiryDao.findByBuyerId(BUYER_ID, 5, 0)).thenReturn(List.of(original, reissue));
+                InquiryStatus.REJECTED, null, null, false, null, null);
+        Mockito.when(inquiryDao.countGroupsByBuyerId(BUYER_ID, ALL_STATUSES)).thenReturn(2);
+        Mockito.when(inquiryDao.findByBuyerId(BUYER_ID, ALL_STATUSES, 5, 0)).thenReturn(List.of(original, reissue));
 
         // 2. Exercise
-        final InquiryPage result = inquiryService.findSentGroupedByPost(BUYER_ID, 1);
+        final InquiryPage result = inquiryService.findSentGroupedByPost(BUYER_ID, null, 1);
 
         // 3. Assert
         Assertions.assertEquals(2, result.getGroups().size());
@@ -1548,7 +1647,7 @@ public class InquiryServiceImplTest {
     }
 
     private static Review review(final long authorId, final long subjectId, final int rating) {
-        return new Review(1, INQUIRY_ID, authorId, subjectId, "reviewer", rating, null, true,
+        return new Review(1, INQUIRY_ID, authorId, subjectId, "reviewer", null, rating, null, true,
                 LocalDateTime.of(2026, 3, 12, 10, 0));
     }
 
@@ -1556,7 +1655,7 @@ public class InquiryServiceImplTest {
                                        final String sellerCbu, final String sellerAlias) {
         return new InquirySummary(INQUIRY_ID, POST_ID, 3L, BUYER_ID, SELLER_ID, BUYER_USERNAME, BUYER_EMAIL,
                 "en", "seller", new PaymentInfo(sellerCbu, sellerAlias), "Versus", "IKV", null, 45000, null, status,
-                PostStatus.RESERVED, null, hasReceipt);
+                PostStatus.RESERVED, null, hasReceipt, null, null);
     }
 
     private void stubSale(final InquiryStatus status, final boolean hasReceipt) {
@@ -1597,13 +1696,13 @@ public class InquiryServiceImplTest {
     private static InquirySummary pendingOnAvailablePost() {
         return new InquirySummary(INQUIRY_ID, POST_ID, 3L, BUYER_ID, SELLER_ID, BUYER_USERNAME, BUYER_EMAIL,
                 "en", "seller", PaymentInfo.NONE, "Versus", "IKV", null, 45000, null, InquiryStatus.PENDING,
-                PostStatus.AVAILABLE, null, false);
+                PostStatus.AVAILABLE, null, false, null, null);
     }
 
     private static InquirySummary summary(final long inquiryId, final long postId, final InquiryStatus status) {
         return new InquirySummary(inquiryId, postId, 1L, BUYER_ID, SELLER_ID, BUYER_USERNAME, null, null,
                 "seller", PaymentInfo.NONE, "Versus", "IKV", null, null, null, status, PostStatus.AVAILABLE, null,
-                false);
+                false, null, null);
     }
 
     private static User seller(final String alias) {

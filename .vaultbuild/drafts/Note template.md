@@ -23,6 +23,25 @@ El problema y quién lo usa.
 
 1. Request, controller, service, DAO, vista, efectos secundarios.
 
+Al final de la sección, siempre, el diagrama del flujo (obligatorio en toda nota de flujo):
+
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant C as NombreController
+    participant S as NombreServiceImpl
+    participant D as NombreJdbcDao
+    B->>C: POST /ruta
+    C->>S: operacion(...)
+    alt regla de negocio rota
+        S-->>C: NombreException
+        C-->>B: error
+    end
+    S->>D: UPDATE ... con guarda
+    S-)S: afterCommit: correo o log
+    C-->>B: 302 /destino
+```
+
 ## Datos
 
 Tablas y columnas que toca. Ver [[Database schema]].

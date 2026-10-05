@@ -3,7 +3,7 @@
 @files: persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java, persistence/src/test/resources/populator.sql, persistence/src/test/java/ar/edu/itba/paw/persistence/CartItemJdbcDaoTest.java, services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java, services/src/test/java/ar/edu/itba/paw/services/InMemoryImageService.java
 
 > [!summary] En una frase
-> Hay 504 casos de test en dos módulos: los DAO se prueban contra una base HSQLDB en memoria con las migraciones reales, y los services con sus dependencias simuladas; nada prueba controllers, vistas, seguridad ni la ruta de PostgreSQL.
+> Hay 550 casos de test en dos módulos: los DAO se prueban contra una base HSQLDB en memoria con las migraciones reales, y los services con sus dependencias simuladas; nada prueba controllers, vistas, seguridad ni la ruta de PostgreSQL.
 
 ## Herramientas
 
@@ -21,27 +21,29 @@
 
 | Módulo | Clases | Casos | Cómo corren |
 |---|---|---|---|
-| `persistence` | 13 | 235 | Contexto de Spring + HSQLDB + migraciones + `populator.sql` |
-| `services` | 12 | 269 | Mockito, sin Spring ni base |
+| `persistence` | 13 | 257 | Contexto de Spring + HSQLDB + migraciones + `populator.sql` |
+| `services` | 15 | 293 | Mockito, sin Spring ni base |
 | `webapp`, `models` | 0 | 0 | Regla del proyecto: no llevan tests |
 
 | Tests de persistence | Casos | | Tests de services | Casos |
 |---|---|---|---|---|
-| [[PostJdbcDaoTest]] | 65 | | [[InquiryServiceImplTest]] | 86 |
-| [[InquiryJdbcDaoTest]] | 41 | | [[PostServiceImplTest]] | 52 |
+| [[PostJdbcDaoTest]] | 69 | | [[InquiryServiceImplTest]] | 92 |
+| [[InquiryJdbcDaoTest]] | 54 | | [[PostServiceImplTest]] | 60 |
 | [[ImageJdbcDaoTest]] | 27 | | [[UserServiceImplTest]] | 44 |
-| [[UserJdbcDaoTest]] | 27 | | [[CartServiceImplTest]] | 21 |
-| [[ReviewJdbcDaoTest]] | 14 | | [[EmailServiceImplTest]] | 17 |
-| [[CartItemJdbcDaoTest]] | 12 | | [[AddressServiceImplTest]] | 10 |
-| [[ArtistJdbcDaoTest]] | 11 | | [[ReviewServiceImplTest]] | 8 |
+| [[UserJdbcDaoTest]] | 27 | | [[CartServiceImplTest]] | 22 |
+| [[ReviewJdbcDaoTest]] | 19 | | [[EmailServiceImplTest]] | 17 |
+| [[CartItemJdbcDaoTest]] | 12 | | [[ReviewServiceImplTest]] | 12 |
+| [[ArtistJdbcDaoTest]] | 11 | | [[AddressServiceImplTest]] | 10 |
 | [[AlbumJdbcDaoTest]] | 10 | | [[PaginationTest]] | 8 |
 | [[PasswordResetTokenJdbcDaoTest]] | 9 | | [[ImageServiceImplTest]] | 7 |
 | [[AddressJdbcDaoTest]] | 6 | | [[ArtistServiceImplTest]] | 6 |
 | [[EmailVerificationTokenJdbcDaoTest]] | 6 | | [[ContactRulesTest]] | 6 |
 | [[PostImageJdbcDaoTest]] | 4 | | [[AlbumServiceImplTest]] | 3 |
-| [[MessageJdbcDaoTest]] | 3 | | [[PublicProfileServiceImplTest]] | 1 |
+| [[MessageJdbcDaoTest]] | 3 | | [[InquiryStatusFilterTest]] | 3 |
+| | | | [[ReceiptTest]] | 2 |
+| | | | [[PublicProfileServiceImplTest]] | 1 |
 
-Los casos se contaron por ocurrencias de `@Test` en `8929aea`. No se ejecutaron en esta revisión.
+Los casos se contaron por ocurrencias de `@Test` en `c3e2a4c`; desde `8929aea` se sumaron 46 (22 en persistence, 24 en services), entre ellos [[ReceiptTest]], [[InquiryStatusFilterTest]], los de autorización del service de publicaciones y los de los filtros por estado. No se ejecutaron en esta revisión.
 
 ## Cómo funciona un test de DAO
 
@@ -69,7 +71,7 @@ Los casos se contaron por ocurrencias de `@Test` en `8929aea`. No se ejecutaron 
 | Prohibido `Mockito.verify` y `Mockito.spy` | Se verifica el resultado o el estado, no que se haya llamado a un método. Un test que verifica llamadas se rompe con cualquier refactor aunque el comportamiento no cambie |
 | Un service que solo delega al DAO no se testea | No hay lógica que probar |
 
-En `8929aea` no hay ningún uso de `verify` ni `spy`. Dos tests de DAO hacen un `INSERT` directo: prueban que el `CHECK` de la migración rechaza un valor que el enum de Java impediría mandar.
+En `c3e2a4c` no hay ningún uso de `verify` ni `spy`, y todos los nombres siguen la convención: el commit `1900a542` renombró 38 que describían el resultado con otro verbo (`Throws...`, `Builds...`, `Preserves...`) en lugar de `Returns...`. Dos tests de DAO hacen un `INSERT` directo: prueban que el `CHECK` de la migración rechaza un valor que el enum de Java impediría mandar.
 
 ## Qué prueba y qué no
 
@@ -112,4 +114,4 @@ No. Corren en otro motor y no cubren la capa web. Por eso la aplicación se leva
 
 ### Test de service
 
-{{code:services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java:62-92}}
+{{code:services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java:62-107}}

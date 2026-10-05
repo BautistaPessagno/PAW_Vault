@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java", "models/src/main/java/ar/edu/itba/paw/models/PostDetail.java", "webapp/src/main/webapp/js/confirm-action.js"]
 ---
@@ -17,13 +17,14 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishControl
 
 ## Qué resuelve
 
-`GET` y `POST /post/{id}/edit` y `POST /post/{id}/delete`. Con el PR #46 un administrador también modera publicaciones ajenas, en reemplazo del panel `/admin` eliminado.
+`GET` y `POST /post/{id}/edit` y `POST /post/{id}/delete`. Con el PR #46 un administrador también modera publicaciones ajenas, en reemplazo del panel `/admin` eliminado. Desde el PR #51 el service vuelve a chequear quién actúa: ya no depende solo del `@PreAuthorize`.
 
 ## Herramientas
 
 | Herramienta | Para qué se usa acá |
 |---|---|
-| `@PreAuthorize` con `hasRole('ADMIN') or @postAccess.isPublisher(...)` | Quién puede editar o eliminar |
+| `@PreAuthorize` con `hasRole('ADMIN') or @postAccess.isPublisher(...)` | Quién puede editar o eliminar, en la capa web |
+| `requireEditable(post, actorId)` en [[PostServiceImpl]] | La misma regla en el service: publicante o rol `ADMIN`, si no `ForbiddenOperationException` (403) |
 | `SELECT ... FOR UPDATE` | Que la edición o el borrado no se crucen con una consulta o una venta |
 | `ON DELETE CASCADE` en `post_images` | Las filas de la galería se van con el post |
 | `UPDATE` de desenganche | Conservar las consultas de un post eliminado |
@@ -34,21 +35,22 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishControl
 
 ### Editar
 
-1. `GET /post/{id}/edit`: `VERIFIED` por URL y `CAN_MODERATE_POST` por recurso. `findEditableById` exige `AVAILABLE`; si no, 409. El formulario se precarga con los datos actuales; la vista recibe las fotos propias y la portada de respaldo del álbum.
-2. `POST /post/{id}/edit` → `PostServiceImpl.update`:
-   - Reglas numéricas.
-   - `findByIdForUpdate` bloquea el post y exige `AVAILABLE`.
-   - Las fotos a quitar (`removedImageIds`) tienen que ser fotos propias de ese post; si no, `InvalidImageException`.
+1. `GET /post/{id}/edit`: `VERIFIED` por URL y `CAN_MODERATE_POST` por recurso. `findEditableById(postId, actorId)` pasa por `requireEditable`: si quien actúa no es el publicante, busca la Cuenta y exige rol `ADMIN` (si no, 403); después exige `AVAILABLE` (si no, 409). El formulario se precarga con los datos actuales; la vista recibe las fotos propias y la portada de respaldo del álbum.
+2. `POST /post/{id}/edit` → `PostServiceImpl.update(postId, actorId, ...)`:
+   - `findByIdForUpdate` bloquea el post y `requireEditable` exige publicante o `ADMIN` y post `AVAILABLE`. La autorización va **antes** que las reglas numéricas: alguien sin permiso recibe 403 aunque mande datos inválidos.
+   - Reglas numéricas de [[VinylInputRules]]. Si un POST armado a mano las saltea, `InvalidPostDataException`, que desde el PR #62 [[ErrorResponseAdvice]] responde con 400.
+   - Las fotos a quitar (`removedImageIds`, las que se marcaron con la X de cada foto: [[Gallery flow]]) tienen que ser fotos propias de ese post; si no, `InvalidImageException`.
    - El tope de 5 cuenta las que se conservan más las nuevas. El validador del formulario no puede saberlo; por eso lo informa el service y el controller lo muestra en el campo.
    - `resolveForEdit` de artista y álbum: busca o crea por identidad y, si el nombre visible o el género difieren, **actualiza el registro compartido**.
    - Crea las fotos nuevas, actualiza el post (con `image_id` si cambió la galería), reemplaza `post_images` y borra las imágenes retiradas.
+   - Loguea `Updated post postId=... actorId=... galleryChanged=...` (PR #62), todavía dentro de la transacción ([[Logging]]).
 3. Éxito: aviso `postUpdated` y redirección a la ficha.
 
 ### Eliminar
 
 `POST /post/{id}/delete` → `PostServiceImpl.delete`:
 
-1. Bloquea el post y exige `AVAILABLE`.
+1. Bloquea el post y pasa por `requireEditable` (publicante o `ADMIN`, y `AVAILABLE`).
 2. Lee los ids de sus fotos propias.
 3. `inquiryDao.detachFromPost`: en un `UPDATE`, cada consulta copia `album_id` y `seller_id` del post, pone `post_id = NULL` y, si estaba `PENDING`, pasa a `REJECTED`.
 4. Borra el post. Las filas de `post_images` se van por `ON DELETE CASCADE`.
@@ -56,6 +58,42 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishControl
 6. Loguea cuántas consultas desenganchó y cuántas imágenes borró.
 
 El controller redirige a `/profile#posts`, o a `/` si quien eliminó es administrador.
+
+```mermaid
+sequenceDiagram
+    participant V as Publicante o admin
+    participant C as PublishController
+    participant S as PostServiceImpl
+    participant P as PostDao
+    participant Q as InquiryDao
+    participant I as ImageService
+    V->>C: POST /post/42/edit
+    C->>S: update(42, actorId, ..., covers, removedImageIds)
+    S->>P: findByIdForUpdate
+    alt no es el publicante ni ADMIN
+        S-->>C: ForbiddenOperationException (403)
+    else post no AVAILABLE
+        S-->>C: PostUnavailableException (409)
+    end
+    S->>S: removidas ⊆ fotos propias, tope de 5
+    S->>S: resolveForEdit de artista y álbum
+    alt la galería cambió
+        S->>I: create (fotos nuevas)
+        S->>P: updateWithImage (nueva principal)
+        S->>I: replaceGallery, delete (retiradas)
+    else sin cambios de fotos
+        S->>P: update
+    end
+    S->>S: LOGGER.info Updated post
+    C-->>V: 302 /post/42
+    V->>C: POST /post/42/delete
+    C->>S: delete(42, actorId)
+    S->>P: findByIdForUpdate, requireEditable
+    S->>Q: detachFromPost (PENDING→REJECTED, post_id = NULL)
+    S->>P: delete (post_images por ON DELETE CASCADE)
+    S->>I: delete de cada foto propia
+    C-->>V: 302 /profile#35;posts (o / si es admin)
+```
 
 ## Decisiones y por qué
 
@@ -66,7 +104,7 @@ El controller redirige a `/profile#posts`, o a `/` si quien eliminó es administ
 | Desenganchar antes de borrar | Borrar primero | Hay FK de `inquiries.post_id` a `posts` | Orden en `delete` |
 | Borrar imágenes después del post | Antes | Las referencias tienen que desaparecer primero | Comentario en [[PostServiceImpl]] |
 | La portada del álbum no se borra | Borrarla con el post | "Es del álbum y queda" | Comentario en [[PostServiceImpl]] |
-| Pertenencia en `@PreAuthorize`, estado en el service | Las dos cosas en el service | Regla por capa del PR #43 y #46 | Comentario en [[PostService]] |
+| Pertenencia en `@PreAuthorize` **y** en el service | Solo en el controller, como hasta `8929aea` | El service no confía en que todo llamador pase por el controller; es el mismo criterio que ya seguían la venta y la libreta | Comentarios en [[PostService]] y [[SecurityConfig]]; commit `563f7020` |
 | El administrador modera desde la ficha | Panel `/admin` | El panel estaba vacío; se quitó | Commits `60480b55`, `e462c468` |
 | Un post inexistente pasa el handler | Devolver `false` | Que el service responda 404 y no un 403 engañoso | Comentario en [[PostAccessHandler]] |
 
@@ -80,7 +118,7 @@ El controller redirige a `/profile#posts`, o a `/` si quien eliminó es administ
 ## Límites conocidos
 
 - **Editar reescribe datos compartidos.** `resolveForEdit` cambia el nombre visible del artista y el título o género del álbum, que también usan publicaciones de otras Cuentas.
-- **La pertenencia no se vuelve a chequear en el service** (ver [[Security and authorization]]).
+- El rol `ADMIN` se lee de la base en cada edición ajena (`userService.findById`), no del principal de la sesión. Es una lectura extra; a cambio, si se le quita el rol, el service deja de aceptarlo aunque su sesión todavía lo tenga (inferencia a partir del código).
 - Eliminar rechaza las consultas pendientes **sin correo** a esos compradores.
 - No hay historial de cambios de una publicación.
 
@@ -95,6 +133,9 @@ Porque hay una venta en curso con un precio y un ejemplar pactados. Solo se toca
 **¿Cómo modera un administrador?**
 La misma expresión de `@PreAuthorize` lo deja pasar por rol; la ficha le muestra los botones (`PostDetail.isEditable`).
 
+**Si el controller ya tiene `@PreAuthorize`, ¿para qué chequea el service?**
+Para que la regla no dependa de cómo se llegue al service. `update`, `delete` y `findEditableById` reciben el id de quien actúa y lo comparan con el publicante, o buscan si es `ADMIN`. Lo cubren ocho tests nuevos de [[PostServiceImplTest]].
+
 **¿Qué diferencia hay entre 403, 404 y 409 acá?**
 403 si no es tuya ni sos administrador; 404 si no existe; 409 si existe y es tuya pero ya no está disponible.
 
@@ -102,7 +143,7 @@ La misma expresión de `@PreAuthorize` lo deja pasar por rol; la ficha le muestr
 
 Expresión de moderación y endpoint de borrado:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 38–40.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 38–40.
 
 ```java
     // Editar y eliminar: el Publicante o un administrador. Que el post siga a la venta lo exige el service.
@@ -110,7 +151,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
             "hasRole('ADMIN') or @postAccess.isPublisher(authentication, #postId)";
 ```
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 115–154.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 116–156.
 
 ```java
     /*
@@ -120,15 +161,16 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
     @PreAuthorize(CAN_MODERATE_POST)
     @RequestMapping(value = "/post/{postId:[0-9]+}/edit", method = RequestMethod.POST)
     public ModelAndView edit(@PathVariable("postId") final long postId,
+                             @AuthenticationPrincipal final AuthenticatedUser currentUser,
                              @Valid @ModelAttribute("publishForm") final PublishForm form,
                              final BindingResult bindingResult,
                              final RedirectAttributes redirectAttributes) throws IOException {
         if (bindingResult.hasErrors()) {
-            return editView(postId);
+            return editView(postId, currentUser.getId());
         }
 
         try {
-            postService.update(postId, form.getTitle(), form.getArtistName(),
+            postService.update(postId, currentUser.getId(), form.getTitle(), form.getArtistName(),
                     form.getReleaseYear(), form.getGenre(), form.getPrice(), form.getDescription(),
                     form.getCondition(), form.getPressingYear(), form.getZone(),
                     form.toImageUploads(), form.getRemovedImageIds());
@@ -141,7 +183,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
         } catch (final ConcurrentPublishException e) {
             bindingResult.reject("publish.concurrent");
         }
-        return editView(postId);
+        return editView(postId, currentUser.getId());
     }
 
     @PreAuthorize(CAN_MODERATE_POST)
@@ -149,7 +191,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
     public ModelAndView delete(@PathVariable("postId") final long postId,
                                @AuthenticationPrincipal final AuthenticatedUser currentUser,
                                final RedirectAttributes redirectAttributes) {
-        postService.delete(postId);
+        postService.delete(postId, currentUser.getId());
         redirectAttributes.addFlashAttribute("postDeleted", true);
         return new ModelAndView(currentUser.isAdmin() ? "redirect:/" : "redirect:/profile#posts");
     }
@@ -157,18 +199,18 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 Edición:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 270–316.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 283–330.
 
 ```java
     @Override
     @Transactional
-    public PostSummary update(final long postId, final String title,
+    public PostSummary update(final long postId, final long actorId, final String title,
                               final String artistName, final int releaseYear, final Genre genre, final int price,
                               final String description, final Condition condition, final Integer pressingYear,
                               final String zone, final List<ImageUpload> images,
                               final List<Long> removedImageIds) {
+        requireEditable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new), actorId);
         requireValidPostData(releaseYear, price, pressingYear);
-        requireAvailable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new));
         final List<Long> oldImageIds = findUploadedImageIds(postId);
         final Set<Long> removed = removedImageIds == null ? Set.of() : new HashSet<>(removedImageIds);
         if (!oldImageIds.containsAll(removed)) {
@@ -200,6 +242,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
                     imageService.delete(removedId);
                 }
             }
+            LOGGER.info("Updated post postId={} actorId={} galleryChanged={}", postId, actorId, galleryChanged);
             return postDao.findById(postId).orElseThrow(PostNotFoundException::new);
         } catch (final DuplicatePostKeyException e) {
             throw new DuplicatePostException();
@@ -211,7 +254,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
 
 Borrado:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 318–338.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 332–352.
 
 ```java
     // Solo se elimina lo que todavia esta a la venta: un ejemplar vendido es el registro de
@@ -220,8 +263,8 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
     // publicacion se va con ella; la portada del album es del album y queda.
     @Override
     @Transactional
-    public int delete(final long postId) {
-        requireAvailable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new));
+    public int delete(final long postId, final long actorId) {
+        requireEditable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new), actorId);
         final List<Long> uploadedImageIds = findUploadedImageIds(postId);
         final int detached = inquiryDao.detachFromPost(postId);
         if (!postDao.delete(postId)) {
@@ -239,7 +282,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
 
 Desenganche de consultas:
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>), líneas 362–372.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>), líneas 415–425.
 
 ```java
     // Antes de borrar la publicacion, cada consulta se queda con su album y su vendedor y
@@ -257,7 +300,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 Handler de pertenencia:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java>), líneas 6–23.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java>), líneas 6–23.
 
 ```java
 // Regla de @PreAuthorize para editar y eliminar una publicacion; el administrador entra por su rol
@@ -282,7 +325,7 @@ public final class PostAccessHandler {
 
 Reescritura de datos compartidos:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java>), líneas 31–42.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java>), líneas 31–42.
 
 ```java
     @Override
@@ -313,4 +356,4 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Alb
 - [models/src/main/java/ar/edu/itba/paw/models/PostDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostDetail.java>) · [[PostDetail]]
 - [webapp/src/main/webapp/js/confirm-action.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/confirm-action.js>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

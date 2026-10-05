@@ -4,23 +4,23 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/PostService.java"]
 ---
 
 # PostService
 
-Contrato de publicaciones: ficha, búsqueda paginada, sugerencias, listados por publicante, alta, edición y borrado, más las operaciones internas de la venta (`lockById`, `lockByIds`, `reserve`, `release`, `markSold`) que exigen una transacción abierta.
+Contrato de publicaciones: ficha, búsqueda paginada, sugerencias, listados por publicante (el privado con filtro opcional por [[PostStatus]] y sus conteos), alta, edición y borrado (estas dos reciben quién actúa), más las operaciones internas de la venta (`lockById`, `lockByIds`, `reserve`, `release`, `markSold`) que exigen una transacción abierta.
 
 ## Guía de lectura
 
-Operaciones para localizar en la fuente: `findById`, `lockById`, `lockByIds`, `reserve`, `release`, `markSold`, `findDetail`, `findPublisherId`, `findEditableById`, `findUploadedImageIds`, `findAlbumCoverImageId`, `search`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `publish`, `update`, `delete`.
+Operaciones para localizar en la fuente: `findById`, `lockById`, `lockByIds`, `reserve`, `release`, `markSold`, `findDetail`, `findPublisherId`, `findEditableById`, `findUploadedImageIds`, `findAlbumCoverImageId`, `search`, `findSearchSuggestions`, `findByPublisherId`, `countByStatusForPublisher`, `findAvailableByPublisherId`, `publish`, `update`, `delete`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Condition]], [[Genre]], [[ImageUpload]], [[Post]], [[PostDetail]], [[PostPage]], [[PostSearchCriteria]], [[PostSummary]], [[SearchResult]], [[SearchSuggestion]].
+Referencias estáticas a tipos del proyecto: [[Condition]], [[FilterCounts]], [[Genre]], [[ImageUpload]], [[Post]], [[PostDetail]], [[PostPage]], [[PostSearchCriteria]], [[PostStatus]], [[PostSummary]], [[SearchResult]], [[SearchSuggestion]].
 
 Referenciado por: [[CartServiceImpl]], [[CartServiceImplTest]], [[InquiryServiceImpl]], [[InquiryServiceImplTest]], [[LandingController]], [[PostAccessHandler]], [[PostServiceImpl]], [[ProfileController]], [[PublicProfileServiceImpl]], [[PublicProfileServiceImplTest]], [[PublishController]], [[SearchSuggestionController]], [[SecurityConfig]].
 
@@ -28,18 +28,20 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/PostService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostService.java>), líneas 1–79.
+Fuente exacta en `c3e2a4c`: [services-contracts/src/main/java/ar/edu/itba/paw/services/PostService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/PostService.java>), líneas 1–85.
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Condition;
+import ar.edu.itba.paw.models.FilterCounts;
 import ar.edu.itba.paw.models.Genre;
 import ar.edu.itba.paw.models.ImageUpload;
 import ar.edu.itba.paw.models.Post;
 import ar.edu.itba.paw.models.PostDetail;
 import ar.edu.itba.paw.models.PostPage;
 import ar.edu.itba.paw.models.PostSearchCriteria;
+import ar.edu.itba.paw.models.PostStatus;
 import ar.edu.itba.paw.models.PostSummary;
 import ar.edu.itba.paw.models.SearchResult;
 import ar.edu.itba.paw.models.SearchSuggestion;
@@ -80,10 +82,10 @@ public interface PostService {
 
     /*
      * Editar y eliminar: quien puede hacerlo (el Publicante o un moderador) lo decide
-     * @postAccess en la capa web. El service exige que el post siga a la venta y lanza
-     * PostUnavailableException si no.
+     * @postAccess en la capa web y el service con actorId. El service comprueba pertenencia
+     * o rol ADMIN antes de exigir que el post siga a la venta.
      */
-    PostSummary findEditableById(long postId);
+    PostSummary findEditableById(long postId, long actorId);
 
     // Imagenes propias del post, para mostrar controles de retiro durante la edicion.
     List<Long> findUploadedImageIds(long postId);
@@ -94,7 +96,11 @@ public interface PostService {
 
     List<SearchSuggestion> findSearchSuggestions(String query);
 
-    PostPage findByPublisherId(long publisherId, int pageNumber);
+    // status null trae los Posts en cualquier estado.
+    PostPage findByPublisherId(long publisherId, PostStatus status, int pageNumber);
+
+    // Los numeros de los chips de filtro de "Mis publicaciones".
+    FilterCounts<PostStatus> countByStatusForPublisher(long publisherId);
 
     PostPage findAvailableByPublisherId(long publisherId, int pageNumber);
 
@@ -102,12 +108,12 @@ public interface PostService {
                  Genre genre, int price, String description, Condition condition, Integer pressingYear,
                  String zone, List<ImageUpload> images);
 
-    PostSummary update(long postId, String title, String artistName, int releaseYear,
+    PostSummary update(long postId, long actorId, String title, String artistName, int releaseYear,
                        Genre genre, int price, String description, Condition condition, Integer pressingYear,
                        String zone, List<ImageUpload> images, List<Long> removedImageIds);
 
     // Devuelve cuantas consultas quedaron desenganchadas de la publicacion eliminada.
-    int delete(long postId);
+    int delete(long postId, long actorId);
 
 }
 ```

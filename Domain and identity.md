@@ -4,8 +4,8 @@ categories: ["Domain"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["CONTEXT.md", "models/src/main/java/ar/edu/itba/paw/models/User.java", "models/src/main/java/ar/edu/itba/paw/models/Album.java", "models/src/main/java/ar/edu/itba/paw/models/Post.java", "models/src/main/java/ar/edu/itba/paw/models/PostStatus.java", "models/src/main/java/ar/edu/itba/paw/models/Inquiry.java", "models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java", "models/src/main/java/ar/edu/itba/paw/models/Message.java", "models/src/main/java/ar/edu/itba/paw/models/Address.java", "models/src/main/java/ar/edu/itba/paw/models/Review.java", "models/src/main/java/ar/edu/itba/paw/models/CartItem.java", "models/src/main/java/ar/edu/itba/paw/models/PostSummary.java", "models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java"]
 ---
@@ -44,7 +44,7 @@ flowchart LR
 | Artista | [[Artist]] | El nombre normalizado | Se crea la primera vez que alguien publica un álbum suyo |
 | Álbum | [[Album]] | Artista, título normalizado y año | La obra, no una edición ni un ejemplar. La tapa no forma parte de la identidad |
 | Post | [[Post]] | Su id; además, una Cuenta no puede tener dos Posts del mismo Álbum | El ejemplar que alguien vende: precio, estado, descripción, año de prensado, zona, fotos |
-| Consulta | [[Inquiry]] | Su id; un comprador tiene a lo sumo una Consulta abierta por Post | Nace con comprador, dirección y precio congelado. La venta es una etapa suya, no otra entidad |
+| Consulta | [[Inquiry]] | Su id; un comprador tiene a lo sumo una Consulta abierta por Post | Nace con comprador y dirección; el precio de la venta se fija al aceptar (ADR 0004). La venta es una etapa suya, no otra entidad |
 | Mensaje | [[Message]] | Su id | Pertenece a una Consulta |
 | Comprobante | [[Receipt]] | La Consulta | Uno por Consulta; subir otro lo reemplaza |
 | Dirección | [[Address]] | Su id | No se edita ni se borra: se archiva y se crea otra |
@@ -108,7 +108,7 @@ Las proyecciones existen para evitar el N+1: un listado trae en una sola consult
 | Verificación separada del rol | Una Cuenta sin verificar tiene que poder iniciar sesión | `CONTEXT.md`, comentario de V6 |
 | Modelos inmutables con ids en vez de objetos | Regla de la etapa JDBC; las entidades con referencias llegan con JPA | `CLAUDE.md` del repo |
 | Un Post es un ejemplar único | No hay stock: reservar o vender afecta a la publicación entera | `docs/issues/selling-flow/02` |
-| Precio congelado en la Consulta | El monto a transferir no cambia si el vendedor edita el Post | Comentario de V5 |
+| Precio fijado en la Consulta al aceptar | El monto a transferir no cambia si el vendedor edita el Post después de aceptar; mientras la Consulta está pendiente, sigue el precio publicado | Comentario de V5; ADR 0004 |
 
 ## Preguntas de defensa
 
@@ -131,7 +131,7 @@ No por tipo de cuenta, sino por el papel de la Cuenta en cada Consulta.
 
 ### Estados de la consulta
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java>), líneas 1–18.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java>), líneas 1–18.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -156,7 +156,7 @@ public enum InquiryStatus {
 
 ### Estados de la publicación
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PostStatus.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostStatus.java>), líneas 1–7.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/PostStatus.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostStatus.java>), líneas 1–7.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -184,4 +184,4 @@ public enum PostStatus {
 - [models/src/main/java/ar/edu/itba/paw/models/PostSummary.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PostSummary.java>) · [[PostSummary]]
 - [models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java>) · [[InquiryDetail]]
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

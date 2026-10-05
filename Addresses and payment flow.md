@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/PaymentForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PaymentFormValidator.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/AddressForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/AddressAccessHandler.java", "services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/AddressService.java", "models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java", "models/src/main/java/ar/edu/itba/paw/models/PaymentInfo.java", "models/src/main/java/ar/edu/itba/paw/models/PaymentInfoRules.java", "models/src/main/java/ar/edu/itba/paw/models/Address.java", "models/src/main/java/ar/edu/itba/paw/models/Province.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/AddressJdbcDao.java", "persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql"]
 ---
@@ -17,7 +17,7 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileControl
 
 ## Qué resuelve
 
-Los dos datos que necesita una venta sin pasarela: a dónde transferir y a dónde enviar. PR #40 (perfil) y #44 (dirección en la consulta).
+Los dos datos que necesita una venta sin pasarela: a dónde transferir y a dónde enviar. PR #40 (perfil) y #44 (dirección en la consulta). El PR #55 agregó la vuelta a la venta cuando el vendedor llega al perfil desde "Aceptar".
 
 ## Herramientas
 
@@ -39,13 +39,52 @@ Los dos datos que necesita una venta sin pasarela: a dónde transferir y a dónd
    - CBU o CVU: 22 dígitos; dos bloques (8 y 14) cerrados cada uno por un dígito verificador calculado con pesos fijos.
    - Alias: de 6 a 20 caracteres, letras, números, punto y guion.
 3. `UserServiceImpl.updatePaymentInfo`:
-   - Normaliza (el CBU sin espacios) y vuelve a validar; si no cumple, `InvalidPaymentInfoException`.
+   - Normaliza (el CBU sin espacios) y vuelve a validar; si no cumple, `InvalidPaymentInfoException`, que [[ErrorResponseAdvice]] responde con 400 desde el PR #62. Solo pasa si el POST salteó [[PaymentForm]].
    - Si el resultado deja la Cuenta **sin** datos de cobro: bloquea la fila de la Cuenta y pregunta `hasOpenSalesBySellerId`. Con una venta abierta lanza `PaymentInfoRequiredException` y el controller muestra el error en el campo.
    - Actualiza `users.cbu` y `users.alias`.
+4. Controller: sin venta a la que volver, aviso `paymentUpdated` y `302 /profile#account`. Con `returnInquiryId` (ver abajo), vuelve a la venta.
 
 ### Dónde se exigen
 
-`InquiryServiceImpl.accept` lee los datos de cobro de la fila bloqueada de la Cuenta. Si no hay, `MissingPaymentInfoException` y el controller redirige a `/profile?missingPayment#account`, que abre esa fila precargada. Alcanza con uno de los dos (`PaymentInfo.isPresent`).
+`InquiryServiceImpl.accept` lee los datos de cobro de la fila bloqueada de la Cuenta. Alcanza con uno de los dos (`PaymentInfo.isPresent`). Si no hay, lanza `MissingPaymentInfoException` y [[InquiryController]] la atrapa en el propio endpoint: redirige a `/profile?missingPayment=&returnInquiryId={id}#account`.
+
+### Volver a la venta
+
+1. `GET /profile` recibe `returnInquiryId` como texto. `paymentReturnId` lo convierte y pregunta a `inquiryService.findSaleToResume(id, userId)`, que devuelve el id solo si la consulta existe y quien mira es su vendedor. Un valor mal formado o ajeno se descarta: el perfil abre igual, sin regreso.
+2. La vista lo manda de vuelta como campo oculto del formulario de cobro.
+3. `POST /profile/payment` repite la misma resolución. Si hay destino:
+   - Con errores de validación o `PaymentInfoRequiredException`, vuelve a dibujar el perfil conservando el destino.
+   - Si se guardó pero la Cuenta sigue sin datos (los dos campos vacíos), muestra el aviso `paymentMissing` y no redirige.
+   - Si quedaron datos, aviso flash `inquiry.sale.payment.updated` y `302 /inquiries/{id}#sale-actions`. La consulta sigue `PENDING`: el vendedor tiene que volver a tocar "Aceptar".
+
+```mermaid
+sequenceDiagram
+    participant V as Publicante
+    participant C as ProfileController
+    participant U as UserServiceImpl
+    participant Q as InquiryDao
+    participant D as UserDao
+    V->>C: POST /profile/payment (cbu, alias)
+    C->>C: PaymentFormValidator
+    C->>U: updatePaymentInfo
+    U->>U: normalizar y revalidar (InvalidPaymentInfoException, 400)
+    alt queda sin datos de cobro
+        U->>D: lockById (FOR UPDATE)
+        U->>Q: hasOpenSalesBySellerId
+        opt hay una venta abierta
+            U-->>C: PaymentInfoRequiredException
+            C-->>V: error en el campo
+        end
+    end
+    U->>D: updatePaymentInfo
+    alt llegó desde una venta (returnInquiryId válido)
+        C->>C: findSaleToResume (consulta propia como vendedor)
+        C-->>V: 302 /inquiries/42#35;sale-actions
+    else sin venta de origen
+        C-->>V: 302 /profile#35;account
+    end
+    Note over V,D: el origen es POST /inquiries/42/accept sin datos de cobro: MissingPaymentInfoException y 302 /profile?missingPayment=&returnInquiryId=42
+```
 
 ## Direcciones
 
@@ -76,6 +115,7 @@ Las columnas `users.cbu`, `users.alias`, la tabla `addresses` y `inquiries.addre
 | Bloquear la Cuenta al dar de alta | Contar y crear sin bloqueo | Dos altas simultáneas pasarían las dos el conteo | Comentario en [[AddressServiceImpl]] |
 | No se pueden vaciar los datos de cobro con una venta abierta | Permitirlo | El comprador se quedaría sin dónde transferir | Comentario en [[UserService]] |
 | Vaciar y aceptar bloquean la misma fila | Chequeo sin bloqueo | Uno espera al otro y ve su resultado | Comentario en [[UserServiceImpl]] |
+| `returnInquiryId` resuelto por el service | Redirigir a cualquier id recibido | Es contexto de navegación: se valida que la venta sea del vendedor y un valor inválido solo pierde el regreso | Comentarios en [[InquiryService]] y [[ProfileController]]; commits `25f95bc9`, `97f489b3` |
 | `InquiryDao` directo en `UserServiceImpl` | Usar `InquiryService` | `InquiryService` ya depende de `UserService`: evitar el ciclo | Comentario en [[UserServiceImpl]] |
 | `PaymentInfo` como objeto de valor con `NONE` | Dos `String` sueltos en `User` | `getPaymentInfo()` nunca es `null` | Comentario en [[User]]; commit `801f9aa1` |
 | Validar el dígito verificador | Solo el largo | Atajar errores de tipeo antes de que alguien transfiera | Inferencia; la regla está en [[PaymentInfoRules]] |
@@ -99,7 +139,10 @@ Las columnas `users.cbu`, `users.alias`, la tabla `addresses` y `inquiries.addre
 Porque una consulta ya enviada apunta a esa fila. Si se editara, cambiaría el domicilio de una venta en curso.
 
 **¿Qué pasa si acepto una consulta sin tener CBU?**
-La aplicación redirige al perfil con la fila de datos de cobro abierta. La consulta no cambia de estado.
+La aplicación redirige al perfil con la fila de datos de cobro abierta y recuerda la venta en `returnInquiryId`. Al guardar, vuelve a esa venta. La consulta no cambia de estado: hay que aceptar de nuevo.
+
+**¿Se puede usar `returnInquiryId` para saltar a una venta ajena?**
+No. `findSaleToResume` solo devuelve el id si quien mira es el vendedor de esa consulta; si no, el parámetro se ignora. Y aunque se redirigiera, la página de la venta tiene su propio `@PreAuthorize`.
 
 **¿Cómo validan un CBU?**
 22 dígitos y dos dígitos verificadores, uno por bloque, calculados con pesos fijos.
@@ -111,7 +154,7 @@ El bloqueo de la fila de la Cuenta: la segunda alta espera y cuenta después.
 
 Datos de cobro en el service:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 330–352.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 330–352.
 
 ```java
     @Override
@@ -141,7 +184,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Use
 
 Reglas del CBU y del alias:
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/PaymentInfoRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PaymentInfoRules.java>), líneas 5–56.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/PaymentInfoRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PaymentInfoRules.java>), líneas 5–56.
 
 ```java
 // Formato de los datos de cobro, compartido por el formulario del perfil y por UserService.
@@ -200,7 +243,7 @@ public final class PaymentInfoRules {
 
 Direcciones en el service:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java>), líneas 30–105.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java>), líneas 30–105.
 
 ```java
     @Override
@@ -283,7 +326,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Add
 
 Endpoints de la libreta:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 172–240.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 180–278.
 
 ```java
     @RequestMapping(value = "/payment", method = RequestMethod.POST)
@@ -293,16 +336,28 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
                                       @ModelAttribute("profileForm") final ProfileForm profileForm,
                                       @ModelAttribute("changePasswordForm") final ChangePasswordForm changePasswordForm,
                                       final RedirectAttributes redirectAttributes,
+                                      @RequestParam(name = "returnInquiryId", required = false) final String returnInquiryId,
                                       @RequestParam(name = "page", defaultValue = "1") final int pageNumber) {
         profileForm.setUsername(currentUser.getDisplayName());
+        final Long destination = paymentReturnId(returnInquiryId, currentUser.getId());
         if (bindingResult.hasErrors()) {
-            return profileView(currentUser.getId(), OpenSection.PAYMENT, pageNumber, null);
+            return paymentView(currentUser.getId(), pageNumber, destination);
         }
+        final User updatedUser;
         try {
-            userService.updatePaymentInfo(currentUser.getId(), form.getCbu(), form.getAlias());
+            updatedUser = userService.updatePaymentInfo(currentUser.getId(), form.getCbu(), form.getAlias());
         } catch (final PaymentInfoRequiredException e) {
             bindingResult.rejectValue("cbu", "payment.required.openSale");
-            return profileView(currentUser.getId(), OpenSection.PAYMENT, pageNumber, null);
+            return paymentView(currentUser.getId(), pageNumber, destination);
+        }
+        if (destination != null) {
+            if (!updatedUser.hasPaymentInfo()) {
+                final ModelAndView view = paymentView(currentUser.getId(), pageNumber, destination);
+                view.addObject("paymentMissing", true);
+                return view;
+            }
+            redirectAttributes.addFlashAttribute("saleNotice", "inquiry.sale.payment.updated");
+            return new ModelAndView("redirect:/inquiries/" + destination + "#sale-actions");
         }
         redirectAttributes.addFlashAttribute("paymentUpdated", true);
         return new ModelAndView("redirect:/profile#account");
@@ -355,11 +410,29 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
         redirectAttributes.addFlashAttribute("addressDeleted", true);
         return new ModelAndView("redirect:/profile#addresses");
     }
+
+    private ModelAndView paymentView(final long userId, final int pageNumber, final Long returnInquiryId) {
+        final ModelAndView view = profileView(userId, OpenSection.PAYMENT, pageNumber, null);
+        view.addObject("returnInquiryId", returnInquiryId);
+        return view;
+    }
+
+    // Un valor mal formado solo pierde el regreso a la venta: no debe impedir abrir el perfil.
+    private Long paymentReturnId(final String value, final long userId) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return inquiryService.findSaleToResume(Long.parseLong(value), userId).orElse(null);
+        } catch (final NumberFormatException e) {
+            return null;
+        }
+    }
 ```
 
 Dirección parcial:
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Address.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Address.java>), líneas 71–79.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/Address.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Address.java>), líneas 71–79.
 
 ```java
     // Copia sin calle, altura, piso, codigo postal ni notas: lo que ve quien todavia no
@@ -383,7 +456,7 @@ Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Address
 - [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>) · [[UserServiceImpl]]
 - [services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java>) · [[AddressServiceImpl]]
 - [services-contracts/src/main/java/ar/edu/itba/paw/services/AddressService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/AddressService.java>) · [[AddressService]]
-- [models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java>)
+- [models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java>) · [[ShippingOptions]]
 - [models/src/main/java/ar/edu/itba/paw/models/PaymentInfo.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PaymentInfo.java>) · [[PaymentInfo]]
 - [models/src/main/java/ar/edu/itba/paw/models/PaymentInfoRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/PaymentInfoRules.java>) · [[PaymentInfoRules]]
 - [models/src/main/java/ar/edu/itba/paw/models/Address.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Address.java>) · [[Address]]
@@ -391,4 +464,4 @@ Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Address
 - [persistence/src/main/java/ar/edu/itba/paw/persistence/AddressJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/AddressJdbcDao.java>) · [[AddressJdbcDao]]
 - [persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

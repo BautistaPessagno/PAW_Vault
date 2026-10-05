@@ -4,15 +4,15 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java"]
 ---
 
 # PublishController
 
-Publicar, editar y eliminar. Editar y eliminar exigen ser el publicante o administrador (`@PreAuthorize`); que el post siga disponible lo exige el service. Ver [[Publish flow]] y [[Edit and delete flow]].
+Publicar, editar y eliminar. Editar y eliminar exigen ser el publicante o administrador con `@PreAuthorize`, y el service lo vuelve a chequear con el id de quien actúa junto con que el post siga disponible. Ver [[Publish flow]] y [[Edit and delete flow]].
 
 ## Guía de lectura
 
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 1–185.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 1–187.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
@@ -137,10 +137,11 @@ public class PublishController {
     @PreAuthorize(CAN_MODERATE_POST)
     @RequestMapping(value = "/post/{postId:[0-9]+}/edit", method = RequestMethod.GET)
     public ModelAndView editForm(@PathVariable("postId") final long postId,
+                                 @AuthenticationPrincipal final AuthenticatedUser currentUser,
                                  @ModelAttribute("publishForm") final PublishForm form,
                                  @RequestParam(name = "coverTooLarge", required = false)
                                  final String coverTooLarge) {
-        final PostSummary post = postService.findEditableById(postId);
+        final PostSummary post = postService.findEditableById(postId, currentUser.getId());
         populate(form, post);
         final ModelAndView modelAndView = editView(postId, post);
         modelAndView.addObject("coverTooLarge", coverTooLarge != null);
@@ -154,15 +155,16 @@ public class PublishController {
     @PreAuthorize(CAN_MODERATE_POST)
     @RequestMapping(value = "/post/{postId:[0-9]+}/edit", method = RequestMethod.POST)
     public ModelAndView edit(@PathVariable("postId") final long postId,
+                             @AuthenticationPrincipal final AuthenticatedUser currentUser,
                              @Valid @ModelAttribute("publishForm") final PublishForm form,
                              final BindingResult bindingResult,
                              final RedirectAttributes redirectAttributes) throws IOException {
         if (bindingResult.hasErrors()) {
-            return editView(postId);
+            return editView(postId, currentUser.getId());
         }
 
         try {
-            postService.update(postId, form.getTitle(), form.getArtistName(),
+            postService.update(postId, currentUser.getId(), form.getTitle(), form.getArtistName(),
                     form.getReleaseYear(), form.getGenre(), form.getPrice(), form.getDescription(),
                     form.getCondition(), form.getPressingYear(), form.getZone(),
                     form.toImageUploads(), form.getRemovedImageIds());
@@ -175,7 +177,7 @@ public class PublishController {
         } catch (final ConcurrentPublishException e) {
             bindingResult.reject("publish.concurrent");
         }
-        return editView(postId);
+        return editView(postId, currentUser.getId());
     }
 
     @PreAuthorize(CAN_MODERATE_POST)
@@ -183,13 +185,13 @@ public class PublishController {
     public ModelAndView delete(@PathVariable("postId") final long postId,
                                @AuthenticationPrincipal final AuthenticatedUser currentUser,
                                final RedirectAttributes redirectAttributes) {
-        postService.delete(postId);
+        postService.delete(postId, currentUser.getId());
         redirectAttributes.addFlashAttribute("postDeleted", true);
         return new ModelAndView(currentUser.isAdmin() ? "redirect:/" : "redirect:/profile#posts");
     }
 
-    private ModelAndView editView(final long postId) {
-        return editView(postId, postService.findEditableById(postId));
+    private ModelAndView editView(final long postId, final long actorId) {
+        return editView(postId, postService.findEditableById(postId, actorId));
     }
 
     private ModelAndView editView(final long postId, final PostSummary post) {

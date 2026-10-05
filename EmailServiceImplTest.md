@@ -4,8 +4,8 @@ categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java"]
 ---
@@ -22,22 +22,22 @@ Operaciones para localizar en la fuente: `setUp`, `templateEngine`, `messageSour
 
 Casos declarados: 17.
 
-- `testSendPostInterestEmailWhenDeliverySucceedsBuildsExpectedMessage`
-- `testSendPostInterestEmailWhenLocaleIsEnglishUsesEnglishCopy`
-- `testSendPostInterestEmailWhenDeliverySucceedsLinksToTheInquiryDetail`
+- `testSendPostInterestEmailWhenDeliverySucceedsReturnsExpectedMessage`
+- `testSendPostInterestEmailWhenLocaleIsEnglishReturnsEnglishCopy`
+- `testSendPostInterestEmailWhenDeliverySucceedsReturnsLinkToTheInquiryDetail`
 - `testSendPostInterestEmailWhenMessageIsPresentReturnsBodyWithMessage`
 - `testSendPostInterestEmailWhenMessageIsMissingReturnsBodyWithoutMessage`
 - `testSendPostInterestEmailWhenSeveralPostsReturnsOneMessageLinkingEachInquiry`
-- `testSendPostInterestEmailWhenDeliveryFailsDoesNotPropagateFailure`
+- `testSendPostInterestEmailWhenDeliveryFailsReturnsWithoutPropagatingFailure`
 - `testSendInquiryUpdateEmailWhenSaleIsAcceptedReturnsEmailLinkedToTheSale`
 - `testSendInquiryUpdateEmailWhenInquiryIsRejectedReturnsEmailLinkedToSentInbox`
 - `testSendInquiryUpdateEmailWhenDeliveryFailsReturnsWithoutPropagatingFailure`
-- `testSendMessageEmailWhenDeliverySucceedsBuildsExpectedMessage`
+- `testSendMessageEmailWhenDeliverySucceedsReturnsExpectedMessage`
 - `testSendMessageEmailWhenBodyHasMarkupReturnsEscapedBodyWithLineBreaks`
 - `testSendMessageEmailWhenLocaleIsEnglishReturnsEnglishSubject`
 - `testSendMessageEmailWhenDeliveryFailsReturnsWithoutPropagatingFailure`
-- `testSendWelcomeEmailWhenDeliverySucceedsBuildsExpectedMessage`
-- `testSendWelcomeEmailWhenDeliveryFailsDoesNotPropagateFailure`
+- `testSendWelcomeEmailWhenDeliverySucceedsReturnsExpectedMessage`
+- `testSendWelcomeEmailWhenDeliveryFailsReturnsWithoutPropagatingFailure`
 - `testSendVerificationEmailWhenDeliverySucceedsReturnsEmailWithSingleUseLink`
 
 ## Conexiones
@@ -50,7 +50,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>), líneas 1–448.
+Fuente exacta en `c3e2a4c`: [services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/EmailServiceImplTest.java>), líneas 1–448.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -105,7 +105,7 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendPostInterestEmailWhenDeliverySucceedsBuildsExpectedMessage()
+    public void testSendPostInterestEmailWhenDeliverySucceedsReturnsExpectedMessage()
             throws MessagingException, IOException {
         // 1. Arrange
         final PostInterestNotification notification = new PostInterestNotification(
@@ -131,7 +131,7 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendPostInterestEmailWhenLocaleIsEnglishUsesEnglishCopy()
+    public void testSendPostInterestEmailWhenLocaleIsEnglishReturnsEnglishCopy()
             throws MessagingException, IOException {
         // 1. Arrange
         final PostInterestNotification notification = new PostInterestNotification(
@@ -147,7 +147,7 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendPostInterestEmailWhenDeliverySucceedsLinksToTheInquiryDetail()
+    public void testSendPostInterestEmailWhenDeliverySucceedsReturnsLinkToTheInquiryDetail()
             throws MessagingException, IOException {
         // 1. Arrange
         final PostInterestNotification notification = new PostInterestNotification(
@@ -217,7 +217,7 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendPostInterestEmailWhenDeliveryFailsDoesNotPropagateFailure() {
+    public void testSendPostInterestEmailWhenDeliveryFailsReturnsWithoutPropagatingFailure() {
         // 1. Arrange
         mailSender.failNextDelivery();
         final PostInterestNotification notification = new PostInterestNotification(
@@ -281,7 +281,7 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendMessageEmailWhenDeliverySucceedsBuildsExpectedMessage()
+    public void testSendMessageEmailWhenDeliverySucceedsReturnsExpectedMessage()
             throws MessagingException, IOException {
         // 1. Arrange
         final MessageNotification notification = new MessageNotification(
@@ -353,7 +353,7 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendWelcomeEmailWhenDeliverySucceedsBuildsExpectedMessage()
+    public void testSendWelcomeEmailWhenDeliverySucceedsReturnsExpectedMessage()
             throws MessagingException, IOException {
         // 1. Arrange
         final User user = new User(7L, "Luz", CONTACT_EMAIL, "hash", UserRole.USER, true, "es");
@@ -370,7 +370,7 @@ public class EmailServiceImplTest {
     }
 
     @Test
-    public void testSendWelcomeEmailWhenDeliveryFailsDoesNotPropagateFailure() {
+    public void testSendWelcomeEmailWhenDeliveryFailsReturnsWithoutPropagatingFailure() {
         // 1. Arrange
         mailSender.failNextDelivery();
         final User user = new User(7L, "Luz", CONTACT_EMAIL, "hash", UserRole.USER, true, "es");

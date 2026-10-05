@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/PublishForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PublishFormValidator.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ImageFiles.java", "models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java", "models/src/main/java/ar/edu/itba/paw/models/ImageRules.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AlbumServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ImageServiceImpl.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/AlbumJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "webapp/src/main/webapp/WEB-INF/views/publish/index.jsp", "webapp/src/main/webapp/js/publish-preview.js"]
 ---
@@ -41,17 +41,54 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishControl
    - Título y artista obligatorios, hasta 255. Año de lanzamiento, género, precio y condición obligatorios. Zona hasta 100, descripción hasta 1000.
    - [[PublishFormValidator]]: años entre 1000 y 9999 y no futuros; precio entre 1 y 99.999.999; prensado no anterior al lanzamiento; hasta 5 fotos, cada una válida según [[ImageRules]].
 4. `PostServiceImpl.publish`, en una transacción:
-   - Repite las reglas numéricas (`requireValidPostData`) y el tope de fotos: un POST que saltee el formulario no entra.
+   - Repite las reglas numéricas (`requireValidPostData`) y el tope de fotos: un POST que saltee el formulario no entra. La regla numérica rota es `InvalidPostDataException`, que desde el PR #62 se responde con 400 en lugar de un 500.
    - `artistService.findOrCreate`: identidad = el nombre en minúsculas solo con letras y dígitos. "Soda Stereo" y "soda-stereo" son el mismo artista.
    - `albumService.findOrCreate`: identidad = artista, título en minúsculas y año.
    - Si el publicante ya tiene un Post de ese álbum, `DuplicatePostException`.
    - Crea las imágenes (cada una se valida de nuevo en `ImageService.create`).
    - Crea el Post con la primera foto como principal (`posts.image_id`) y estado `AVAILABLE`.
    - Si hay más fotos, `replaceGallery` las guarda en `post_images` con orden 1 a 4.
+   - Loguea `Published post postId=... publisherId=... albumId=... images=...` (PR #62). El log sale antes del commit ([[Logging]]).
 5. Errores traducidos:
    - `DuplicatePostKeyException` (la restricción `UNIQUE (user_id, album_id)` detectó una carrera) → `DuplicatePostException` → error global `publish.duplicate`.
    - Otra `DataIntegrityViolationException` (dos publicaciones simultáneas crearon el mismo álbum) → `ConcurrentPublishException` → `publish.concurrent`, que invita a reintentar.
 6. Éxito: aviso flash `postCreated` y redirección a la ficha `/post/{id}`.
+
+```mermaid
+sequenceDiagram
+    participant V as Publicante
+    participant F as MultipartFilter
+    participant C as PublishController
+    participant S as PostServiceImpl
+    participant A as Artist/AlbumService
+    participant I as ImageService
+    participant P as PostDao
+    V->>F: POST /publish (multipart)
+    alt supera 26 MiB
+        F-->>V: 302 /publish?coverTooLarge
+    end
+    F->>C: partes leídas, CSRF verificado
+    C->>C: @Valid PublishForm + PublishFormValidator
+    C->>S: publish(...)
+    S->>S: requireValidPostData, requireGallerySize
+    alt POST que saltea el formulario
+        S-->>C: InvalidPostDataException (400)
+    end
+    S->>A: findOrCreate artista y álbum
+    S->>P: existsByUserIdAndAlbumId
+    alt ya publicó ese álbum
+        S-->>C: DuplicatePostException
+        C-->>V: formulario con publish.duplicate
+    end
+    S->>I: create (una por foto)
+    S->>P: create (AVAILABLE, image_id = primera)
+    S->>I: replaceGallery (orden 1 a 4)
+    S->>S: LOGGER.info Published post
+    alt carrera en UNIQUE o álbum duplicado
+        S-->>C: DuplicatePostException / ConcurrentPublishException
+    end
+    C-->>V: 302 /post/{id}
+```
 
 ## Datos
 
@@ -110,7 +147,7 @@ En la tabla `images`. La primera va referenciada desde el Post; las demás, desd
 
 Controller:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 76–100.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>), líneas 76–100.
 
 ```java
     // Las fotos ya llegan validadas por PublishFormValidator.
@@ -142,7 +179,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 Service:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 237–268.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 248–281.
 
 ```java
     @Override
@@ -167,6 +204,8 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
             if (imageIds.size() > 1) {
                 imageService.replaceGallery(post.getId(), extrasOf(imageIds));
             }
+            LOGGER.info("Published post postId={} publisherId={} albumId={} images={}",
+                    post.getId(), publisher.getId(), album.getId(), imageIds.size());
             return post;
         } catch (final DuplicatePostKeyException e) {
             throw new DuplicatePostException();
@@ -181,7 +220,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
 
 Reglas repetidas en el service:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 350–380.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 364–402.
 
 ```java
     // La primera foto es la principal y va en el post; el resto es la galeria.
@@ -193,6 +232,14 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
         if (size > ImageRules.MAX_GALLERY_IMAGES) {
             throw new InvalidImageException();
         }
+    }
+
+    private PostSummary requireEditable(final PostSummary post, final long actorId) {
+        if (post.getUserId() != actorId && userService.findById(actorId)
+                .filter(user -> user.getRole() == UserRole.ADMIN).isEmpty()) {
+            throw new ForbiddenOperationException();
+        }
+        return requireAvailable(post);
     }
 
     private static PostSummary requireAvailable(final PostSummary post) {
@@ -219,7 +266,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
 
 Savepoint del artista:
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>), líneas 72–95.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>), líneas 72–95.
 
 ```java
     @Override
@@ -250,7 +297,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 Identidad del artista:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>), líneas 26–31.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>), líneas 26–31.
 
 ```java
     @Override
@@ -261,7 +308,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Art
     }
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>), líneas 57–63.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java>), líneas 57–63.
 
 ```java
     private static String normalizeForIdentity(final String name) {
@@ -275,7 +322,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Art
 
 Validador del formulario:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PublishFormValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PublishFormValidator.java>), líneas 14–50.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PublishFormValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PublishFormValidator.java>), líneas 14–50.
 
 ```java
 public class PublishFormValidator implements ConstraintValidator<ValidPublishForm, PublishForm> {
@@ -335,4 +382,4 @@ public class PublishFormValidator implements ConstraintValidator<ValidPublishFor
 - [webapp/src/main/webapp/WEB-INF/views/publish/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/publish/index.jsp>)
 - [webapp/src/main/webapp/js/publish-preview.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/publish-preview.js>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

@@ -4,15 +4,15 @@ categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/ReviewJdbcDaoTest.java"]
 ---
 
 # ReviewJdbcDaoTest
 
-Tests de `ReviewJdbcDao` en `persistence`: 14 casos declarados. Cubre: alta, actualización que reactiva, desactivación, estadísticas y listado de activas. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
+Tests de `ReviewJdbcDao` en `persistence`: 19 casos declarados. Cubre: alta, actualización que reactiva, desactivación, listado y estadísticas por rol, paginación con `OFFSET` y foto del autor. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
 ## Guía de lectura
 
@@ -20,8 +20,13 @@ Datos y dependencias declaradas: `REVIEWS_TABLE`, `LIMIT`, `CONFIRMED_SALE_ID`, 
 
 Operaciones para localizar en la fuente: `setUp`.
 
-Casos declarados: 14.
+Casos declarados: 19.
 
+- `testFindActiveBySubjectIdWhenUserHasBothRolesReturnsOnlySelectedRole`
+- `testStatsBySubjectIdWhenUserHasBothRolesReturnsIndependentActiveTotals`
+- `testFindActiveBySubjectIdWhenOffsetIsTenReturnsLastReviewWithoutRepeats`
+- `testFindActiveBySubjectIdWhenRoleHasNoReviewsReturnsEmptyList`
+- `testFindActiveBySubjectIdWhenAuthorHasAvatarReturnsAccountAppearance`
 - `testFindByInquiryAndAuthorWhenReviewExistsReturnsReviewWithAuthorName`
 - `testFindByInquiryAndAuthorWhenAuthorHasNoReviewReturnsEmpty`
 - `testFindActiveBySubjectIdWhenSubjectHasTwoActiveReviewsReturnsNewestFirst`
@@ -39,7 +44,7 @@ Casos declarados: 14.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Review]], [[ReviewDao]], [[ReviewStats]], [[TestConfiguration]].
+Referencias estáticas a tipos del proyecto: [[Review]], [[ReviewDao]], [[ReviewStats]], [[ReviewSubjectRole]], [[TestConfiguration]].
 
 Referenciado por: sin referencias léxicas desde otros archivos Java.
 
@@ -47,13 +52,14 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/ReviewJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ReviewJdbcDaoTest.java>), líneas 1–244.
+Fuente exacta en `c3e2a4c`: [persistence/src/test/java/ar/edu/itba/paw/persistence/ReviewJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/ReviewJdbcDaoTest.java>), líneas 1–317.
 
 ```java
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.Review;
 import ar.edu.itba.paw.models.ReviewStats;
+import ar.edu.itba.paw.models.ReviewSubjectRole;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,10 +105,82 @@ public class ReviewJdbcDaoTest {
     @Autowired
     private ReviewDao reviewDao;
 
+    @Test
+    public void testFindActiveBySubjectIdWhenUserHasBothRolesReturnsOnlySelectedRole() {
+        // 1. Arrange
+        final long subjectId = 6;
+
+        // 2. Exercise
+        final List<Review> sellers = reviewDao.findActiveBySubjectId(subjectId, ReviewSubjectRole.SELLER, 10, 0);
+        final List<Review> buyers = reviewDao.findActiveBySubjectId(subjectId, ReviewSubjectRole.BUYER, 10, 0);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(30L, 29L, 28L, 27L, 26L, 25L, 24L, 23L, 22L, 21L),
+                sellers.stream().map(Review::getId).collect(Collectors.toList()));
+        Assertions.assertEquals(List.of(31L), buyers.stream().map(Review::getId).collect(Collectors.toList()));
+    }
+
     @Autowired
     private DataSource dataSource;
 
+    @Test
+    public void testStatsBySubjectIdWhenUserHasBothRolesReturnsIndependentActiveTotals() {
+        // 1. Arrange
+        final long subjectId = 6;
+
+        // 2. Exercise
+        final ReviewStats seller = reviewDao.statsBySubjectId(subjectId, ReviewSubjectRole.SELLER);
+        final ReviewStats buyer = reviewDao.statsBySubjectId(subjectId, ReviewSubjectRole.BUYER);
+
+        // 3. Assert
+        Assertions.assertEquals(11, seller.getCount());
+        Assertions.assertEquals(4.0, seller.getAverage());
+        Assertions.assertEquals(1, buyer.getCount());
+        Assertions.assertEquals(2.0, buyer.getAverage());
+    }
+
     private JdbcTemplate jdbcTemplate;
+
+    @Test
+    public void testFindActiveBySubjectIdWhenOffsetIsTenReturnsLastReviewWithoutRepeats() {
+        // 1. Arrange
+        final long subjectId = 6;
+
+        // 2. Exercise
+        final List<Review> first = reviewDao.findActiveBySubjectId(subjectId, ReviewSubjectRole.SELLER, 10, 0);
+        final List<Review> second = reviewDao.findActiveBySubjectId(subjectId, ReviewSubjectRole.SELLER, 10, 10);
+
+        // 3. Assert
+        Assertions.assertEquals(10, first.size());
+        Assertions.assertEquals(List.of(20L), second.stream().map(Review::getId).collect(Collectors.toList()));
+        Assertions.assertTrue(first.stream().noneMatch(review -> review.getId() == second.get(0).getId()));
+    }
+
+    @Test
+    public void testFindActiveBySubjectIdWhenRoleHasNoReviewsReturnsEmptyList() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final List<Review> result = reviewDao.findActiveBySubjectId(SELLER_ID, ReviewSubjectRole.BUYER, LIMIT, 0);
+        final ReviewStats stats = reviewDao.statsBySubjectId(SELLER_ID, ReviewSubjectRole.BUYER);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+        Assertions.assertEquals(0, stats.getCount());
+        Assertions.assertEquals(0.0, stats.getAverage());
+    }
+
+    @Test
+    public void testFindActiveBySubjectIdWhenAuthorHasAvatarReturnsAccountAppearance() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final List<Review> reviews = reviewDao.findActiveBySubjectId(SELLER_ID, ReviewSubjectRole.SELLER, LIMIT, 0);
+
+        // 3. Assert
+        Assertions.assertEquals(2L, reviews.get(0).getAuthorAvatarImageId());
+        Assertions.assertNull(reviews.get(1).getAuthorAvatarImageId());
+    }
 
     @BeforeEach
     public void setUp() {
@@ -142,7 +220,7 @@ public class ReviewJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<Review> result = reviewDao.findActiveBySubjectId(SELLER_ID, LIMIT);
+        final List<Review> result = reviewDao.findActiveBySubjectId(SELLER_ID, ReviewSubjectRole.SELLER, LIMIT, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(NEWEST_REVIEW_ID, BUYER_REVIEW_ID),
@@ -155,7 +233,7 @@ public class ReviewJdbcDaoTest {
         final int limit = 1;
 
         // 2. Exercise
-        final List<Review> result = reviewDao.findActiveBySubjectId(SELLER_ID, limit);
+        final List<Review> result = reviewDao.findActiveBySubjectId(SELLER_ID, ReviewSubjectRole.SELLER, limit, 0);
 
         // 3. Assert
         Assertions.assertEquals(1, result.size());
@@ -167,7 +245,7 @@ public class ReviewJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<Review> result = reviewDao.findActiveBySubjectId(OTHER_BUYER_ID, LIMIT);
+        final List<Review> result = reviewDao.findActiveBySubjectId(OTHER_BUYER_ID, ReviewSubjectRole.BUYER, LIMIT, 0);
 
         // 3. Assert
         Assertions.assertTrue(result.isEmpty());
@@ -178,7 +256,7 @@ public class ReviewJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final ReviewStats result = reviewDao.statsBySubjectId(SELLER_ID);
+        final ReviewStats result = reviewDao.statsBySubjectId(SELLER_ID, ReviewSubjectRole.SELLER);
 
         // 3. Assert
         Assertions.assertEquals(2, result.getCount());
@@ -190,7 +268,7 @@ public class ReviewJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final ReviewStats result = reviewDao.statsBySubjectId(OTHER_BUYER_ID);
+        final ReviewStats result = reviewDao.statsBySubjectId(OTHER_BUYER_ID, ReviewSubjectRole.BUYER);
 
         // 3. Assert
         Assertions.assertEquals(0, result.getCount());

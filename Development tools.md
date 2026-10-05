@@ -4,8 +4,8 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["tools/paw_checks.py", "tools/git-hooks/pre-commit", "tools/setup_local_postgres.sh", "tools/seed_local_data.sh", "tools/sql/demo-users.sql", "database/seed_dev_posts.sql", "database/demo_posts.tsv"]
 ---
@@ -64,7 +64,7 @@ Los tres chequeos son estáticos. No compilan, no corren tests y no levantan la 
 
 ### Chequeos
 
-Fuente exacta en `8929aea`: [tools/paw_checks.py](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/paw_checks.py>), líneas 1–154.
+Fuente exacta en `c3e2a4c`: [tools/paw_checks.py](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/paw_checks.py>), líneas 1–154.
 
 ```python
 #!/usr/bin/env python3
@@ -225,7 +225,7 @@ if __name__ == "__main__":
 
 ### Hook
 
-Fuente exacta en `8929aea`: [tools/git-hooks/pre-commit](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/git-hooks/pre-commit>), líneas 1–36.
+Fuente exacta en `c3e2a4c`: [tools/git-hooks/pre-commit](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/git-hooks/pre-commit>), líneas 1–36.
 
 ```text
 #!/usr/bin/env bash
@@ -276,4 +276,4 @@ exit 0
 - [database/seed_dev_posts.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/database/seed_dev_posts.sql>)
 - [database/demo_posts.tsv](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/database/demo_posts.tsv>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

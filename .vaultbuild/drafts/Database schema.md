@@ -110,7 +110,7 @@ erDiagram
 | `album_id`, `seller_id` | Copia de a qué álbum y a quién se le consultó, para que la bandeja siga mostrando algo sin el post |
 | `buyer_id` | NOT NULL |
 | `address_id` | Dirección de envío elegida (V5) |
-| `price` | Precio congelado al consultar (V5); `NULL` en consultas anteriores |
+| `price` | Precio guardado al consultar (V5) y reemplazado al aceptar por el del post bloqueado (`startSale`, ADR 0004, sin cambio de esquema); `NULL` en consultas anteriores a V5 |
 | `status` | `CHECK` con los seis estados de [[InquiryStatus]] (V5) |
 | `receipt_content_type`, `receipt_data`, `receipt_uploaded_at` | Comprobante: uno por consulta, se reemplaza entero |
 | `created_at` | |
@@ -159,7 +159,7 @@ Las reglas de la segunda mitad no tienen restricción porque dependen de contar 
 | Comprobante dentro de `inquiries` | Hay uno por consulta y se reemplaza entero | Comentario de V5 |
 | La venta es una etapa de la consulta, no otra tabla | Mismos participantes y misma publicación; cambia solo el estado | `CONTEXT.md` |
 | `inquiries.post_id` nullable con copia de álbum y vendedor | Que la bandeja del comprador sobreviva a la eliminación del post | Comentario de V1 |
-| Precio congelado en la consulta | Es el monto a transferir aunque después se edite el post | Comentario de V5 |
+| Precio guardado en la consulta | Es el monto a transferir aunque después se edite el post. Desde el PR #56 se fija al aceptar; al consultar queda solo como respaldo | Comentario de V5; ADR 0004 |
 | Direcciones archivadas, no borradas | Una consulta puede seguir apuntándola | Comentario de V5 |
 | `ON DELETE CASCADE` solo en `post_images` y `cart_items` | Son datos descartables que no tienen sentido sin el post | Comentario de V11 |
 

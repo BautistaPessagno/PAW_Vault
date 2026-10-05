@@ -59,13 +59,15 @@ Los validadores de clase agregan el error **al campo** que corresponde (`addProp
 | [[LineBreakNormalizingEditor]] | Mensaje de contacto y cuerpo de mensajes y reseñas | Unifica `\r\n` en `\n`, para que el largo que cuenta el servidor coincida con el del navegador |
 | Editor que ignora inválidos | Filtros del catálogo | Un valor de enum o número mal formado en la URL se descarta en vez de dar 400 |
 
+Los filtros por estado de las bandejas (`status`) y de "Mis publicaciones" (`postStatus`) no pasan por un editor propio: se ligan directo al enum con `@RequestParam`, así que un valor desconocido termina en `MethodArgumentTypeMismatchException` y en 400 (inferencia sobre la conversión de Spring 5.3). En la ficha, `postStatus` es contexto de regreso y [[PostController]] lo ignora si no es válido. Ver [[Status filters flow]].
+
 ## De la excepción a la respuesta
 
 | Excepción | Quién la traduce | Respuesta |
 |---|---|---|
 | `PostNotFoundException`, `InquiryNotFoundException`, `UserNotFoundException`, `PageNotFoundException`, `AddressNotFoundException`, `ReceiptNotFoundException` | [[ErrorResponseAdvice]] | 404 con `error/404` |
 | `ForbiddenOperationException` | [[ErrorResponseAdvice]] | 403 con `error/403` |
-| `InvalidImageException`, `InvalidReviewException`, parámetro con tipo inválido | [[ErrorResponseAdvice]] | 400 con `error/400` |
+| `InvalidImageException`, `InvalidReviewException`, `InvalidPostDataException`, `InvalidPaymentInfoException`, parámetro con tipo inválido | [[ErrorResponseAdvice]] | 400 con `error/400` |
 | `InvalidSearchQueryException` | [[LandingController]] | 400 |
 | `InvalidInquiryStateException` | [[InquiryController]] | 409 con `error/409` |
 | `PostUnavailableException` | [[PostContactController]], [[PublishController]] | 409 |
@@ -100,7 +102,6 @@ Tres criterios ordenan la tabla:
 
 ## Límites conocidos
 
-- `InvalidPostDataException` e `InvalidPaymentInfoException` no tienen handler: solo se alcanzan salteando el formulario, y en ese caso la respuesta sería un 500.
 - No hay página propia para el 500.
 - El comentario de [[ReceiptValidator]] menciona un tope de 6 MB en el resolver; el valor real es 26 MiB ([[Known gaps and document drift]]).
 

@@ -1,7 +1,7 @@
 > [!summary] En una frase
 > Un orden para leer los {{FILES}} archivos versionados del proyecto ({{JAVA}} clases Java, {{LINES}} líneas en total) sin perderse: primero el contexto, después un flujo simple de punta a punta, y luego cada funcionalidad en el orden en que se apoyan unas en otras.
 
-Cada archivo aparece **una sola vez**, con una casilla para marcar. La lista se generó a partir de `git ls-tree` en `8929aea` y el generador falla si un archivo queda sin asignar o aparece dos veces, así que la cobertura es completa.
+Cada archivo aparece **una sola vez**, con una casilla para marcar. La lista se generó a partir de `git ls-tree` en `c3e2a4c` y el generador falla si un archivo queda sin asignar o aparece dos veces, así que la cobertura es completa.
 
 ## Cómo usarlo
 
@@ -44,7 +44,7 @@ Los enlaces `[[Clase]]` abren la nota de esa clase en el vault, con su resumen, 
 |---|---|---|---|
 {{TABLE}}
 
-Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y líneas en blanco. Sirven para estimar el esfuerzo relativo de cada etapa, no como medida de complejidad.
+Las líneas son el total de cada archivo en `c3e2a4c`, incluidos comentarios y líneas en blanco. Sirven para estimar el esfuerzo relativo de cada etapa, no como medida de complejidad.
 
 ## Qué conviene saltear en una primera lectura
 

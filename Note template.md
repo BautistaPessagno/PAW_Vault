@@ -4,8 +4,8 @@ categories: ["Navigation"]
 type: "template"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 tags: ["codemap", "navigation"]
 ---
@@ -30,6 +30,25 @@ El problema y quién lo usa.
 ## Recorrido paso a paso
 
 1. Request, controller, service, DAO, vista, efectos secundarios.
+
+Al final de la sección, siempre, el diagrama del flujo (obligatorio en toda nota de flujo):
+
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant C as NombreController
+    participant S as NombreServiceImpl
+    participant D as NombreJdbcDao
+    B->>C: POST /ruta
+    C->>S: operacion(...)
+    alt regla de negocio rota
+        S-->>C: NombreException
+        C-->>B: error
+    end
+    S->>D: UPDATE ... con guarda
+    S-)S: afterCommit: correo o log
+    C-->>B: 302 /destino
+```
 
 ## Datos
 

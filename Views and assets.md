@@ -4,16 +4,16 @@ categories: ["Web"]
 type: "guide"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
-sources: ["webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/login.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/register.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp", "webapp/src/main/webapp/WEB-INF/views/cart/index.jsp", "webapp/src/main/webapp/WEB-INF/views/error/400.jsp", "webapp/src/main/webapp/WEB-INF/views/error/403.jsp", "webapp/src/main/webapp/WEB-INF/views/error/404.jsp", "webapp/src/main/webapp/WEB-INF/views/error/409.jsp", "webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp", "webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp", "webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp", "webapp/src/main/webapp/WEB-INF/views/landing/index.jsp", "webapp/src/main/webapp/WEB-INF/views/post/contact.jsp", "webapp/src/main/webapp/WEB-INF/views/post/detail.jsp", "webapp/src/main/webapp/WEB-INF/views/profile/index.jsp", "webapp/src/main/webapp/WEB-INF/views/profile/public.jsp", "webapp/src/main/webapp/WEB-INF/views/publish/index.jsp", "webapp/src/main/webapp/js/account-edit.js", "webapp/src/main/webapp/js/autocomplete.js", "webapp/src/main/webapp/js/catalog.js", "webapp/src/main/webapp/js/confirm-action.js", "webapp/src/main/webapp/js/post-gallery.js", "webapp/src/main/webapp/js/publish-preview.js", "webapp/src/main/webapp/js/submit-once.js", "webapp/src/main/webapp/images/covers/placeholder.svg", "webapp/src/main/webapp/images/logo.svg"]
+sources: ["webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/login.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/register.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp", "webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp", "webapp/src/main/webapp/WEB-INF/views/cart/index.jsp", "webapp/src/main/webapp/WEB-INF/views/error/400.jsp", "webapp/src/main/webapp/WEB-INF/views/error/403.jsp", "webapp/src/main/webapp/WEB-INF/views/error/404.jsp", "webapp/src/main/webapp/WEB-INF/views/error/409.jsp", "webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp", "webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp", "webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp", "webapp/src/main/webapp/WEB-INF/views/landing/index.jsp", "webapp/src/main/webapp/WEB-INF/views/post/contact.jsp", "webapp/src/main/webapp/WEB-INF/views/post/detail.jsp", "webapp/src/main/webapp/WEB-INF/views/profile/index.jsp", "webapp/src/main/webapp/WEB-INF/views/profile/public.jsp", "webapp/src/main/webapp/WEB-INF/views/publish/index.jsp", "webapp/src/main/webapp/js/account-edit.js", "webapp/src/main/webapp/js/autocomplete.js", "webapp/src/main/webapp/js/catalog.js", "webapp/src/main/webapp/js/confirm-action.js", "webapp/src/main/webapp/js/post-gallery.js", "webapp/src/main/webapp/js/publish-preview.js", "webapp/src/main/webapp/js/sale-detail.js", "webapp/src/main/webapp/js/submit-once.js", "webapp/src/main/webapp/images/covers/placeholder.svg", "webapp/src/main/webapp/images/logo.svg"]
 ---
 
 # Views and assets
 
 > [!summary] En una frase
-> 20 vistas JSP, 7 scripts y 2 imágenes: las vistas solo componen componentes y muestran lo que el controller dejó en el modelo, y cada script mejora algo que ya funciona sin JavaScript.
+> 20 vistas JSP, 8 scripts y 2 imágenes: las vistas solo componen componentes y muestran lo que el controller dejó en el modelo, y cada script mejora algo que ya funciona sin JavaScript.
 
 Los componentes compartidos están en [[UI components]] y los estilos en [[UI styles and tokens]].
 
@@ -39,15 +39,15 @@ Los componentes compartidos están en [[UI components]] y los estilos en [[UI st
 | `error/403` | Sin permiso | [[ErrorController]], [[ErrorResponseAdvice]] | [[Validation and errors]] | 18 |
 | `error/404` | No encontrado | [[ErrorController]], [[ErrorResponseAdvice]] | [[Validation and errors]] | 30 |
 | `error/409` | Conflicto: el estado cambió | [[InquiryController]], [[PostContactController]], [[PublishController]] | [[Validation and errors]] | 18 |
-| `inquiry/detail` | La página de la venta: acciones según estado y rol, conversación, reseña | [[InquiryController]] | [[Inquiry and sale flow]] | 276 |
-| `inquiry/received` | Bandeja del vendedor, agrupada por publicación | [[InquiryController]] | [[Inquiry and sale flow]] | 73 |
-| `inquiry/sent` | Bandeja del comprador | [[InquiryController]] | [[Inquiry and sale flow]] | 71 |
+| `inquiry/detail` | La página de la venta: acciones según estado y rol, conversación, reseña | [[InquiryController]] | [[Inquiry and sale flow]] | 287 |
+| `inquiry/received` | Bandeja del vendedor, agrupada por publicación | [[InquiryController]] | [[Inquiry and sale flow]] | 81 |
+| `inquiry/sent` | Bandeja del comprador | [[InquiryController]] | [[Inquiry and sale flow]] | 79 |
 | `landing/index` | Filtros, orden, grilla, estado vacío y paginación | [[LandingController]] | [[Landing flow]] | 223 |
 | `post/contact` | Mensaje y elección de dirección | [[PostContactController]] | [[Contact flow]] | 68 |
-| `post/detail` | Ficha: galería, vendedor, acciones según quién mira | [[PostController]] | [[Post detail flow]] | 188 |
-| `profile/index` | Perfil privado: cuenta, contraseña, cobro, direcciones, publicaciones | [[ProfileController]] | [[Profile flow]] | 328 |
-| `profile/public` | Perfil público: reputación, publicaciones, reseñas | [[PublicProfileController]] | [[Public profile flow]] | 89 |
-| `publish/index` | Publicar y editar comparten vista | [[PublishController]] | [[Publish flow]] | 145 |
+| `post/detail` | Ficha: galería, vendedor, acciones según quién mira | [[PostController]] | [[Post detail flow]] | 183 |
+| `profile/index` | Perfil privado: cuenta, contraseña, cobro, direcciones, publicaciones | [[ProfileController]] | [[Profile flow]] | 341 |
+| `profile/public` | Perfil público: reputación, publicaciones, reseñas | [[PublicProfileController]] | [[Public profile flow]] | 108 |
+| `publish/index` | Publicar y editar comparten vista | [[PublishController]] | [[Publish flow]] | 155 |
 
 "Controller" se calculó buscando el nombre lógico de la vista en las clases de `webapp`.
 
@@ -57,10 +57,11 @@ Los componentes compartidos están en [[UI components]] y los estilos en [[UI st
 |---|---|---|
 | `account-edit.js` | Filas editables del perfil y diálogo de la foto | Perfil privado (`pageScript`) |
 | `autocomplete.js` | Sugerencias: espera, número de secuencia, JSON y nodos armados con textContent | Todas las páginas; actúa en el buscador y en el campo de artista |
-| `catalog.js` | Envía el orden al cambiar el select; pliega filtros en pantallas angostas | Todas las páginas; actúa en el catálogo |
+| `catalog.js` | Envía el orden al cambiar el select; pliega filtros en pantallas angostas | Todas las páginas; actúa en los formularios `data-auto-submit` (orden del catálogo y rol de las reseñas del perfil público) |
 | `confirm-action.js` | Abre el diálogo antes de enviar un formulario destructivo | Todas las páginas; actúa donde hay `data-confirm-message` |
 | `post-gallery.js` | Cambia la foto principal al tocar una miniatura | Ficha (`pageScript`) |
 | `publish-preview.js` | Vista previa de la tarjeta mientras se completa el formulario | Publicar y editar (lo carga la propia vista) |
+| `sale-detail.js` | Página de la venta: alto de la conversación, scroll al último mensaje, Enter para enviar y cancelar la edición de la reseña | Página de la venta (`pageScript`) |
 | `submit-once.js` | Evita el doble envío | Todas las páginas (lo carga `head.tag`) |
 
 Todos son JavaScript sin dependencias ni framework, cargados con `defer`.
@@ -109,7 +110,7 @@ Las sugerencias llegan como JSON y los nodos se arman con `textContent`, nunca c
 
 Pedido de recuperación.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp>), líneas 1–34.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp>), líneas 1–34.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -152,7 +153,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/forgot-pa
 
 Login: mirá los nombres de los campos y el token CSRF.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/login.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/login.jsp>), líneas 1–56.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/auth/login.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/login.jsp>), líneas 1–56.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -217,7 +218,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/login.jsp
 
 Formulario de registro.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/register.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/register.jsp>), líneas 1–46.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/auth/register.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/register.jsp>), líneas 1–46.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -272,7 +273,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/register.
 
 Nueva contraseña con el token en un campo oculto.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp>), líneas 1–48.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp>), líneas 1–48.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -329,7 +330,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/reset-pas
 
 Pantalla para la cuenta sin verificar.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp>), líneas 1–32.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp>), líneas 1–32.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -370,7 +371,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/verify-re
 
 Resultado de abrir el enlace de verificación.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp>), líneas 1–44.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp>), líneas 1–44.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -423,7 +424,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/auth/verify.js
 
 Carrito agrupado por publicante. Mirá la URL de la tapa (línea 53).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/cart/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/cart/index.jsp>), líneas 1–128.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/cart/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/cart/index.jsp>), líneas 1–128.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -478,7 +479,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/cart/index.jsp
                             <ul class="inbox-list">
                                 <c:forEach items="${group.items}" var="item">
                                     <c:choose>
-                                        <c:when test="${item.coverImageId.present}"><c:url value="/covers/${item.coverImageId.get()}" var="coverUrl"/></c:when>
+                                        <c:when test="${item.coverImageId.present}"><c:url value="/post/${item.postId}/images/${item.coverImageId.get()}" var="coverUrl"/></c:when>
                                         <c:otherwise><c:url value="/images/covers/placeholder.svg" var="coverUrl"/></c:otherwise>
                                     </c:choose>
                                     <c:url value="/post/${item.postId}" var="postUrl"/>
@@ -560,7 +561,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/cart/index.jsp
 
 Pedido inválido.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/400.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/400.jsp>), líneas 1–28.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/error/400.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/400.jsp>), líneas 1–28.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -597,7 +598,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/400.jsp]
 
 Sin permiso.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/403.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/403.jsp>), líneas 1–18.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/error/403.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/403.jsp>), líneas 1–18.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -624,7 +625,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/403.jsp]
 
 No encontrado.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/404.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/404.jsp>), líneas 1–30.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/error/404.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/404.jsp>), líneas 1–30.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -663,7 +664,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/404.jsp]
 
 Conflicto: el estado cambió.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/409.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/409.jsp>), líneas 1–18.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/error/409.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/409.jsp>), líneas 1–18.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -690,7 +691,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/error/409.jsp]
 
 La página de la venta: acciones según estado y rol, conversación, reseña.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp>), líneas 1–276.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp>), líneas 1–287.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -744,35 +745,90 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/detail
 <c:url value="/inquiries/${inquiry.id}/messages" var="messagesUrl"/>
 <c:url value="/inquiries/${inquiry.id}/review" var="reviewUrl"/>
 <c:url value="/inquiries/${inquiry.id}/review/remove" var="reviewRemoveUrl"/>
-<c:url value="/users/${detail.counterpartyId}" var="counterpartyUrl"/>
-<spring:message code="review.save" var="reviewSaveLabel"/>
+<c:url value="/inquiries/${inquiry.id}" var="detailUrl"/>
+<spring:message code="${empty detail.ownReview ? 'review.save' : 'review.update'}" var="reviewSaveLabel"/>
+<spring:message code="review.edit" var="reviewEditLabel"/>
+<spring:message code="review.cancel" var="reviewCancelLabel"/>
+<spring:message code="review.remove.confirmation" var="reviewRemoveConfirmation"/>
 <spring:message code="review.remove" var="reviewRemoveLabel"/>
 <spring:message code="review.rating.label" var="reviewRatingLabel"/>
 <spring:message code="review.body.label" var="reviewBodyLabel"/>
 <!DOCTYPE html>
 <html lang="${pageContext.response.locale}">
-<ui:head titleCode="${pageTitleCode}"/>
+<ui:head titleCode="${pageTitleCode}" pageScript="sale-detail"/>
 <body>
 <ui:site-header/>
-<main class="page-shell">
+<main class="page-shell sale-page">
     <ui:back-link href="${detail.sellerView ? '/inquiries' : '/inquiries/sent'}" label="${backLabel}"/>
     <ui:h1 text="${heading}"/>
     <c:if test="${not empty saleNotice}"><p class="notice"><spring:message code="${saleNotice}"/></p></c:if>
     <c:if test="${param.receiptTooLarge != null}"><p class="notice notice--error"><spring:message code="inquiry.receipt.invalid"/></p></c:if>
 
-    <%-- Una tarjeta con el resumen, el estado y las acciones de la Venta. A su lado, la decision
-         sobre el Comprador mientras la Consulta esta pendiente, o los datos de cobro mientras el
-         comprador tiene que transferir. --%>
-    <div class="sale-layout${detail.canUploadReceipt or detail.canReject ? '' : ' sale-layout--single'}">
-        <section class="surface sale-summary">
+    <div class="sale-layout">
+    <%-- La Conversacion: del Mensaje mas viejo al mas nuevo. Sin acciones de decision. --%>
+    <section class="conversation" id="conversation">
+        <header class="conversation__header">
+            <h2 class="visually-hidden" id="conversation-title"><spring:message code="inquiry.conversation.heading"/></h2>
+            <ui:user-byline userId="${detail.counterpartyId}" username="${detail.counterpartyUsername}" imageId="${detail.counterpartyAvatarImageId}"/>
+        </header>
+        <div class="conversation__history" tabindex="0" role="region" aria-labelledby="conversation-title" data-conversation-history>
+        <c:choose>
+            <c:when test="${empty detail.messages}">
+                <p class="conversation__empty"><spring:message code="inquiry.conversation.empty"/></p>
+            </c:when>
+            <c:otherwise>
+                <ol class="conversation__list">
+                    <c:forEach items="${detail.messages}" var="message">
+                        <c:set var="own" value="${message.senderId eq detail.viewerId}"/>
+                        <li class="message${own ? ' message--own' : ''}">
+                            <p class="message__meta">
+                                <span class="message__author">
+                                    <c:choose>
+                                        <c:when test="${own}"><c:out value="${youLabel}"/></c:when>
+                                        <c:when test="${message.senderId eq inquiry.buyerId}"><c:out value="${inquiry.buyerUsername}"/></c:when>
+                                        <c:otherwise><c:out value="${inquiry.sellerUsername}"/></c:otherwise>
+                                    </c:choose>
+                                </span>
+                                <fmt:formatDate value="${message.sentAt}" type="both" dateStyle="short" timeStyle="short" var="sentAt"/>
+                                <span class="message__time"><c:out value="${sentAt}"/></span>
+                            </p>
+                            <p class="message__body"><c:out value="${message.body}"/></p>
+                        </li>
+                    </c:forEach>
+                </ol>
+            </c:otherwise>
+        </c:choose>
+        </div>
+        <c:choose>
+            <c:when test="${detail.canWrite}">
+                <form:form action="${messagesUrl}#conversation" method="post" modelAttribute="messageForm" data-submit-once="true" data-focus-message="${messageSent ? 'true' : 'false'}" cssClass="form-stack conversation__form">
+                    <ui:textarea path="body" id="message-body" label="${messageLabel}" maxLength="${maxMessageLength}" rows="2" hideLabel="true"/>
+                    <div class="form-stack__actions">
+                        <ui:button label="${sendLabel}" type="submit"/>
+                    </div>
+                </form:form>
+            </c:when>
+            <%-- Por que no se puede escribir: la publicacion ya no existe, o la Consulta se rechazo o
+                 se cancelo. REJECTED + SOLD no alcanza para decir que se vendio a otra persona: el
+                 rechazo pudo ser manual, o el mismo comprador pudo comprar con otra Consulta. --%>
+            <c:when test="${inquiry.postDeleted}">
+                <p class="notice"><spring:message code="inquiry.conversation.closed.postDeleted"/></p>
+            </c:when>
+            <c:otherwise>
+                <p class="notice"><spring:message code="inquiry.conversation.closed"/></p>
+            </c:otherwise>
+        </c:choose>
+    </section>
+        <div class="sale-sidebar">
+        <section class="sale-summary">
             <ui:inbox-group-header group="${inquiry}"/>
-            <dl class="sale-facts">
+            <dl class="sale-facts" id="sale-actions">
                 <c:if test="${not empty inquiry.price}">
                     <dt><spring:message code="inquiry.sale.price"/></dt>
                     <dd><spring:message code="vinylCard.price.format"><spring:argument value="${inquiry.price}"/></spring:message></dd>
                 </c:if>
                 <dt><spring:message code="${detail.sellerView ? 'inquiry.sale.buyer' : 'inquiry.sale.seller'}"/></dt>
-                <dd><a href="<c:out value="${counterpartyUrl}"/>"><c:out value="${detail.counterpartyUsername}"/></a></dd>
+                <dd><ui:user-byline userId="${detail.counterpartyId}" username="${detail.counterpartyUsername}" imageId="${detail.counterpartyAvatarImageId}"/></dd>
                 <dt><spring:message code="inquiry.sale.status"/></dt>
                 <dd><ui:inquiry-status status="${inquiry.status}"/></dd>
                 <c:if test="${detail.addressVisible}">
@@ -825,7 +881,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/detail
 
         <%-- La decision es sobre la persona: nombra al Comprador y nunca aparece junto a un Mensaje. --%>
         <c:if test="${detail.canReject}">
-            <section class="surface sale-decision">
+            <section class="sale-decision">
                 <h2 class="text text-h3">
                     <spring:message code="inquiry.detail.decision.heading" var="decisionHeading">
                         <spring:argument value="${inquiry.buyerUsername}"/>
@@ -854,7 +910,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/detail
         </c:if>
 
         <c:if test="${detail.canUploadReceipt}">
-            <section class="surface form-stack sale-payment">
+            <section class="form-stack sale-payment">
                 <h2 class="text text-h3"><spring:message code="inquiry.sale.payment.heading"/></h2>
                 <c:choose>
                     <c:when test="${detail.paymentInfoMissing}">
@@ -890,81 +946,37 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/detail
                 </form:form>
             </section>
         </c:if>
+
+        <c:if test="${detail.canReview}">
+            <section class="sale-review" id="review">
+                <h2 class="text text-h3"><spring:message code="${empty detail.ownReview ? 'review.prompt' : 'review.published'}"/></h2>
+                <c:if test="${reviewSaved}"><p class="notice" role="status"><spring:message code="review.saved"/></p></c:if>
+                <c:if test="${reviewRemoved}"><p class="notice" role="status"><spring:message code="review.removed"/></p></c:if>
+                <c:if test="${not empty detail.ownReview}">
+                    <div class="sale-review__published"><ui:review-content maxRating="${maxRating}" review="${detail.ownReview}"/></div>
+                </c:if>
+                <spring:bind path="reviewForm.*"><c:set var="reviewHasErrors" value="${status.error}"/></spring:bind>
+                <details class="sale-review__editor"<c:if test="${reviewHasErrors}"> open</c:if>>
+                    <summary class="button button--ghost button--sm"><c:out value="${empty detail.ownReview ? reviewSaveLabel : reviewEditLabel}"/></summary>
+                    <form:form action="${reviewUrl}#review" method="post" modelAttribute="reviewForm" data-submit-once="true" cssClass="form-stack" novalidate="novalidate">
+                        <ui:star-rating-input path="rating" legend="${reviewRatingLabel}" max="${maxRating}" valueCode="review.rating.value"/>
+                        <ui:textarea path="body" id="review-body" label="${reviewBodyLabel}" maxLength="${maxReviewLength}" rows="3"/>
+                        <div class="form-stack__actions">
+                            <ui:button label="${reviewSaveLabel}" type="submit"/>
+                            <ui:button label="${reviewCancelLabel}" url="${detailUrl}" variant="ghost" data="cancel-review"/>
+                        </div>
+                    </form:form>
+                </details>
+                <c:if test="${not empty detail.ownReview}">
+                    <form class="sale-review__remove" action="<c:out value="${reviewRemoveUrl}"/>" method="post" data-confirm-message="<c:out value="${reviewRemoveConfirmation}"/>" data-submit-once="true">
+                        <sec:csrfInput/>
+                        <ui:button label="${reviewRemoveLabel}" type="submit" variant="danger-outline" size="sm"/>
+                    </form>
+                </c:if>
+            </section>
+        </c:if>
+        </div>
     </div>
-
-    <c:if test="${detail.canReview}">
-        <section class="surface sale-review" id="review">
-            <h2 class="text text-h3">
-                <spring:message code="review.heading" var="reviewHeading">
-                    <spring:argument value="${detail.counterpartyUsername}"/>
-                </spring:message>
-                <c:out value="${reviewHeading}"/>
-            </h2>
-            <c:if test="${reviewSaved}"><p class="notice"><spring:message code="review.saved"/></p></c:if>
-            <c:if test="${reviewRemoved}"><p class="notice"><spring:message code="review.removed"/></p></c:if>
-            <form:form action="${reviewUrl}" method="post" modelAttribute="reviewForm" cssClass="form-stack" novalidate="novalidate">
-                <ui:star-rating-input path="rating" legend="${reviewRatingLabel}" max="${maxRating}" valueCode="review.rating.value" />
-                <ui:textarea path="body" id="review-body" label="${reviewBodyLabel}" maxLength="${maxReviewLength}" />
-                <ui:button label="${reviewSaveLabel}" type="submit" />
-            </form:form>
-            <c:if test="${not empty detail.ownReview}">
-                <form action="<c:out value="${reviewRemoveUrl}"/>" method="post">
-                    <sec:csrfInput/>
-                    <ui:button label="${reviewRemoveLabel}" type="submit" variant="danger-outline" size="sm" />
-                </form>
-            </c:if>
-        </section>
-    </c:if>
-
-    <%-- La Conversacion: del Mensaje mas viejo al mas nuevo. Sin acciones de decision. --%>
-    <section class="surface conversation" id="conversation">
-        <h2 class="text text-h3"><spring:message code="inquiry.conversation.heading"/></h2>
-        <c:choose>
-            <c:when test="${empty detail.messages}">
-                <p class="conversation__empty"><spring:message code="inquiry.conversation.empty"/></p>
-            </c:when>
-            <c:otherwise>
-                <ol class="conversation__list">
-                    <c:forEach items="${detail.messages}" var="message">
-                        <c:set var="own" value="${message.senderId eq detail.viewerId}"/>
-                        <li class="message${own ? ' message--own' : ''}">
-                            <p class="message__meta">
-                                <span class="message__author">
-                                    <c:choose>
-                                        <c:when test="${own}"><c:out value="${youLabel}"/></c:when>
-                                        <c:when test="${message.senderId eq inquiry.buyerId}"><c:out value="${inquiry.buyerUsername}"/></c:when>
-                                        <c:otherwise><c:out value="${inquiry.sellerUsername}"/></c:otherwise>
-                                    </c:choose>
-                                </span>
-                                <fmt:formatDate value="${message.sentAt}" type="both" dateStyle="short" timeStyle="short" var="sentAt"/>
-                                <span class="message__time"><c:out value="${sentAt}"/></span>
-                            </p>
-                            <p class="message__body"><c:out value="${message.body}"/></p>
-                        </li>
-                    </c:forEach>
-                </ol>
-            </c:otherwise>
-        </c:choose>
-        <c:choose>
-            <c:when test="${detail.canWrite}">
-                <form:form action="${messagesUrl}#conversation" method="post" modelAttribute="messageForm" data-submit-once="true" cssClass="form-stack conversation__form">
-                    <ui:textarea path="body" id="message-body" label="${messageLabel}" maxLength="${maxMessageLength}"/>
-                    <div class="form-stack__actions">
-                        <ui:button label="${sendLabel}" type="submit"/>
-                    </div>
-                </form:form>
-            </c:when>
-            <%-- Por que no se puede escribir: la publicacion ya no existe, o la Consulta se rechazo o
-                 se cancelo. REJECTED + SOLD no alcanza para decir que se vendio a otra persona: el
-                 rechazo pudo ser manual, o el mismo comprador pudo comprar con otra Consulta. --%>
-            <c:when test="${inquiry.postDeleted}">
-                <p class="notice"><spring:message code="inquiry.conversation.closed.postDeleted"/></p>
-            </c:when>
-            <c:otherwise>
-                <p class="notice"><spring:message code="inquiry.conversation.closed"/></p>
-            </c:otherwise>
-        </c:choose>
-    </section>
 </main>
 <ui:confirm-dialog title="${confirmTitle}" confirmLabel="${confirmAction}"/>
 </body>
@@ -975,7 +987,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/detail
 
 Bandeja del vendedor, agrupada por publicación.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp>), líneas 1–73.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp>), líneas 1–81.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -986,6 +998,9 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/receiv
 <spring:message code="inquiry.viewSale" var="viewSaleLabel"/>
 <spring:message code="inquiry.openConversation" var="openConversationLabel"/>
 <spring:message code="inquiry.pagination" var="paginationLabel"/>
+<spring:message code="inquiry.filter.label" var="filterLabel"/>
+<jsp:useBean id="paginationParams" class="java.util.LinkedHashMap" scope="page"/>
+<c:set target="${paginationParams}" property="status" value="${statusFilter}"/>
 <!DOCTYPE html>
 <html lang="${pageContext.response.locale}">
 <ui:head titleCode="inquiry.received.pageTitle"/>
@@ -994,12 +1009,16 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/receiv
 <main class="page-shell">
     <ui:h1 text="${heading}"/>
     <ui:inquiry-nav active="received" receivedCount="${receivedCount}" sentCount="${sentCount}"/>
+    <c:if test="${filterCounts.total gt 0}">
+        <ui:filter-chips baseUrl="/inquiries" paramName="status" values="${statusFilters}" active="${statusFilter}"
+                         counts="${filterCounts.counts}" messagePrefix="inquiry.filter" label="${filterLabel}"/>
+    </c:if>
     <c:if test="${inquiryRejected}"><p class="notice"><spring:message code="inquiry.rejected"/></p></c:if>
 
     <section class="inbox" id="inquiries">
         <c:choose>
             <c:when test="${empty receivedPage.groups}">
-                <p class="empty-state"><spring:message code="inquiry.received.empty"/></p>
+                <p class="empty-state"><spring:message code="${empty statusFilter ? 'inquiry.received.empty' : 'inquiry.filter.empty'}"/></p>
             </c:when>
             <c:otherwise>
                 <c:forEach items="${receivedPage.groups}" var="group">
@@ -1043,6 +1062,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/receiv
                                hasPrevious="${receivedPage.hasPrevious}"
                                hasNext="${receivedPage.hasNext}"
                                baseUrl="/inquiries"
+                               extraParams="${paginationParams}"
                                fragment="inquiries"
                                ariaLabel="${paginationLabel}"/>
             </c:otherwise>
@@ -1057,7 +1077,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/receiv
 
 Bandeja del comprador.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp>), líneas 1–71.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp>), líneas 1–79.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -1066,6 +1086,9 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/sent.j
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 <spring:message code="inquiry.heading" var="heading"/>
 <spring:message code="inquiry.pagination" var="paginationLabel"/>
+<spring:message code="inquiry.filter.label" var="filterLabel"/>
+<jsp:useBean id="paginationParams" class="java.util.LinkedHashMap" scope="page"/>
+<c:set target="${paginationParams}" property="status" value="${statusFilter}"/>
 <spring:message code="inquiry.viewSale" var="viewSaleLabel"/>
 <spring:message code="inquiry.pay" var="payLabel"/>
 <spring:message code="inquiry.openConversation" var="openConversationLabel"/>
@@ -1077,6 +1100,10 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/sent.j
 <main class="page-shell">
     <ui:h1 text="${heading}"/>
     <ui:inquiry-nav active="sent" receivedCount="${receivedCount}" sentCount="${sentCount}"/>
+    <c:if test="${filterCounts.total gt 0}">
+        <ui:filter-chips baseUrl="/inquiries/sent" paramName="status" values="${statusFilters}" active="${statusFilter}"
+                         counts="${filterCounts.counts}" messagePrefix="inquiry.filter" label="${filterLabel}"/>
+    </c:if>
     <c:if test="${inquirySubmitted}"><p class="notice"><spring:message code="inquiry.submitted"/></p></c:if>
     <c:if test="${not empty cartResult}">
         <p class="notice"><spring:message code="cart.result.sent" arguments="${cartResult.sentCount}"/></p>
@@ -1088,7 +1115,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/sent.j
     <section class="inbox" id="inquiries">
         <c:choose>
             <c:when test="${empty sentPage.groups}">
-                <p class="empty-state"><spring:message code="inquiry.sent.empty"/></p>
+                <p class="empty-state"><spring:message code="${empty statusFilter ? 'inquiry.sent.empty' : 'inquiry.filter.empty'}"/></p>
             </c:when>
             <c:otherwise>
                 <c:forEach items="${sentPage.groups}" var="group">
@@ -1123,6 +1150,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/sent.j
                                hasPrevious="${sentPage.hasPrevious}"
                                hasNext="${sentPage.hasNext}"
                                baseUrl="/inquiries/sent"
+                               extraParams="${paginationParams}"
                                fragment="inquiries"
                                ariaLabel="${paginationLabel}"/>
             </c:otherwise>
@@ -1137,7 +1165,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/inquiry/sent.j
 
 Filtros, orden, grilla, estado vacío y paginación.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/landing/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/landing/index.jsp>), líneas 1–223.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/landing/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/landing/index.jsp>), líneas 1–223.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -1369,7 +1397,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/landing/index.
 
 Mensaje y elección de dirección.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/post/contact.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/contact.jsp>), líneas 1–68.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/post/contact.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/contact.jsp>), líneas 1–68.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -1446,7 +1474,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/post/contact.j
 
 Ficha: galería, vendedor, acciones según quién mira.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/post/detail.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/detail.jsp>), líneas 1–188.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/post/detail.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/detail.jsp>), líneas 1–183.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -1491,7 +1519,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/post/detail.js
 <main class="page-shell">
     <c:choose>
         <c:when test="${not empty returnProfilePath}">
-            <ui:back-link href="${returnProfilePath}" page="${returnProfilePage}"
+            <ui:back-link href="${returnProfilePath}" page="${returnProfilePage}" postStatus="${returnPostStatus}"
                           fragment="posts" label="${backToProfileLabel}"/>
         </c:when>
         <c:otherwise><ui:back-link href="/${empty returnQuery ? '' : '?'}${returnQuery}"/></c:otherwise>
@@ -1543,12 +1571,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/post/detail.js
             </div>
             <ui:p text="${post.artistName}" variant="lead"/>
             <c:if test="${not empty seller}">
-                <c:url value="/users/${seller.id}" var="sellerUrl" />
-                <spring:message code="post.detail.seller.open" var="sellerOpenLabel"><spring:argument value="${seller.username}" /></spring:message>
-                <a class="seller-byline" href="<c:out value="${sellerUrl}" />" aria-label="<c:out value="${sellerOpenLabel}" />">
-                    <ui:avatar userId="${seller.id}" imageId="${seller.avatarImageId}" name="${seller.username}" size="sm" alt="" />
-                    <span class="seller-byline__name"><c:out value="${seller.username}" /></span>
-                </a>
+                <ui:user-byline userId="${seller.id}" username="${seller.username}" imageId="${seller.avatarImageId}" />
             </c:if>
             <spring:message code="vinylCard.price.format" var="priceValue">
                 <spring:argument value="${post.price}"/>
@@ -1643,7 +1666,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/post/detail.js
 
 Perfil privado: cuenta, contraseña, cobro, direcciones, publicaciones.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/profile/index.jsp>), líneas 1–328.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/profile/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/profile/index.jsp>), líneas 1–341.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -1673,9 +1696,15 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/index.
 <spring:message code="auth.passwordConfirmation.label" var="passwordConfirmationLabel" />
 <spring:message code="auth.password.hint" var="passwordHint" />
 <spring:message code="profile.posts.pagination" var="paginationLabel" />
+<spring:message code="profile.posts.filter.label" var="postFilterLabel" />
+<jsp:useBean id="postPaginationParams" class="java.util.LinkedHashMap" scope="page" />
+<c:set target="${postPaginationParams}" property="postStatus" value="${postStatusFilter}" />
 <jsp:useBean id="postLinkParams" class="java.util.LinkedHashMap" scope="page" />
 <c:set target="${postLinkParams}" property="origin" value="${postOrigin}" />
 <c:set target="${postLinkParams}" property="originPage" value="${postPage.pageNumber}" />
+<c:if test="${not empty postStatusFilter}">
+    <c:set target="${postLinkParams}" property="postStatus" value="${postStatusFilter}" />
+</c:if>
 <spring:message code="auth.logout.action" var="logoutLabel" />
 <spring:message code="profile.payment.label" var="paymentLabel" />
 <spring:message code="profile.payment.edit" var="paymentEditLabel" />
@@ -1815,6 +1844,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/index.
                     <span class="account-row__edit" role="img" aria-label="<c:out value="${paymentEditLabel}" />"><ui:icon name="pencil"/></span>
                 </summary>
                 <form:form cssClass="account-row__form" action="${paymentUrl}" method="post" modelAttribute="paymentForm">
+                    <c:if test="${not empty returnInquiryId}"><input type="hidden" name="returnInquiryId" value="<c:out value="${returnInquiryId}" />" /></c:if>
                     <ui:text-input path="cbu" label="${cbuLabel}" maxLength="30" autofocus="${paymentEditOpen}" />
                     <ui:text-input path="alias" label="${aliasLabel}" maxLength="20" />
                     <div class="account-row__actions">
@@ -1914,12 +1944,17 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/index.
 
     <section class="profile-posts" id="posts">
         <h2><spring:message code="profile.posts.heading" /></h2>
+        <c:if test="${postStatusCounts.total gt 0}">
+            <ui:filter-chips baseUrl="/profile" paramName="postStatus" values="${postStatuses}"
+                             active="${postStatusFilter}" counts="${postStatusCounts.counts}"
+                             messagePrefix="profile.posts.filter" label="${postFilterLabel}" fragment="posts"/>
+        </c:if>
         <c:if test="${postDeleted}">
             <p class="notice"><spring:message code="post.deleted" /></p>
         </c:if>
         <c:choose>
             <c:when test="${empty postPage.posts}">
-                <p class="empty-state"><spring:message code="profile.posts.empty" /></p>
+                <p class="empty-state"><spring:message code="${empty postStatusFilter ? 'profile.posts.empty' : 'profile.posts.filter.empty'}" /></p>
             </c:when>
             <c:otherwise>
                 <ul class="post-grid profile-posts__grid">
@@ -1934,6 +1969,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/index.
                                hasPrevious="${postPage.hasPrevious}"
                                hasNext="${postPage.hasNext}"
                                baseUrl="/profile"
+                               extraParams="${postPaginationParams}"
                                fragment="posts"
                                ariaLabel="${paginationLabel}"/>
             </c:otherwise>
@@ -1980,7 +2016,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/index.
 
 Perfil público: reputación, publicaciones, reseñas.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/public.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/profile/public.jsp>), líneas 1–89.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/profile/public.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/profile/public.jsp>), líneas 1–108.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -1991,10 +2027,21 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/public
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 <c:set var="publicUser" value="${profile.user}" />
 <c:set var="postPage" value="${profile.postPage}" />
-<c:set var="reviewStats" value="${profile.reviewStats}" />
+<c:set var="reviewPage" value="${profile.reviewPage}" />
+<c:set var="reviewStats" value="${reviewPage.stats}" />
 <spring:message code="publicProfile.avatar.alt" var="avatarAlt"><spring:argument value="${publicUser.username}" /></spring:message>
 <spring:message code="publicProfile.posts.pagination" var="paginationLabel" />
 <spring:message code="publicProfile.editOwn" var="editOwnLabel" />
+<spring:message code="publicProfile.reviews.role" var="roleLabel" />
+<spring:message code="publicProfile.reviews.apply" var="applyReviewsLabel" />
+<spring:message code="publicProfile.reviews.pagination" var="reviewsPaginationLabel" />
+<c:url value="/users/${publicUser.id}" var="profileUrl"/>
+<jsp:useBean id="postsPaginationParams" class="java.util.LinkedHashMap" scope="page" />
+<c:set target="${postsPaginationParams}" property="reviewRole" value="${reviewPage.role}" />
+<c:set target="${postsPaginationParams}" property="reviewPage" value="${reviewPage.pageNumber}" />
+<jsp:useBean id="reviewsPaginationParams" class="java.util.LinkedHashMap" scope="page" />
+<c:set target="${reviewsPaginationParams}" property="reviewRole" value="${reviewPage.role}" />
+<c:set target="${reviewsPaginationParams}" property="page" value="${postPage.pageNumber}" />
 <jsp:useBean id="postLinkParams" class="java.util.LinkedHashMap" scope="page" />
 <c:set target="${postLinkParams}" property="origin" value="${postOrigin}" />
 <c:set target="${postLinkParams}" property="originPage" value="${postPage.pageNumber}" />
@@ -2011,21 +2058,18 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/public
         <ui:avatar userId="${publicUser.id}" imageId="${publicUser.avatarImageId}" name="${publicUser.username}" size="xl" alt="${avatarAlt}" />
         <div class="profile-hero__body">
             <ui:h1 text="${publicUser.username}" />
-            <c:choose>
-                <c:when test="${reviewStats.count gt 0}">
-                    <fmt:formatNumber value="${reviewStats.average}" maxFractionDigits="1" minFractionDigits="1" var="averageRating" />
-                    <p class="profile-hero__rating">
-                        <span class="profile-hero__star" aria-hidden="true">&#9733;</span>
-                        <spring:message code="publicProfile.reputation.summary">
-                            <spring:argument value="${averageRating}" />
-                            <spring:argument value="${reviewStats.count}" />
-                        </spring:message>
-                    </p>
-                </c:when>
-                <c:otherwise>
-                    <p class="profile-hero__rating profile-hero__rating--empty"><spring:message code="publicProfile.reputation.pending" /></p>
-                </c:otherwise>
-            </c:choose>
+            <c:if test="${reviewStats.count gt 0}">
+                <fmt:formatNumber value="${reviewStats.average}" maxFractionDigits="1" minFractionDigits="1" var="averageRating"/>
+                <spring:message code="publicProfile.reputation.summary" var="ratingSummary">
+                    <spring:argument value="${averageRating}"/>
+                    <spring:argument value="${reviewStats.count}"/>
+                </spring:message>
+                <p class="profile-reputation">
+                    <span aria-hidden="true"><c:out value="${averageRating}"/></span>
+                    <ui:rating value="${reviewStats.average}" maxRating="${maxRating}" label="${ratingSummary}"/>
+                    <span class="text text--muted" aria-hidden="true"><spring:message code="publicProfile.reviews.count"><spring:argument value="${reviewStats.count}"/></spring:message></span>
+                </p>
+            </c:if>
         </div>
         <c:if test="${currentUserId eq publicUser.id}">
             <div class="profile-hero__actions">
@@ -2047,28 +2091,39 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/public
                 <%-- La ruta va sin c:url: pagination-link la arma con el context path. --%>
                 <ui:pagination currentPage="${postPage.pageNumber}" hasPrevious="${postPage.hasPrevious}"
                                hasNext="${postPage.hasNext}" baseUrl="/users/${publicUser.id}" fragment="posts"
-                               ariaLabel="${paginationLabel}" />
+                               extraParams="${postsPaginationParams}" ariaLabel="${paginationLabel}" />
             </c:otherwise>
         </c:choose>
     </section>
-    <c:if test="${not empty profile.reviews}">
-        <section class="profile-reviews">
+    <section class="profile-reviews" id="reviews">
+        <div class="profile-reviews__header">
             <h2 class="text text-h3"><spring:message code="publicProfile.reviews.heading" /></h2>
-            <ul class="profile-reviews__list">
-                <c:forEach items="${profile.reviews}" var="review">
-                    <li class="profile-reviews__item">
-                        <spring:message code="review.rating.value" var="ratingLabel"><spring:argument value="${review.rating}" /></spring:message>
-                        <span class="profile-reviews__stars" role="img" aria-label="<c:out value="${ratingLabel}" />">
-                            <c:forEach begin="1" end="${maxRating}" var="star"><span class="${star le review.rating ? 'profile-reviews__star--filled' : ''}" aria-hidden="true">&#9733;</span></c:forEach>
-                        </span>
-                        <c:if test="${not empty review.body}"><p class="profile-reviews__body"><c:out value="${review.body}" /></p></c:if>
-                        <c:url value="/users/${review.authorId}" var="authorUrl" />
-                        <a class="profile-reviews__author" href="<c:out value="${authorUrl}" />"><c:out value="${review.authorUsername}" /></a>
-                    </li>
-                </c:forEach>
-            </ul>
-        </section>
-    </c:if>
+            <form method="get" action="<c:out value="${profileUrl}"/>#reviews"
+                  class="profile-reviews__filter" data-auto-submit>
+                <input type="hidden" name="page" value="<c:out value="${postPage.pageNumber}"/>"/>
+                <ui:segmented-control name="reviewRole" legend="${roleLabel}" hideLegend="true" items="${reviewRoles}"
+                                      messagePrefix="publicProfile.reviews.role" selectedValue="${reviewPage.role}"/>
+                <ui:button label="${applyReviewsLabel}" type="submit" variant="secondary" size="sm"/>
+            </form>
+        </div>
+            <c:choose>
+                <c:when test="${reviewStats.count gt 0}">
+                    <ul class="profile-reviews__list">
+                        <c:forEach items="${reviewPage.reviews}" var="review">
+                            <li class="profile-reviews__item">
+                                <ui:review-content maxRating="${maxRating}" review="${review}" showAuthor="true"/>
+                            </li>
+                        </c:forEach>
+                    </ul>
+                    <ui:pagination currentPage="${reviewPage.pageNumber}" hasPrevious="${reviewPage.hasPrevious}"
+                                   hasNext="${reviewPage.hasNext}" baseUrl="/users/${publicUser.id}" pageParam="reviewPage"
+                                   extraParams="${reviewsPaginationParams}" fragment="reviews" ariaLabel="${reviewsPaginationLabel}"/>
+                </c:when>
+                <c:otherwise>
+                    <p class="empty-state"><spring:message code="publicProfile.reviews.empty.${reviewPage.role}"/></p>
+                </c:otherwise>
+            </c:choose>
+    </section>
 </main>
 </body>
 </html>
@@ -2078,7 +2133,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/profile/public
 
 Publicar y editar comparten vista.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/publish/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/publish/index.jsp>), líneas 1–145.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/publish/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/publish/index.jsp>), líneas 1–155.
 
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" %>
@@ -2193,11 +2248,21 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/publish/index.
                                     <spring:message code="publish.gallery.remove" var="removeImageLabel">
                                         <spring:argument value="${photoStatus.index + 1}"/>
                                     </spring:message>
-                                    <label class="publish-gallery__item">
+                                    <spring:message code="publish.gallery.restore" var="restoreImageLabel">
+                                        <spring:argument value="${photoStatus.index + 1}"/>
+                                    </spring:message>
+                                    <div class="publish-gallery__item">
                                         <img src="<c:out value="${uploadedImageUrl}"/>" alt="" data-existing-image/>
-                                        <form:checkbox path="removedImageIds" value="${imageId}"/>
-                                        <span><c:out value="${removeImageLabel}"/></span>
-                                    </label>
+                                        <form:checkbox path="removedImageIds" value="${imageId}" id="remove-image-${imageId}"
+                                                       cssClass="publish-gallery__remove-input"/>
+                                        <label for="remove-image-<c:out value="${imageId}"/>" class="publish-gallery__remove">
+                                            <span class="publish-gallery__remove-icon" aria-hidden="true"
+                                                  title="<c:out value="${removeImageLabel}"/>">&times;</span>
+                                            <span class="publish-gallery__restore-icon" aria-hidden="true"
+                                                  title="<c:out value="${restoreImageLabel}"/>">&#8634;</span>
+                                            <span class="visually-hidden"><c:out value="${removeImageLabel}"/></span>
+                                        </label>
+                                    </div>
                                 </c:forEach>
                             </div>
                         </c:if>
@@ -2234,7 +2299,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/publish/index.
 
 Filas editables del perfil y diálogo de la foto.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/account-edit.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/account-edit.js>), líneas 1–256.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/account-edit.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/account-edit.js>), líneas 1–256.
 
 ```javascript
 // Filas de edicion del perfil. Al abrir una fila el foco va al primer campo con el cursor
@@ -2499,7 +2564,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/account-edit.js](</Users/
 
 Sugerencias: espera, número de secuencia, JSON y nodos armados con textContent.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/autocomplete.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/autocomplete.js>), líneas 1–370.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/autocomplete.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/autocomplete.js>), líneas 1–370.
 
 ```javascript
 (function () {
@@ -2878,11 +2943,11 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/autocomplete.js](</Users/
 
 Envía el orden al cambiar el select; pliega filtros en pantallas angostas.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/catalog.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/catalog.js>), líneas 1–29.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/catalog.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/catalog.js>), líneas 1–29.
 
 ```javascript
-// El orden del catalogo se submitea solo al cambiar el select: sin JS queda el
-// boton "Ordenar" como fallback. En pantallas angostas los filtros arrancan
+// Los formularios data-auto-submit envian selects y radios al cambiar: sin JS
+// queda su boton como fallback. En pantallas angostas los filtros arrancan
 // plegados para no tapar los resultados.
 (function () {
     'use strict';
@@ -2891,8 +2956,8 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/catalog.js](</Users/bauti
         var forms = document.querySelectorAll('form[data-auto-submit]');
         forms.forEach(function (form) {
             form.classList.add('is-enhanced');
-            form.querySelectorAll('select').forEach(function (select) {
-                select.addEventListener('change', function () {
+            form.querySelectorAll('select, input[type="radio"]').forEach(function (control) {
+                control.addEventListener('change', function () {
                     if (form.requestSubmit) {
                         form.requestSubmit();
                     } else {
@@ -2916,7 +2981,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/catalog.js](</Users/bauti
 
 Abre el diálogo antes de enviar un formulario destructivo.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/confirm-action.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/confirm-action.js>), líneas 1–63.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/confirm-action.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/confirm-action.js>), líneas 1–63.
 
 ```javascript
 // La confirmacion corre en captura para que, mientras el dialogo esta abierto,
@@ -2988,7 +3053,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/confirm-action.js](</User
 
 Cambia la foto principal al tocar una miniatura.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/post-gallery.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/post-gallery.js>), líneas 1–21.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/post-gallery.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/post-gallery.js>), líneas 1–21.
 
 ```javascript
 (function () {
@@ -3018,7 +3083,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/post-gallery.js](</Users/
 
 Vista previa de la tarjeta mientras se completa el formulario.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/publish-preview.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/publish-preview.js>), líneas 1–101.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/publish-preview.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/publish-preview.js>), líneas 1–101.
 
 ```javascript
 (function () {
@@ -3124,11 +3189,61 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/publish-preview.js](</Use
 }());
 ```
 
+### sale-detail.js
+
+Página de la venta: alto de la conversación, scroll al último mensaje, Enter para enviar y cancelar la edición de la reseña.
+
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/sale-detail.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/sale-detail.js>), líneas 1–41.
+
+```javascript
+(function () {
+    "use strict";
+
+    const history = document.querySelector("[data-conversation-history]");
+    const conversation = document.getElementById("conversation");
+    function fitConversation() {
+        if (!conversation || window.innerWidth <= 900) return;
+        const top = conversation.getBoundingClientRect().top + window.scrollY;
+        conversation.style.setProperty("--conversation-height", Math.max(288, window.innerHeight - top - 24) + "px");
+    }
+    fitConversation();
+    window.addEventListener("resize", fitConversation);
+    if (history) history.scrollTop = history.scrollHeight;
+
+    const editor = document.getElementById("message-body");
+    if (editor && editor.form) {
+        if (editor.form.dataset.focusMessage === "true" || editor.getAttribute("aria-invalid") === "true") {
+            window.addEventListener("pageshow", function () { editor.focus(); }, {once: true});
+        }
+        let composing = false;
+        editor.addEventListener("compositionstart", function () { composing = true; });
+        editor.addEventListener("compositionend", function () { composing = false; });
+        editor.addEventListener("keydown", function (event) {
+            if (event.key !== "Enter" || event.shiftKey || event.isComposing || composing || event.keyCode === 229) return;
+            if (typeof editor.form.requestSubmit !== "function") return;
+            event.preventDefault();
+            editor.form.requestSubmit();
+        });
+    }
+
+    document.querySelectorAll("[data-cancel-review]").forEach(function (cancel) {
+        cancel.addEventListener("click", function (event) {
+            const details = cancel.closest("details");
+            if (!details) return;
+            event.preventDefault();
+            details.querySelector("form").reset();
+            details.open = false;
+            details.querySelector("summary").focus();
+        });
+    });
+}());
+```
+
 ### submit-once.js
 
 Evita el doble envío.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/submit-once.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/submit-once.js>), líneas 1–37.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/submit-once.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/submit-once.js>), líneas 1–37.
 
 ```javascript
 // Evita el doble envio: al submitear un form[data-submit-once] se deshabilitan
@@ -3174,7 +3289,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/submit-once.js](</Users/b
 
 ### placeholder.svg
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/images/covers/placeholder.svg](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/images/covers/placeholder.svg>), líneas 1–9.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/images/covers/placeholder.svg](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/images/covers/placeholder.svg>), líneas 1–9.
 
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-hidden="true">
@@ -3190,7 +3305,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/images/covers/placeholder.sv
 
 ### logo.svg
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/images/logo.svg](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/images/logo.svg>), líneas 1–29.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/images/logo.svg](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/images/logo.svg>), líneas 1–29.
 
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -3252,8 +3367,9 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/images/logo.svg](</Users/bau
 - [webapp/src/main/webapp/js/confirm-action.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/confirm-action.js>)
 - [webapp/src/main/webapp/js/post-gallery.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/post-gallery.js>)
 - [webapp/src/main/webapp/js/publish-preview.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/publish-preview.js>)
+- [webapp/src/main/webapp/js/sale-detail.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/sale-detail.js>)
 - [webapp/src/main/webapp/js/submit-once.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/submit-once.js>)
 - [webapp/src/main/webapp/images/covers/placeholder.svg](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/images/covers/placeholder.svg>)
 - [webapp/src/main/webapp/images/logo.svg](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/images/logo.svg>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

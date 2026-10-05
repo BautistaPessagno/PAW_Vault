@@ -4,12 +4,31 @@ categories: [Testing]
 type: guide
 module: vault
 project: quieroVinilos
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: verified-static
 ---
 
 # Verification record
+
+## Actualización a c3e2a4c, 2026-10-05
+
+El objetivo es `c3e2a4cd23337bd35175d14ef551ba12a758a59d`, el `origin/main` del clon local (merge del PR #62). La copia de trabajo seguía en `1368153`; no se hizo `fetch` ni `checkout` desde el vault: todo salió de los objetos de Git del commit objetivo. Desde `8929aea` hay 60 commits (39 sin merges), 74 archivos cambiados y 12 nuevos, sin borrados ni migraciones nuevas. El detalle está en [[Recent changes 2026-10-05]].
+
+| Chequeo | Resultado |
+|---|---|
+| `verify.py` | 0 errores: 306 notas, 539 extractos verificados contra Git, 238 de 238 clases Java con nota, 2567 rutas citadas, 472 archivos en inventario y roadmap |
+| Commit del repositorio | `verify.py` ahora acepta un commit documentado adelante de la copia de trabajo y falla solo si `HEAD` u `origin/main` tienen commits que el vault no cubre |
+| Diagramas | Los 31 bloques Mermaid del vault (26 notas) se compilaron con `mermaid-cli` 11 en Chromium headless, sin errores. Nuevos o modificados en esta actualización: [[Status filters flow]] (dos), [[Inquiry and sale flow]], [[Addresses and payment flow]], [[Public profile flow]], [[Edit and delete flow]], [[Cart flow]], [[Post detail flow]], [[Conversation flow]], [[Gallery flow]], [[Publish flow]], [[Paginated listings]] y [[Note template]] |
+| Tests contados | 550 `@Test` (257 persistence, 293 services). No se ejecutaron |
+| `tools/paw_checks.py all` | Sobre una copia de `c3e2a4c` exportada con `git archive`: i18n OK, flyway OK, jsp OK |
+
+- Cada afirmación nueva se contrastó con el código de `c3e2a4c`: firmas de DAO y services, SQL de los filtros, `ErrorResponseAdvice`, logs y CSS de la galería.
+- Los extractos de archivos cambiados se reubicaron buscando el bloque exacto en el commit nuevo; los siete que cambiaron de contenido se volvieron a elegir a mano.
+- Se corrigió una afirmación anterior de [[Logging]]: solo seis logs de éxito se emiten después del commit, no todos.
+- Se corrigieron filas de decisiones de [[Profile flow]] y [[Post detail flow]] que tenían una columna de más.
+- El diagrama Mermaid pasó a ser obligatorio en toda nota de flujo: [[AGENTS]], [[Vault guide]] y [[Note template]].
+- No se ejecutó la aplicación.
 
 ## Actualización a 8929aea, 2026-10-04
 
@@ -46,6 +65,15 @@ Las verificaciones automáticas están en `.vaultbuild/verify.py`. Los conteos d
 - La transcripción completa de la defensa del sprint 2. El conector de Wispr Flow no devolvió reuniones ni notas para la cuenta; la nota "Sprint 2 defensa" (23 de septiembre, 20:26) se leyó en la aplicación de escritorio. Se leyó el **resumen** entero; la pestaña de transcripción no se pudo abrir en segundo plano. [[Sprint 2 defense review]] se apoya en ese resumen, que es automático y puede omitir detalle.
 - El estado del Git del propio vault: su directorio `.git` no se pudo leer desde el entorno de trabajo, así que no se hizo commit ni se comparó con versiones anteriores.
 - Cualquier comportamiento en ejecución.
+
+## Diagramas de flujo, 2026-10-05
+
+Se agregó un diagrama de secuencia Mermaid al final del recorrido de las 13 notas de flujo que no tenían: [[Addresses and payment flow]], [[Contact flow]], [[Conversation flow]], [[Cover image flow]], [[Edit and delete flow]], [[Gallery flow]], [[Landing flow]], [[Post detail flow]], [[Profile flow]], [[Public profile flow]], [[Publish flow]], [[Reviews flow]] y [[Search suggestions flow]]. Se editaron los borradores de `.vaultbuild/drafts/` y se regeneraron con `build.py`.
+
+- Cada paso del diagrama se contrastó con el código de `8929aea` (controllers, services y DAO citados en la nota). No se retargeteó el vault: el repositorio ya está en `1368153` y esa actualización queda pendiente.
+- Los 13 diagramas se compilaron con `mermaid-cli` 11 sin errores. El `#` de las anclas se escribe `#35;` porque Mermaid corta el texto del mensaje en `#`.
+- `verify.py`: 509 extractos verificados, 232 de 232 clases, 27 diagramas Mermaid. Único error: el repositorio avanzó (HEAD `1368153`), preexistente.
+- Al regenerar, [[Addresses and payment flow]], [[Contact flow]] y [[Post detail flow]] ganaron los enlaces a notas de clase que les faltaban en "Archivos para seguir el flujo".
 
 ## Refresh through f12af08, 2026-09-22
 

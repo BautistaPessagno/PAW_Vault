@@ -4,15 +4,15 @@ categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/PublicProfileServiceImplTest.java"]
 ---
 
 # PublicProfileServiceImplTest
 
-Tests de `PublicProfileServiceImpl` en `services`: 1 casos declarados. Cubre: composición del perfil público. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
+Tests de `PublicProfileServiceImpl` en `services`: 1 casos declarados. Cubre: composición del perfil público con la página de reseñas del rol pedido. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
 ## Guía de lectura
 
@@ -26,7 +26,7 @@ Casos declarados: 1.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[PostService]], [[PublicProfileService]], [[PublicProfileServiceImpl]], [[ReviewService]], [[UserNotFoundException]], [[UserService]].
+Referencias estáticas a tipos del proyecto: [[PostService]], [[PublicProfileService]], [[PublicProfileServiceImpl]], [[ReviewService]], [[ReviewSubjectRole]], [[UserNotFoundException]], [[UserService]].
 
 Referenciado por: sin referencias léxicas desde otros archivos Java.
 
@@ -34,10 +34,12 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/PublicProfileServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PublicProfileServiceImplTest.java>), líneas 1–40.
+Fuente exacta en `c3e2a4c`: [services/src/test/java/ar/edu/itba/paw/services/PublicProfileServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PublicProfileServiceImplTest.java>), líneas 1–42.
 
 ```java
 package ar.edu.itba.paw.services;
+
+import ar.edu.itba.paw.models.ReviewSubjectRole;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +73,7 @@ public class PublicProfileServiceImplTest {
         Mockito.when(userService.findPublicProfileById(USER_ID)).thenReturn(Optional.empty());
 
         // 2. Exercise
-        final Executable find = () -> publicProfileService.findByUserId(USER_ID, PAGE);
+        final Executable find = () -> publicProfileService.findByUserId(USER_ID, PAGE, ReviewSubjectRole.SELLER, 1);
 
         // 3. Assert
         Assertions.assertThrows(UserNotFoundException.class, find);

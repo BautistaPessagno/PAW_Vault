@@ -1,10 +1,10 @@
 @title: Views and assets
 @categories: Web
 @module: webapp
-@files: webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp, webapp/src/main/webapp/WEB-INF/views/auth/login.jsp, webapp/src/main/webapp/WEB-INF/views/auth/register.jsp, webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp, webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp, webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp, webapp/src/main/webapp/WEB-INF/views/cart/index.jsp, webapp/src/main/webapp/WEB-INF/views/error/400.jsp, webapp/src/main/webapp/WEB-INF/views/error/403.jsp, webapp/src/main/webapp/WEB-INF/views/error/404.jsp, webapp/src/main/webapp/WEB-INF/views/error/409.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp, webapp/src/main/webapp/WEB-INF/views/landing/index.jsp, webapp/src/main/webapp/WEB-INF/views/post/contact.jsp, webapp/src/main/webapp/WEB-INF/views/post/detail.jsp, webapp/src/main/webapp/WEB-INF/views/profile/index.jsp, webapp/src/main/webapp/WEB-INF/views/profile/public.jsp, webapp/src/main/webapp/WEB-INF/views/publish/index.jsp, webapp/src/main/webapp/js/account-edit.js, webapp/src/main/webapp/js/autocomplete.js, webapp/src/main/webapp/js/catalog.js, webapp/src/main/webapp/js/confirm-action.js, webapp/src/main/webapp/js/post-gallery.js, webapp/src/main/webapp/js/publish-preview.js, webapp/src/main/webapp/js/submit-once.js, webapp/src/main/webapp/images/covers/placeholder.svg, webapp/src/main/webapp/images/logo.svg
+@files: webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp, webapp/src/main/webapp/WEB-INF/views/auth/login.jsp, webapp/src/main/webapp/WEB-INF/views/auth/register.jsp, webapp/src/main/webapp/WEB-INF/views/auth/reset-password.jsp, webapp/src/main/webapp/WEB-INF/views/auth/verify-required.jsp, webapp/src/main/webapp/WEB-INF/views/auth/verify.jsp, webapp/src/main/webapp/WEB-INF/views/cart/index.jsp, webapp/src/main/webapp/WEB-INF/views/error/400.jsp, webapp/src/main/webapp/WEB-INF/views/error/403.jsp, webapp/src/main/webapp/WEB-INF/views/error/404.jsp, webapp/src/main/webapp/WEB-INF/views/error/409.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp, webapp/src/main/webapp/WEB-INF/views/landing/index.jsp, webapp/src/main/webapp/WEB-INF/views/post/contact.jsp, webapp/src/main/webapp/WEB-INF/views/post/detail.jsp, webapp/src/main/webapp/WEB-INF/views/profile/index.jsp, webapp/src/main/webapp/WEB-INF/views/profile/public.jsp, webapp/src/main/webapp/WEB-INF/views/publish/index.jsp, webapp/src/main/webapp/js/account-edit.js, webapp/src/main/webapp/js/autocomplete.js, webapp/src/main/webapp/js/catalog.js, webapp/src/main/webapp/js/confirm-action.js, webapp/src/main/webapp/js/post-gallery.js, webapp/src/main/webapp/js/publish-preview.js, webapp/src/main/webapp/js/sale-detail.js, webapp/src/main/webapp/js/submit-once.js, webapp/src/main/webapp/images/covers/placeholder.svg, webapp/src/main/webapp/images/logo.svg
 
 > [!summary] En una frase
-> 20 vistas JSP, 7 scripts y 2 imágenes: las vistas solo componen componentes y muestran lo que el controller dejó en el modelo, y cada script mejora algo que ya funciona sin JavaScript.
+> 20 vistas JSP, 8 scripts y 2 imágenes: las vistas solo componen componentes y muestran lo que el controller dejó en el modelo, y cada script mejora algo que ya funciona sin JavaScript.
 
 Los componentes compartidos están en [[UI components]] y los estilos en [[UI styles and tokens]].
 
@@ -30,15 +30,15 @@ Los componentes compartidos están en [[UI components]] y los estilos en [[UI st
 | `error/403` | Sin permiso | [[ErrorController]], [[ErrorResponseAdvice]] | [[Validation and errors]] | 18 |
 | `error/404` | No encontrado | [[ErrorController]], [[ErrorResponseAdvice]] | [[Validation and errors]] | 30 |
 | `error/409` | Conflicto: el estado cambió | [[InquiryController]], [[PostContactController]], [[PublishController]] | [[Validation and errors]] | 18 |
-| `inquiry/detail` | La página de la venta: acciones según estado y rol, conversación, reseña | [[InquiryController]] | [[Inquiry and sale flow]] | 276 |
-| `inquiry/received` | Bandeja del vendedor, agrupada por publicación | [[InquiryController]] | [[Inquiry and sale flow]] | 73 |
-| `inquiry/sent` | Bandeja del comprador | [[InquiryController]] | [[Inquiry and sale flow]] | 71 |
+| `inquiry/detail` | La página de la venta: acciones según estado y rol, conversación, reseña | [[InquiryController]] | [[Inquiry and sale flow]] | 287 |
+| `inquiry/received` | Bandeja del vendedor, agrupada por publicación | [[InquiryController]] | [[Inquiry and sale flow]] | 81 |
+| `inquiry/sent` | Bandeja del comprador | [[InquiryController]] | [[Inquiry and sale flow]] | 79 |
 | `landing/index` | Filtros, orden, grilla, estado vacío y paginación | [[LandingController]] | [[Landing flow]] | 223 |
 | `post/contact` | Mensaje y elección de dirección | [[PostContactController]] | [[Contact flow]] | 68 |
-| `post/detail` | Ficha: galería, vendedor, acciones según quién mira | [[PostController]] | [[Post detail flow]] | 188 |
-| `profile/index` | Perfil privado: cuenta, contraseña, cobro, direcciones, publicaciones | [[ProfileController]] | [[Profile flow]] | 328 |
-| `profile/public` | Perfil público: reputación, publicaciones, reseñas | [[PublicProfileController]] | [[Public profile flow]] | 89 |
-| `publish/index` | Publicar y editar comparten vista | [[PublishController]] | [[Publish flow]] | 145 |
+| `post/detail` | Ficha: galería, vendedor, acciones según quién mira | [[PostController]] | [[Post detail flow]] | 183 |
+| `profile/index` | Perfil privado: cuenta, contraseña, cobro, direcciones, publicaciones | [[ProfileController]] | [[Profile flow]] | 341 |
+| `profile/public` | Perfil público: reputación, publicaciones, reseñas | [[PublicProfileController]] | [[Public profile flow]] | 108 |
+| `publish/index` | Publicar y editar comparten vista | [[PublishController]] | [[Publish flow]] | 155 |
 
 "Controller" se calculó buscando el nombre lógico de la vista en las clases de `webapp`.
 
@@ -48,10 +48,11 @@ Los componentes compartidos están en [[UI components]] y los estilos en [[UI st
 |---|---|---|
 | `account-edit.js` | Filas editables del perfil y diálogo de la foto | Perfil privado (`pageScript`) |
 | `autocomplete.js` | Sugerencias: espera, número de secuencia, JSON y nodos armados con textContent | Todas las páginas; actúa en el buscador y en el campo de artista |
-| `catalog.js` | Envía el orden al cambiar el select; pliega filtros en pantallas angostas | Todas las páginas; actúa en el catálogo |
+| `catalog.js` | Envía el orden al cambiar el select; pliega filtros en pantallas angostas | Todas las páginas; actúa en los formularios `data-auto-submit` (orden del catálogo y rol de las reseñas del perfil público) |
 | `confirm-action.js` | Abre el diálogo antes de enviar un formulario destructivo | Todas las páginas; actúa donde hay `data-confirm-message` |
 | `post-gallery.js` | Cambia la foto principal al tocar una miniatura | Ficha (`pageScript`) |
 | `publish-preview.js` | Vista previa de la tarjeta mientras se completa el formulario | Publicar y editar (lo carga la propia vista) |
+| `sale-detail.js` | Página de la venta: alto de la conversación, scroll al último mensaje, Enter para enviar y cancelar la edición de la reseña | Página de la venta (`pageScript`) |
 | `submit-once.js` | Evita el doble envío | Todas las páginas (lo carga `head.tag`) |
 
 Todos son JavaScript sin dependencias ni framework, cargados con `defer`.
@@ -253,6 +254,12 @@ Cambia la foto principal al tocar una miniatura.
 Vista previa de la tarjeta mientras se completa el formulario.
 
 {{file:webapp/src/main/webapp/js/publish-preview.js}}
+
+### sale-detail.js
+
+Página de la venta: alto de la conversación, scroll al último mensaje, Enter para enviar y cancelar la edición de la reseña.
+
+{{file:webapp/src/main/webapp/js/sale-detail.js}}
 
 ### submit-once.js
 

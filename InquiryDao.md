@@ -4,19 +4,19 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/InquiryDao.java"]
 ---
 
 # InquiryDao
 
-Contrato de consultas: crear una o varias en lote, bandejas paginadas por publicación, resumen y partes, transiciones de estado con guarda, comprobante, consultas abiertas de un comprador, rechazo de las demás pendientes y desenganche al eliminar un post.
+Contrato de consultas: crear una o varias en lote, bandejas paginadas por publicación y filtradas por un conjunto de estados, conteo por estado para los chips, resumen y partes, transiciones de estado con guarda, `startSale` (pasa a espera de pago y fija el precio en un solo `UPDATE`), comprobante, consultas abiertas de un comprador, rechazo de las demás pendientes y desenganche al eliminar un post.
 
 ## Guía de lectura
 
-Operaciones para localizar en la fuente: `create`, `createAll`, `findById`, `findByIdForUpdate`, `findOpenIdByPostAndBuyer`, `findPostIdsWithOpenInquiry`, `findByBuyerId`, `findBySellerId`, `countGroupsByBuyerId`, `countGroupsBySellerId`, `updateStatus`, `saveReceipt`, `findReceipt`, `findSummaryById`, `findPartiesById`, `hasOpenSalesBySellerId`, `findPendingByPostId`, `rejectOtherPending`, `countByBuyerId`, `countBySellerId`, `detachFromPost`.
+Operaciones para localizar en la fuente: `create`, `createAll`, `findById`, `findByIdForUpdate`, `findOpenIdByPostAndBuyer`, `findPostIdsWithOpenInquiry`, `findByBuyerId`, `findBySellerId`, `countGroupsByBuyerId`, `countGroupsBySellerId`, `countByStatusForBuyer`, `countByStatusForSeller`, `updateStatus`, `startSale`, `saveReceipt`, `findReceipt`, `findSummaryById`, `findPartiesById`, `hasOpenSalesBySellerId`, `findPendingByPostId`, `rejectOtherPending`, `countByBuyerId`, `countBySellerId`, `detachFromPost`.
 
 ## Conexiones
 
@@ -28,7 +28,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/InquiryDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/InquiryDao.java>), líneas 1–69.
+Fuente exacta en `c3e2a4c`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/InquiryDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/InquiryDao.java>), líneas 1–80.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -46,7 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface InquiryDao {
-    // price es el del post al consultar: queda fijo aunque el post se edite despues.
+    // Precio inicial para el fallback de consultas cuyo post desaparece. startSale fija el precio de venta.
     Inquiry create(long postId, long buyerId, long addressId, int price);
 
     /*
@@ -68,16 +68,27 @@ public interface InquiryDao {
 
     // Bandejas paginadas por publicacion: devuelven las consultas de una pagina de grupos,
     // ordenadas de la mas nueva a la mas vieja. El grupo es el post, o el album y el vendedor
-    // cuando el post fue eliminado. groupLimit/groupOffset cuentan grupos, no consultas.
-    List<InquirySummary> findByBuyerId(long buyerId, int groupLimit, int groupOffset);
+    // cuando el post fue eliminado. groupLimit/groupOffset cuentan grupos, no consultas. Solo
+    // entran las consultas en statuses: un grupo sin ninguna no aparece.
+    List<InquirySummary> findByBuyerId(long buyerId, Collection<InquiryStatus> statuses, int groupLimit,
+                                       int groupOffset);
 
-    List<InquirySummary> findBySellerId(long sellerId, int groupLimit, int groupOffset);
+    List<InquirySummary> findBySellerId(long sellerId, Collection<InquiryStatus> statuses, int groupLimit,
+                                        int groupOffset);
 
-    int countGroupsByBuyerId(long buyerId);
+    int countGroupsByBuyerId(long buyerId, Collection<InquiryStatus> statuses);
 
-    int countGroupsBySellerId(long sellerId);
+    int countGroupsBySellerId(long sellerId, Collection<InquiryStatus> statuses);
+
+    // Para los filtros de la bandeja. Los estados sin consultas no estan en el mapa.
+    Map<InquiryStatus, Integer> countByStatusForBuyer(long buyerId);
+
+    Map<InquiryStatus, Integer> countByStatusForSeller(long sellerId);
 
     boolean updateStatus(long id, InquiryStatus from, InquiryStatus to);
+
+    // Fija el monto de la Venta solo al pasar una Consulta pendiente a espera de pago.
+    boolean startSale(long inquiryId, int price);
 
     boolean saveReceipt(long id, String contentType, byte[] data);
 

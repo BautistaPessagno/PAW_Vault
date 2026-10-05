@@ -4,8 +4,8 @@ categories: ["Web", "Services", "Architecture"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java", "webapp/src/main/webapp/WEB-INF/web.xml", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticatedUser.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticationSessions.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/VerificationAccessDeniedHandler.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/PostAccessHandler.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/InquiryAccessHandler.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/AddressAccessHandler.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/SameSiteRedirects.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java", "models/src/main/java/ar/edu/itba/paw/models/ImageRules.java", "models/src/main/java/ar/edu/itba/paw/models/ReceiptRules.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java", "pom.xml"]
 ---
@@ -45,7 +45,7 @@ Definido en `web.xml`. El orden importa:
 | 4 | `springSecurityFilterChain` | `/*` | Sesión, CSRF, login, logout y autorización por URL |
 | 5 | `DispatcherServlet` | `/` | Controllers; acá corre `@PreAuthorize` |
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>), líneas 20–85.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>), líneas 20–85.
 
 ```xml
   <filter>
@@ -127,7 +127,7 @@ Ejemplo: aceptar una consulta, `POST /inquiries/42/accept`.
 
 ## Autorización por URL
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>), líneas 85–110.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>), líneas 85–110.
 
 ```java
     /*
@@ -135,7 +135,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/
      * cuenta verificada). Quien puede operar sobre un recurso ajeno lo decide un @PreAuthorize en
      * el controller: @postAccess (Publicante o administrador) para editar y eliminar un Post, y
      * @inquiryAccess y @addressAccess para la Venta y la libreta. Los services vuelven a chequear la
-     * pertenencia de la Venta y de la libreta antes de escribir, y responden 403 o 404.
+     * pertenencia de Posts, Venta y libreta antes de escribir, y responden 403 o 404.
      *
      * Las rutas de cuenta verificada se definen una sola vez: las usan la regla de acceso y el
      * AccessDeniedHandler que manda a la pagina de "verifica tu correo".
@@ -182,7 +182,7 @@ Tres detalles que suelen preguntarse:
 - **Un recurso inexistente "pasa" el handler.** Los tres devuelven `true` si no encuentran el recurso, para que el service responda 404. Si devolvieran `false`, un id inexistente daría un 403 engañoso.
 - **Sin sesión devuelven `false`.** `AuthenticatedUser.idOf` devuelve vacío si el principal no es una Cuenta.
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/InquiryAccessHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/InquiryAccessHandler.java>), líneas 9–40.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/InquiryAccessHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/InquiryAccessHandler.java>), líneas 9–40.
 
 ```java
 // Reglas de @PreAuthorize para la Consulta y su Venta: ver, conversar y cancelar es de las dos
@@ -225,10 +225,10 @@ public final class InquiryAccessHandler {
 |---|---|---|
 | Consulta y venta | Sí: `requireSeller`, `requireBuyer`, `requireParty`, y `lockConfirmedSale` para reseñas | [[InquiryServiceImpl]] |
 | Dirección | Sí: `archiveOwned` compara el dueño | [[AddressServiceImpl]] |
-| Publicación (editar, eliminar) | **No.** `PostService.update` y `delete` no reciben quién opera; solo exigen que el post siga disponible | [[PostServiceImpl]] |
+| Publicación (editar, eliminar) | Sí, desde el PR #51: `findEditableById`, `update` y `delete` reciben el id de quien actúa y `requireEditable` exige publicante o rol `ADMIN` antes de exigir `AVAILABLE` | [[PostServiceImpl]] |
 | Consultar un post propio | Sí: `validateContactable` lanza `ForbiddenOperationException` | [[InquiryServiceImpl]] |
 
-Para las publicaciones la pertenencia vive únicamente en `@PreAuthorize`. Es coherente con el comentario de [[SecurityConfig]] ("los services vuelven a chequear la pertenencia de la Venta y de la libreta"), pero significa que un llamador nuevo de `PostService.update` que no pase por [[PublishController]] no tendría ese control.
+Hasta `8929aea` las publicaciones eran la excepción: la pertenencia vivía solo en `@PreAuthorize`. El commit `563f7020` la llevó también al service y el comentario de [[SecurityConfig]] pasó a decir "los services vuelven a chequear la pertenencia de Posts, Venta y libreta". Ver [[Edit and delete flow]].
 
 ## Cómo se convierte una denegación en respuesta
 
@@ -240,7 +240,7 @@ Para las publicaciones la pertenencia vive únicamente en `@PreAuthorize`. Es co
 | `ForbiddenOperationException` desde un service | [[ErrorResponseAdvice]] | Vista `error/403` con estado 403 |
 | `*NotFoundException`, `PageNotFoundException` | [[ErrorResponseAdvice]] | Vista `error/404` con estado 404 |
 | Ruta que no existe | `<error-page>` de `web.xml` → [[ErrorController]] | 404 con el mismo view resolver y locale |
-| `InvalidImageException`, `InvalidReviewException`, parámetro de tipo incorrecto | [[ErrorResponseAdvice]] | 400 |
+| `InvalidImageException`, `InvalidReviewException`, `InvalidPostDataException`, `InvalidPaymentInfoException`, parámetro de tipo incorrecto | [[ErrorResponseAdvice]] | 400 |
 | `InvalidInquiryStateException`, `PostUnavailableException` | Handler del controller correspondiente | 409 |
 | Sesión expirada por cambio de clave | Filtro de sesiones concurrentes | Redirección a `/login?sessionExpired` |
 | Casos esperables del carrito (post propio, no disponible, repetido, lleno, dirección archivada, nada para enviar) | [[CartExceptionAdvice]], solo para [[CartController]] y con prioridad sobre [[ErrorResponseAdvice]] | Redirección a la pantalla de origen con un aviso, no una página de error |
@@ -248,7 +248,7 @@ Para las publicaciones la pertenencia vive únicamente en `@PreAuthorize`. Es co
 
 Política: lo que no existe es 404, lo que existe y es ajeno es 403, lo que existe pero ya no admite la operación es 409.
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/VerificationAccessDeniedHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/VerificationAccessDeniedHandler.java>), líneas 15–47.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/VerificationAccessDeniedHandler.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/VerificationAccessDeniedHandler.java>), líneas 15–47.
 
 ```java
 /*
@@ -286,7 +286,7 @@ public final class VerificationAccessDeniedHandler implements AccessDeniedHandle
 }
 ```
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java>), líneas 19–50.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java>), líneas 21–52.
 
 ```java
 /*
@@ -311,11 +311,11 @@ public class ErrorResponseAdvice {
         return new ModelAndView("error/403");
     }
 
-    // Los formularios aplican las mismas ImageRules y ReviewRules: solo llega aca un POST que se
-    // salteo la validacion. Un parametro de la URL que no es del tipo esperado (una pagina que no
-    // es un numero, un origin desconocido) tambien es un pedido mal armado.
-    @ExceptionHandler({InvalidImageException.class, InvalidReviewException.class,
-            MethodArgumentTypeMismatchException.class})
+    // Los formularios aplican las mismas ImageRules, ReviewRules, VinylInputRules y PaymentInfoRules:
+    // solo llega aca un POST que se salteo la validacion. Un parametro de la URL que no es del tipo
+    // esperado (una pagina que no es un numero, un origin desconocido) tambien es un pedido mal armado.
+    @ExceptionHandler({InvalidImageException.class, InvalidReviewException.class, InvalidPostDataException.class,
+            InvalidPaymentInfoException.class, MethodArgumentTypeMismatchException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ModelAndView badRequest() {
         return new ModelAndView("error/400");
@@ -335,7 +335,7 @@ public class ErrorResponseAdvice {
 - [[AuthenticatedUser]] define `equals` y `hashCode` por id de Cuenta. El registro agrupa sesiones por principal: sin eso, el principal refrescado después de verificar sería "otro" y sus sesiones no se encontrarían.
 - Cambiar o recuperar la clave llama a `logoutEverywhere`: expira las otras sesiones y cierra la actual.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>), líneas 103–117.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>), líneas 103–117.
 
 ```xml
   <!--
@@ -367,7 +367,7 @@ Spring Security lo deja activo por defecto y el proyecto no lo desactiva. Todo P
 
 ## Contraseñas
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>), líneas 34–60.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>), líneas 34–60.
 
 ```java
     // Costo 12: es el que ya tienen los hashes guardados, subirlo los invalidaria.
@@ -423,7 +423,7 @@ BCrypt con costo 12. [[ValidPassword]] exige de 12 a 72 caracteres, una letra y 
 
 La misma regla se aplica dos veces: en el validador del formulario (para mostrar el error junto al campo) y en el service (por si alguien saltea el formulario). Las dos leen la misma clase de `models`.
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/ImageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ImageRules.java>), líneas 15–64.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/ImageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ImageRules.java>), líneas 15–64.
 
 ```java
     // El tipo declarado tiene que coincidir con la firma del contenido: no alcanza la extension.
@@ -483,7 +483,7 @@ Cómo se sirven:
 - **Imágenes**: nunca por id suelto. Las rutas son `/post/{postId}/images/{imageId}`, `/users/{userId}/avatar/{imageId}` y `/albums/{albumId}/cover/{imageId}`, y el SQL exige que la imagen pertenezca a ese recurso. El avatar además exige que la Cuenta esté verificada. Así no se pueden recorrer imágenes ajenas incrementando el id.
 - **Comprobante**: solo para las dos partes; `nosniff`, sin caché, `Content-Disposition: inline` con nombre y extensión. Las imágenes van con `Content-Security-Policy: sandbox`. El PDF no, porque el visor de Chrome no abre un documento con sandbox; por eso se exige la firma `%PDF-` al subirlo.
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>), líneas 47–68.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>), líneas 47–68.
 
 ```java
     @Override
@@ -510,7 +510,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
     }
 ```
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java>), líneas 212–236.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java>), líneas 237–261.
 
 ```java
     /*
@@ -605,8 +605,8 @@ Se expiran todas; cada navegador va a `/login?sessionExpired` en su próximo req
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>) · [[MultipartExceptionHandlerFilter]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java>) · [[ErrorResponseAdvice]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java>) · [[ErrorController]]
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java>)
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java>)
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java>) · [[CartExceptionAdvice]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java>) · [[ListingQueries]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PublishController.java>) · [[PublishController]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java>) · [[InquiryController]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>) · [[ProfileController]]
@@ -615,4 +615,4 @@ Se expiran todas; cada navegador va a `/login?sessionExpired` en su próximo req
 - [persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ImageJdbcDao.java>) · [[ImageJdbcDao]]
 - [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

@@ -4,8 +4,8 @@ categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java"]
 ---
@@ -26,7 +26,7 @@ Casos declarados: 9.
 - `testFindByTokenWhenTokenIsExpiredReturnsTokenWithPastExpiration`
 - `testFindByTokenWhenTokenDoesNotExistReturnsEmpty`
 - `testCreateWhenTokenIsNewReturnsPersistedToken`
-- `testCreateWhenUserAlreadyHasATokenThrowsDuplicateKeyExceptionWithoutPersistingIt`
+- `testCreateWhenUserAlreadyHasATokenReturnsDuplicateKeyExceptionWithoutPersistingIt`
 - `testDeleteExpiredWhenThereAreExpiredTokensReturnsCountAndKeepsTheLiveOnes`
 - `testDeleteByUserIdWhenUserHasTokensReturnsCountAndEmptyLookup`
 - `testDeleteByTokenWhenTokenExistsReturnsOneAndRemovesIt`
@@ -42,7 +42,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java>), líneas 1–189.
+Fuente exacta en `c3e2a4c`: [persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDaoTest.java>), líneas 1–189.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -163,7 +163,7 @@ public class PasswordResetTokenJdbcDaoTest {
      * dos pedidos simultaneos para el mismo correo dejarian dos tokens utilizables.
      */
     @Test
-    public void testCreateWhenUserAlreadyHasATokenThrowsDuplicateKeyExceptionWithoutPersistingIt() {
+    public void testCreateWhenUserAlreadyHasATokenReturnsDuplicateKeyExceptionWithoutPersistingIt() {
         // 1. Arrange
         final LocalDateTime expiresAt = LocalDateTime.of(2030, 6, 15, 10, 30);
 

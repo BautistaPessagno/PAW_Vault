@@ -33,8 +33,8 @@ categories: ["Flows", "Web", "Services"]
 type: "guide"          # guide | code | test | index | template | instructions
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"  # fecha de inspección
-commit: "8929aea..."    # commit completo del repositorio
+snapshot: "2026-10-05"  # fecha de inspección
+commit: "c3e2a4c..."    # commit completo del repositorio
 status: "documented"    # o "historical"
 sources: ["ruta/desde/la/raiz/del/repo.java"]
 ```
@@ -50,7 +50,7 @@ Los **nombres de las notas** están en inglés, porque los enlaces dependen de e
 | Flujo o mecanismo (`guide`) | Explica una funcionalidad o un tema transversal a fondo | A mano, como borrador, con extractos insertados por script |
 | Clase (`code`, `test`) | Una por archivo Java: resumen, campos, métodos, conexiones, código completo | Generada |
 | Índice (`index`) | [[Source inventory]] | Generada |
-| Navegación | [[Home]], [[Feature map]], [[Roadmap de lectura]], [[Defense guide]], [[Recent changes 2026-10-04]] | Mixta |
+| Navegación | [[Home]], [[Feature map]], [[Roadmap de lectura]], [[Defense guide]], [[Recent changes 2026-10-05]], [[Recent changes 2026-10-04]] | Mixta |
 | Histórica | Clases que ya no existen, con su último código | Generada al detectar un borrado |
 
 ## Estándar de profundidad
@@ -62,7 +62,7 @@ Después de la defensa del sprint 2 quedó claro que describir qué hace el cód
 | En una frase | Qué hace y cómo, en una oración |
 | Qué resuelve | Qué problema y para quién |
 | Herramientas | Qué biblioteca, anotación, sentencia SQL o API interviene y para qué sirve cada una |
-| Recorrido paso a paso | Qué pasa en cada capa, en orden, con diagrama si hay ramas o estados |
+| Recorrido paso a paso | Qué pasa en cada capa, en orden, y **siempre** un diagrama Mermaid del flujo al final de la sección |
 | Datos | Qué tablas y columnas toca |
 | Decisiones y por qué | Qué se eligió, qué alternativa había y **de dónde sale el motivo** |
 | Concurrencia y casos borde | Qué pasa con dos pedidos a la vez, reintentos, pestañas viejas |
@@ -78,6 +78,8 @@ Dos reglas sobre las decisiones:
 
 Una funcionalidad nueva no está documentada hasta que su nota tenga todas las secciones.
 
+Regla de diagramas: toda explicación de un flujo lleva un diagrama Mermaid, también cuando el flujo no tiene ramas. Si una actualización modifica un flujo, su diagrama se actualiza en el mismo cambio. Ver la sección "Diagramas".
+
 ## Reglas de evidencia
 
 - Cada afirmación se verifica contra el código del commit documentado: cantidades, constantes, rutas, anotaciones, SQL.
@@ -92,11 +94,11 @@ Una funcionalidad nueva no está documentada hasta que su nota tenga todas las s
 1. Mirar el commit actual del repositorio y compararlo con [[Project snapshot]]. Listar commits y archivos cambiados.
 2. Leer los archivos cambiados completos, no solo el diff.
 3. Fijar el commit y la fecha nuevos en `.vaultbuild/build.py`.
-4. Actualizar los borradores de las notas de flujo afectadas, sección por sección, y crear la nota de cada funcionalidad nueva con el estándar de arriba.
+4. Actualizar los borradores de las notas de flujo afectadas, sección por sección, y crear la nota de cada funcionalidad nueva con el estándar de arriba. Cada flujo nuevo o modificado sale con su diagrama Mermaid actualizado.
 5. Agregar el resumen de cada clase nueva en `summaries.py` y regenerar las notas de clase con `gen_code.py`. Las clases borradas quedan como históricas.
 6. Regenerar [[Roadmap de lectura]], [[Source inventory]], [[Defense guide]] y las notas de interfaz con sus generadores.
 7. Actualizar [[Feature map]], [[Home]], [[Project snapshot]] y escribir una nota `Recent changes <fecha>`.
-8. Correr las verificaciones y anotar el resultado en [[Verification record]].
+8. Correr las verificaciones, validar con `mermaid-cli` cada diagrama nuevo o modificado, y anotar el resultado en [[Verification record]].
 9. Volver a mirar el commit del repositorio antes de cerrar: si cambió, se repite contra el nuevo.
 
 ## Herramientas del vault
@@ -132,6 +134,14 @@ El buscador rápido con el nombre de una clase abre su nota. Búsquedas útiles:
 
 Las notas usan Mermaid. Obsidian puede pedir permiso la primera vez. Cada diagrama está además explicado en texto o tablas.
 
+| Regla | Por qué |
+|---|---|
+| Toda nota de flujo tiene al menos un `sequenceDiagram` al final de "Recorrido paso a paso" | Pedido del equipo el 5 de octubre de 2026, después de notar notas de flujo sin diagrama |
+| Los participantes llevan el nombre real de la clase (`participant S as InquiryServiceImpl`) | Que el diagrama se pueda seguir en el código |
+| `alt`/`else` para ramas, `opt` para pasos opcionales, `-)` para lo que corre después del commit | Mismas convenciones en todas las notas |
+| `#` se escribe `#35;` dentro de un mensaje y no se usa `;` | Mermaid corta el texto en `#` y usa `;` como separador |
+| Se edita el borrador en `.vaultbuild/drafts/` y se regenera con `build.py` | La nota de la raíz se sobrescribe en cada actualización |
+
 [[AGENTS]] tiene estas mismas reglas para agentes; `CLAUDE.md` es un enlace simbólico a ese archivo. [[Note template]] es el esqueleto de una nota nueva. [[Welcome]] es la nota inicial de Obsidian.
 
-Fuente inspeccionada: `8929aea`, 2026-10-04.
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05.

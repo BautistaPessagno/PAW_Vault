@@ -4,23 +4,23 @@ categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java"]
 ---
 
 # PostServiceImplTest
 
-Tests de `PostServiceImpl` en `services`: 52 casos declarados. Cubre: normalización de la búsqueda, filtros inválidos, paginación, publicar, editar con galería, eliminar y bloqueos. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
+Tests de `PostServiceImpl` en `services`: 60 casos declarados. Cubre: normalización de la búsqueda, filtros inválidos, paginación, publicar, editar con galería, eliminar, autorización por publicante o ADMIN en el service, "Mis publicaciones" filtrada por estado y bloqueos. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
 ## Guía de lectura
 
-Datos y dependencias declaradas: `USERNAME`, `PUBLISHER_EMAIL`, `PUBLISHER_LOCALE`, `PUBLISHER_ID`, `TITLE`, `ARTIST_NAME`, `RELEASE_YEAR`, `GENRE`, `COVER_IMAGE_ID`, `COVER_CONTENT_TYPE`, `COVER_DATA`, `PNG_DATA`, `PRICE`, `DESCRIPTION`, `CONDITION`, `PRESSING_YEAR`, `ZONE`, `PROFILE_PAGE_SIZE`, `CATALOG_PAGE_SIZE`, `MAX_QUERY_LENGTH`, `postDao`, `userService`, `artistService`, `albumService`, `imageService`, `inquiryDao`, `postService`.
+Datos y dependencias declaradas: `ALL_STATUSES`, `USERNAME`, `PUBLISHER_EMAIL`, `PUBLISHER_LOCALE`, `PUBLISHER_ID`, `TITLE`, `ARTIST_NAME`, `RELEASE_YEAR`, `GENRE`, `COVER_IMAGE_ID`, `COVER_CONTENT_TYPE`, `COVER_DATA`, `PNG_DATA`, `PRICE`, `DESCRIPTION`, `CONDITION`, `PRESSING_YEAR`, `ZONE`, `PROFILE_PAGE_SIZE`, `CATALOG_PAGE_SIZE`, `MAX_QUERY_LENGTH`, `postDao`, `userService`, `artistService`, `albumService`, `imageService`, `inquiryDao`, `postService`.
 
-Operaciones para localizar en la fuente: `setUp`, `testSearchWhenQueryIsNullOrBlankReturnsFeaturedPostsWithoutQuery`, `testSearchWhenPageCannotProduceAValidOffsetThrowsPageNotFoundException`, `ignoresEveryFilter`, `pngUpload`, `user`, `summary`, `criteria`.
+Operaciones para localizar en la fuente: `setUp`, `testSearchWhenQueryIsNullOrBlankReturnsFeaturedPostsWithoutQuery`, `testSearchWhenPageCannotProduceAValidOffsetReturnsPageNotFoundException`, `testFindEditableByIdWhenAdminAndPostIsUnavailableReturnsConflict`, `admin`, `ignoresEveryFilter`, `pngUpload`, `user`, `summary`, `criteria`.
 
-Casos declarados: 52.
+Casos declarados: 60.
 
 - `testPublishWhenPublisherAlreadyPostedAlbumReturnsDuplicatePostException`
 - `testPublishWhenConcurrentInsertDuplicatesPostReturnsDuplicatePostException`
@@ -37,11 +37,11 @@ Casos declarados: 52.
 - `testFindDetailWhenAnotherUserViewsAvailablePostReturnsNotOwnedAndNotEditable`
 - `testFindDetailWhenModeratorViewsAnotherUsersAvailablePostReturnsEditable`
 - `testFindDetailWhenModeratorViewsSoldPostReturnsNotEditable`
-- `testFindDetailWhenPostDoesNotExistThrowsPostNotFoundException`
+- `testFindDetailWhenPostDoesNotExistReturnsPostNotFoundException`
 - `testFindEditableByIdWhenPostIsAvailableReturnsPost`
-- `testFindEditableByIdWhenPostIsSoldThrowsPostUnavailableException`
+- `testFindEditableByIdWhenPostIsSoldReturnsPostUnavailableException`
 - `testUpdateWhenPostIsAvailableReturnsUpdatedPostAndPreservesCover`
-- `testUpdateWhenPostIsSoldThrowsPostUnavailableException`
+- `testUpdateWhenPostIsSoldReturnsPostUnavailableException`
 - `testUpdateWhenPrimaryImageIsRemovedReturnsPromotedExtraImage`
 - `testUpdateWhenImageRemovalBelongsToAnotherPostReturnsInvalidImageException`
 - `testUpdateWhenAlbumFallbackIsSubmittedForRemovalReturnsInvalidImageException`
@@ -49,21 +49,22 @@ Casos declarados: 52.
 - `testUpdateWhenPriceExceedsLimitReturnsInvalidPostDataException`
 - `testDeleteWhenPostIsAvailableReturnsDetachedInquiries`
 - `testDeleteWhenPostHasOwnAndGalleryPhotosReturnsAndDeletesEveryUploadedPhoto`
-- `testDeleteWhenPostIsReservedThrowsPostUnavailableException`
-- `testDeleteWhenPostIsSoldThrowsPostUnavailableException`
-- `testDeleteWhenPostDoesNotExistThrowsPostNotFoundException`
+- `testDeleteWhenPostIsReservedReturnsPostUnavailableException`
+- `testDeleteWhenPostIsSoldReturnsPostUnavailableException`
+- `testDeleteWhenPostDoesNotExistReturnsPostNotFoundException`
 - `testSearchWhenSortIsMissingReturnsNewestAsAppliedSort`
 - `testSearchWhenSortIsGivenReturnsItAsAppliedSort`
 - `testSearchWhenFirstPageOfThirtyOneMatchesReturnsFifteenWithTotalPages`
 - `testSearchWhenSecondPageHasRowsReturnsPageWithPreviousAndCorrectOffset`
-- `testSearchWhenPageIsPastTheLastOneThrowsPageNotFoundException`
-- `testFindSearchSuggestionsWhenQueryHasSeparatorsSearchesWithNormalizedText`
+- `testSearchWhenPageIsPastTheLastOneReturnsPageNotFoundException`
+- `testFindSearchSuggestionsWhenQueryHasSeparatorsReturnsSuggestionsForNormalizedText`
 - `testFindSearchSuggestionsWhenQueryHasNoLettersOrDigitsReturnsEmptyList`
 - `testSearchWhenQueryHasAccentsReturnsPostsMatchedByNormalizedText`
 - `testSearchWhenQueryHasNoLettersOrDigitsReturnsEmptyPage`
 - `testFindByPublisherIdWhenSecondPageOfFortyPostsReturnsPageWithTotal`
 - `testFindAvailableByPublisherIdWhenSecondPageOfThirtyPostsReturnsLastPageWithoutNext`
 - `testFindAvailableByPublisherIdWhenPageIsPastTheLastOneReturnsPageNotFoundException`
+- `testFindByPublisherIdWhenFilteringSoldReturnsSoldPage`
 - `testFindByPublisherIdWhenTotalIsAMultipleOfThePageSizeReturnsLastPageWithoutNext`
 - `testFindByPublisherIdWhenPageIsPastTheLastOneReturnsPageNotFoundException`
 - `testFindByPublisherIdWhenPublisherHasNoPostsReturnsEmptyFirstPage`
@@ -74,10 +75,17 @@ Casos declarados: 52.
 - `testSearchWhenFiltersAreOutOfRangeReturnsResultsWithoutApplyingThem`
 - `testSearchWhenPriceRangeIsExactReturnsResultsWithBothBounds`
 - `testSearchWhenYearIsFutureReturnsResultsWithoutYearFilter`
+- `testFindEditableByIdWhenActorIsAnotherUserReturnsForbidden`
+- `testUpdateWhenActorIsAnotherUserReturnsForbidden`
+- `testDeleteWhenActorIsAnotherUserReturnsForbidden`
+- `testFindEditableByIdWhenActorIsAdminReturnsPost`
+- `testUpdateWhenActorIsAdminReturnsUpdatedPost`
+- `testDeleteWhenActorIsAdminReturnsDetachedInquiries`
+- `testFindEditableByIdWhenActorIsUnknownReturnsForbidden`
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Album]], [[AlbumService]], [[Artist]], [[ArtistService]], [[Condition]], [[DuplicatePostException]], [[DuplicatePostKeyException]], [[Genre]], [[Image]], [[ImageService]], [[ImageUpload]], [[InMemoryImageService]], [[InquiryDao]], [[InvalidImageException]], [[InvalidPostDataException]], [[InvalidSearchQueryException]], [[PageNotFoundException]], [[Post]], [[PostDao]], [[PostDetail]], [[PostNotFoundException]], [[PostPage]], [[PostSearchCriteria]], [[PostServiceImpl]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[PublicUserProfile]], [[SearchResult]], [[SearchSuggestion]], [[SearchSuggestionType]], [[User]], [[UserRole]], [[UserService]], [[VinylInputRules]].
+Referencias estáticas a tipos del proyecto: [[Album]], [[AlbumService]], [[Artist]], [[ArtistService]], [[Condition]], [[DuplicatePostException]], [[DuplicatePostKeyException]], [[ForbiddenOperationException]], [[Genre]], [[Image]], [[ImageService]], [[ImageUpload]], [[InMemoryImageService]], [[InquiryDao]], [[InvalidImageException]], [[InvalidPostDataException]], [[InvalidSearchQueryException]], [[PageNotFoundException]], [[Post]], [[PostDao]], [[PostDetail]], [[PostNotFoundException]], [[PostPage]], [[PostSearchCriteria]], [[PostServiceImpl]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[PublicUserProfile]], [[SearchResult]], [[SearchSuggestion]], [[SearchSuggestionType]], [[User]], [[UserRole]], [[UserService]], [[VinylInputRules]].
 
 Referenciado por: sin referencias léxicas desde otros archivos Java.
 
@@ -85,7 +93,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java>), líneas 1–1061.
+Fuente exacta en `c3e2a4c`: [services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java>), líneas 1–1209.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -133,6 +141,7 @@ import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class PostServiceImplTest {
+    private static final List<PostStatus> ALL_STATUSES = List.of(PostStatus.values());
 
     private static final String USERNAME = "publisher";
     private static final String PUBLISHER_EMAIL = "publisher@example.com";
@@ -461,7 +470,7 @@ public class PostServiceImplTest {
     }
 
     @Test
-    public void testFindDetailWhenPostDoesNotExistThrowsPostNotFoundException() {
+    public void testFindDetailWhenPostDoesNotExistReturnsPostNotFoundException() {
         // 1. Arrange
         Mockito.when(postDao.findById(1)).thenReturn(Optional.empty());
 
@@ -479,21 +488,21 @@ public class PostServiceImplTest {
         Mockito.when(postDao.findById(1)).thenReturn(Optional.of(expected));
 
         // 2. Exercise
-        final PostSummary result = postService.findEditableById(1);
+        final PostSummary result = postService.findEditableById(1, PUBLISHER_ID);
 
         // 3. Assert
         Assertions.assertSame(expected, result);
     }
 
     @Test
-    public void testFindEditableByIdWhenPostIsSoldThrowsPostUnavailableException() {
+    public void testFindEditableByIdWhenPostIsSoldReturnsPostUnavailableException() {
         // 1. Arrange
         final PostSummary sold = summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID,
                 PostStatus.SOLD);
         Mockito.when(postDao.findById(1)).thenReturn(Optional.of(sold));
 
         // 2. Exercise
-        final Executable find = () -> postService.findEditableById(1);
+        final Executable find = () -> postService.findEditableById(1, PUBLISHER_ID);
 
         // 3. Assert
         Assertions.assertThrows(PostUnavailableException.class, find);
@@ -516,7 +525,7 @@ public class PostServiceImplTest {
         Mockito.when(postDao.findById(1)).thenReturn(Optional.of(expected));
 
         // 2. Exercise
-        final PostSummary result = postService.update(1, album.getTitle(), artist.getName(),
+        final PostSummary result = postService.update(1, PUBLISHER_ID, album.getTitle(), artist.getName(),
                 album.getReleaseYear(), album.getGenre(), 60000, DESCRIPTION, Condition.NEW,
                 2022, ZONE, List.of(), List.of());
 
@@ -529,14 +538,14 @@ public class PostServiceImplTest {
     }
 
     @Test
-    public void testUpdateWhenPostIsSoldThrowsPostUnavailableException() {
+    public void testUpdateWhenPostIsSoldReturnsPostUnavailableException() {
         // 1. Arrange
         final PostSummary sold = summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID,
                 PostStatus.SOLD);
         Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(sold));
 
         // 2. Exercise
-        final Executable update = () -> postService.update(1, TITLE, ARTIST_NAME,
+        final Executable update = () -> postService.update(1, PUBLISHER_ID, TITLE, ARTIST_NAME,
                 RELEASE_YEAR, GENRE, PRICE, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE, List.of(), List.of());
 
         // 3. Assert
@@ -560,7 +569,7 @@ public class PostServiceImplTest {
         Mockito.when(postDao.findById(1)).thenReturn(Optional.of(updated));
 
         // 2. Exercise
-        final PostSummary result = postService.update(1, TITLE, ARTIST_NAME,
+        final PostSummary result = postService.update(1, PUBLISHER_ID, TITLE, ARTIST_NAME,
                 RELEASE_YEAR, GENRE, PRICE, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE,
                 List.of(), List.of(COVER_IMAGE_ID));
 
@@ -576,7 +585,7 @@ public class PostServiceImplTest {
         Mockito.when(postDao.findOwnImageId(1)).thenReturn(Optional.of(COVER_IMAGE_ID));
 
         // 2. Exercise
-        final Executable update = () -> postService.update(1, TITLE, ARTIST_NAME,
+        final Executable update = () -> postService.update(1, PUBLISHER_ID, TITLE, ARTIST_NAME,
                 RELEASE_YEAR, GENRE, PRICE, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE,
                 List.of(), List.of(99L));
 
@@ -592,7 +601,7 @@ public class PostServiceImplTest {
         Mockito.when(postDao.findOwnImageId(1)).thenReturn(Optional.empty());
 
         // 2. Exercise
-        final Executable update = () -> postService.update(1, TITLE, ARTIST_NAME,
+        final Executable update = () -> postService.update(1, PUBLISHER_ID, TITLE, ARTIST_NAME,
                 RELEASE_YEAR, GENRE, PRICE, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE,
                 List.of(), List.of(COVER_IMAGE_ID));
 
@@ -609,7 +618,7 @@ public class PostServiceImplTest {
         Mockito.when(imageService.findGalleryImageIds(1)).thenReturn(List.of(4L, 5L, 6L));
 
         // 2. Exercise
-        final Executable update = () -> postService.update(1, TITLE, ARTIST_NAME,
+        final Executable update = () -> postService.update(1, PUBLISHER_ID, TITLE, ARTIST_NAME,
                 RELEASE_YEAR, GENRE, PRICE, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE,
                 Collections.nCopies(2, pngUpload()), List.of());
 
@@ -621,9 +630,11 @@ public class PostServiceImplTest {
     public void testUpdateWhenPriceExceedsLimitReturnsInvalidPostDataException() {
         // 1. Arrange
         final int invalidPrice = VinylInputRules.MAX_PRICE + 1;
+        Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID)));
 
         // 2. Exercise
-        final Executable update = () -> postService.update(1, TITLE, ARTIST_NAME,
+        final Executable update = () -> postService.update(1, PUBLISHER_ID, TITLE, ARTIST_NAME,
                 RELEASE_YEAR, GENRE, invalidPrice, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE,
                 List.of(), List.of());
 
@@ -640,7 +651,7 @@ public class PostServiceImplTest {
         Mockito.when(postDao.delete(1)).thenReturn(true);
 
         // 2. Exercise
-        final int detached = postService.delete(1);
+        final int detached = postService.delete(1, PUBLISHER_ID);
 
         // 3. Assert
         Assertions.assertEquals(3, detached);
@@ -661,7 +672,7 @@ public class PostServiceImplTest {
         Mockito.when(postDao.delete(1)).thenReturn(true);
 
         // 2. Exercise
-        final int detached = service.delete(1);
+        final int detached = service.delete(1, PUBLISHER_ID);
 
         // 3. Assert
         Assertions.assertEquals(0, detached);
@@ -670,40 +681,40 @@ public class PostServiceImplTest {
     }
 
     @Test
-    public void testDeleteWhenPostIsReservedThrowsPostUnavailableException() {
+    public void testDeleteWhenPostIsReservedReturnsPostUnavailableException() {
         // 1. Arrange
         final PostSummary reserved = summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID,
                 PostStatus.RESERVED);
         Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(reserved));
 
         // 2. Exercise
-        final Executable delete = () -> postService.delete(1);
+        final Executable delete = () -> postService.delete(1, PUBLISHER_ID);
 
         // 3. Assert
         Assertions.assertThrows(PostUnavailableException.class, delete);
     }
 
     @Test
-    public void testDeleteWhenPostIsSoldThrowsPostUnavailableException() {
+    public void testDeleteWhenPostIsSoldReturnsPostUnavailableException() {
         // 1. Arrange
         final PostSummary sold = summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID,
                 PostStatus.SOLD);
         Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(sold));
 
         // 2. Exercise
-        final Executable delete = () -> postService.delete(1);
+        final Executable delete = () -> postService.delete(1, PUBLISHER_ID);
 
         // 3. Assert
         Assertions.assertThrows(PostUnavailableException.class, delete);
     }
 
     @Test
-    public void testDeleteWhenPostDoesNotExistThrowsPostNotFoundException() {
+    public void testDeleteWhenPostDoesNotExistReturnsPostNotFoundException() {
         // 1. Arrange
         Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.empty());
 
         // 2. Exercise
-        final Executable delete = () -> postService.delete(1);
+        final Executable delete = () -> postService.delete(1, PUBLISHER_ID);
 
         // 3. Assert
         Assertions.assertThrows(PostNotFoundException.class, delete);
@@ -801,7 +812,7 @@ public class PostServiceImplTest {
     }
 
     @Test
-    public void testSearchWhenPageIsPastTheLastOneThrowsPageNotFoundException() {
+    public void testSearchWhenPageIsPastTheLastOneReturnsPageNotFoundException() {
         // 1. Arrange
         Mockito.when(postDao.countSearch(ArgumentMatchers.any(PostSearchCriteria.class)))
                 .thenReturn(CATALOG_PAGE_SIZE);
@@ -815,7 +826,7 @@ public class PostServiceImplTest {
 
     @ParameterizedTest
     @ValueSource(ints = {0, -1, Integer.MAX_VALUE})
-    public void testSearchWhenPageCannotProduceAValidOffsetThrowsPageNotFoundException(final int pageNumber) {
+    public void testSearchWhenPageCannotProduceAValidOffsetReturnsPageNotFoundException(final int pageNumber) {
         // 1. Arrange
 
         // 2. Exercise
@@ -826,7 +837,7 @@ public class PostServiceImplTest {
     }
 
     @Test
-    public void testFindSearchSuggestionsWhenQueryHasSeparatorsSearchesWithNormalizedText() {
+    public void testFindSearchSuggestionsWhenQueryHasSeparatorsReturnsSuggestionsForNormalizedText() {
         // 1. Arrange
         final List<SearchSuggestion> expected = List.of(
                 new SearchSuggestion(SearchSuggestionType.ARTIST, "Soda Stereo", null));
@@ -890,11 +901,11 @@ public class PostServiceImplTest {
         for (int index = 0; index < PROFILE_PAGE_SIZE; index += 1) {
             rows.add(summary(PUBLISHER_ID, TITLE + index, ARTIST_NAME, PRICE, COVER_IMAGE_ID));
         }
-        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID)).thenReturn(40);
-        Mockito.when(postDao.findByPublisherId(PUBLISHER_ID, PROFILE_PAGE_SIZE, PROFILE_PAGE_SIZE)).thenReturn(rows);
+        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID, ALL_STATUSES)).thenReturn(40);
+        Mockito.when(postDao.findByPublisherId(PUBLISHER_ID, ALL_STATUSES, PROFILE_PAGE_SIZE, PROFILE_PAGE_SIZE)).thenReturn(rows);
 
         // 2. Exercise
-        final PostPage result = postService.findByPublisherId(PUBLISHER_ID, 2);
+        final PostPage result = postService.findByPublisherId(PUBLISHER_ID, null, 2);
 
         // 3. Assert
         Assertions.assertEquals(PROFILE_PAGE_SIZE, result.getPosts().size());
@@ -938,17 +949,33 @@ public class PostServiceImplTest {
     }
 
     @Test
+    public void testFindByPublisherIdWhenFilteringSoldReturnsSoldPage() {
+        // 1. Arrange
+        final List<PostSummary> rows = List.of(summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID));
+        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID, List.of(PostStatus.SOLD))).thenReturn(1);
+        Mockito.when(postDao.findByPublisherId(PUBLISHER_ID, List.of(PostStatus.SOLD), PROFILE_PAGE_SIZE, 0))
+                .thenReturn(rows);
+
+        // 2. Exercise
+        final PostPage result = postService.findByPublisherId(PUBLISHER_ID, PostStatus.SOLD, 1);
+
+        // 3. Assert
+        Assertions.assertEquals(rows, result.getPosts());
+        Assertions.assertEquals(1, result.getTotalPages());
+    }
+
+    @Test
     public void testFindByPublisherIdWhenTotalIsAMultipleOfThePageSizeReturnsLastPageWithoutNext() {
         // 1. Arrange
         final List<PostSummary> rows = new ArrayList<>();
         for (int index = 0; index < PROFILE_PAGE_SIZE; index += 1) {
             rows.add(summary(PUBLISHER_ID, TITLE + index, ARTIST_NAME, PRICE, COVER_IMAGE_ID));
         }
-        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID)).thenReturn(PROFILE_PAGE_SIZE * 2);
-        Mockito.when(postDao.findByPublisherId(PUBLISHER_ID, PROFILE_PAGE_SIZE, PROFILE_PAGE_SIZE)).thenReturn(rows);
+        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID, ALL_STATUSES)).thenReturn(PROFILE_PAGE_SIZE * 2);
+        Mockito.when(postDao.findByPublisherId(PUBLISHER_ID, ALL_STATUSES, PROFILE_PAGE_SIZE, PROFILE_PAGE_SIZE)).thenReturn(rows);
 
         // 2. Exercise
-        final PostPage result = postService.findByPublisherId(PUBLISHER_ID, 2);
+        final PostPage result = postService.findByPublisherId(PUBLISHER_ID, null, 2);
 
         // 3. Assert
         Assertions.assertEquals(PROFILE_PAGE_SIZE, result.getPosts().size());
@@ -960,10 +987,10 @@ public class PostServiceImplTest {
     @Test
     public void testFindByPublisherIdWhenPageIsPastTheLastOneReturnsPageNotFoundException() {
         // 1. Arrange
-        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID)).thenReturn(40);
+        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID, ALL_STATUSES)).thenReturn(40);
 
         // 2. Exercise
-        final Executable findPage = () -> postService.findByPublisherId(PUBLISHER_ID, 4);
+        final Executable findPage = () -> postService.findByPublisherId(PUBLISHER_ID, null, 4);
 
         // 3. Assert
         Assertions.assertThrows(PageNotFoundException.class, findPage);
@@ -972,11 +999,11 @@ public class PostServiceImplTest {
     @Test
     public void testFindByPublisherIdWhenPublisherHasNoPostsReturnsEmptyFirstPage() {
         // 1. Arrange
-        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID)).thenReturn(0);
-        Mockito.when(postDao.findByPublisherId(PUBLISHER_ID, PROFILE_PAGE_SIZE, 0)).thenReturn(List.of());
+        Mockito.when(postDao.countByPublisherId(PUBLISHER_ID, ALL_STATUSES)).thenReturn(0);
+        Mockito.when(postDao.findByPublisherId(PUBLISHER_ID, ALL_STATUSES, PROFILE_PAGE_SIZE, 0)).thenReturn(List.of());
 
         // 2. Exercise
-        final PostPage result = postService.findByPublisherId(PUBLISHER_ID, 1);
+        final PostPage result = postService.findByPublisherId(PUBLISHER_ID, null, 1);
 
         // 3. Assert
         Assertions.assertTrue(result.getPosts().isEmpty());
@@ -1114,6 +1141,135 @@ public class PostServiceImplTest {
         // 3. Assert
         Assertions.assertEquals(1, result.getPage().getPosts().size());
         Assertions.assertSame(featured, result.getPage().getPosts().get(0));
+    }
+
+    @Test
+    public void testFindEditableByIdWhenActorIsAnotherUserReturnsForbidden() {
+        // 1. Arrange
+        Mockito.when(postDao.findById(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID)));
+        Mockito.when(userService.findById(2)).thenReturn(Optional.of(
+                user(2, "other", "other@example.com")));
+
+        // 2. Exercise
+        final Executable find = () -> postService.findEditableById(1, 2);
+
+        // 3. Assert
+        Assertions.assertThrows(ForbiddenOperationException.class, find);
+    }
+
+    @Test
+    public void testUpdateWhenActorIsAnotherUserReturnsForbidden() {
+        // 1. Arrange
+        Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID)));
+        Mockito.when(userService.findById(2)).thenReturn(Optional.of(user(2, "other", "other@example.com")));
+
+        // 2. Exercise
+        final Executable update = () -> postService.update(1, 2, TITLE, ARTIST_NAME,
+                RELEASE_YEAR, GENRE, PRICE, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE, List.of(), List.of());
+
+        // 3. Assert
+        Assertions.assertThrows(ForbiddenOperationException.class, update);
+    }
+
+    @Test
+    public void testDeleteWhenActorIsAnotherUserReturnsForbidden() {
+        // 1. Arrange
+        Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID)));
+        Mockito.when(userService.findById(2)).thenReturn(Optional.of(user(2, "other", "other@example.com")));
+
+        // 2. Exercise
+        final Executable delete = () -> postService.delete(1, 2);
+
+        // 3. Assert
+        Assertions.assertThrows(ForbiddenOperationException.class, delete);
+    }
+
+    @Test
+    public void testFindEditableByIdWhenActorIsAdminReturnsPost() {
+        // 1. Arrange
+        Mockito.when(postDao.findById(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID)));
+        Mockito.when(userService.findById(2)).thenReturn(Optional.of(admin()));
+
+        // 2. Exercise
+        final PostSummary post = postService.findEditableById(1, 2);
+
+        // 3. Assert
+        Assertions.assertEquals(1, post.getId());
+        Assertions.assertEquals(PUBLISHER_ID, post.getUserId());
+    }
+
+    @Test
+    public void testUpdateWhenActorIsAdminReturnsUpdatedPost() {
+        // 1. Arrange
+        final PostSummary existing = summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID);
+        Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(existing));
+        Mockito.when(userService.findById(2)).thenReturn(Optional.of(admin()));
+        Mockito.when(artistService.resolveForEdit(ARTIST_NAME)).thenReturn(new Artist(1, ARTIST_NAME));
+        Mockito.when(albumService.resolveForEdit(TITLE, 1, RELEASE_YEAR, GENRE))
+                .thenReturn(new Album(1, TITLE, 1, RELEASE_YEAR, GENRE, COVER_IMAGE_ID));
+        Mockito.when(postDao.update(1, 1, 60000, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE)).thenReturn(true);
+        Mockito.when(postDao.findById(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, 60000, COVER_IMAGE_ID)));
+
+        // 2. Exercise
+        final PostSummary post = postService.update(1, 2, TITLE, ARTIST_NAME, RELEASE_YEAR, GENRE,
+                60000, DESCRIPTION, CONDITION, PRESSING_YEAR, ZONE, List.of(), List.of());
+
+        // 3. Assert
+        Assertions.assertEquals(60000, post.getPrice());
+        Assertions.assertEquals(PUBLISHER_ID, post.getUserId());
+    }
+
+    @Test
+    public void testDeleteWhenActorIsAdminReturnsDetachedInquiries() {
+        // 1. Arrange
+        Mockito.when(postDao.findByIdForUpdate(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID)));
+        Mockito.when(userService.findById(2)).thenReturn(Optional.of(admin()));
+        Mockito.when(inquiryDao.detachFromPost(1)).thenReturn(3);
+        Mockito.when(postDao.delete(1)).thenReturn(true);
+
+        // 2. Exercise
+        final int detached = postService.delete(1, 2);
+
+        // 3. Assert
+        Assertions.assertEquals(3, detached);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"RESERVED", "SOLD"})
+    public void testFindEditableByIdWhenAdminAndPostIsUnavailableReturnsConflict(final String status) {
+        // 1. Arrange
+        Mockito.when(postDao.findById(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID, PostStatus.valueOf(status))));
+        Mockito.when(userService.findById(2)).thenReturn(Optional.of(admin()));
+
+        // 2. Exercise
+        final Executable find = () -> postService.findEditableById(1, 2);
+
+        // 3. Assert
+        Assertions.assertThrows(PostUnavailableException.class, find);
+    }
+
+    @Test
+    public void testFindEditableByIdWhenActorIsUnknownReturnsForbidden() {
+        // 1. Arrange
+        Mockito.when(postDao.findById(1)).thenReturn(Optional.of(
+                summary(PUBLISHER_ID, TITLE, ARTIST_NAME, PRICE, COVER_IMAGE_ID)));
+
+        // 2. Exercise
+        final Executable find = () -> postService.findEditableById(1, 99);
+
+        // 3. Assert
+        Assertions.assertThrows(ForbiddenOperationException.class, find);
+    }
+
+    private static User admin() {
+        return new User(2, "admin", "admin@example.com", "$2a$12$hash", UserRole.ADMIN, true, "es");
     }
 
     // Stubbea el DAO solo para los criterios que tiene que recibir: un artista no positivo,

@@ -32,7 +32,7 @@ Hay `LOGGER` en ocho services ([[UserServiceImpl]], [[InquiryServiceImpl]], [[Po
 
 | Nivel | Cantidad | Uso |
 |---|---|---|
-| INFO | 39 | Una operación de negocio que terminó: registro, verificación, publicación, consulta, cambio de estado, correo enviado |
+| INFO | 41 | Una operación de negocio que terminó: registro, verificación, publicación y edición de un post, consulta, cambio de estado, correo enviado |
 | WARN | 9 | Algo esperable que no salió: intento rechazado, pool saturado, archivo demasiado grande |
 | ERROR | 7 | Fallas de infraestructura, sobre todo de SMTP, con la excepción |
 
@@ -41,7 +41,8 @@ Convenciones que se repiten:
 - `private static final Logger LOGGER = LoggerFactory.getLogger(Clase.class)`.
 - Mensajes parametrizados (`"... userId={}"`), nunca concatenación: el texto no se arma si el nivel está apagado.
 - Se loguean **ids**, no datos personales: ni correos, ni tokens, ni contraseñas.
-- Los logs de éxito se emiten **después del commit** ([[TransactionCallbacks]]): si la transacción se revierte, no queda un log que afirme algo que no pasó.
+- Seis logs de éxito se emiten **después del commit** con [[TransactionCallbacks]]: crear una consulta, verificar el correo, enviar el enlace de verificación o de recuperación, y cambiar o recuperar la contraseña. Si la transacción se revierte, no queda un log que afirme algo que no pasó.
+- El resto, entre ellos los de aceptar, rechazar, confirmar, cancelar, y los de publicar y editar un post que sumó el PR #62 (`c60be91e`), se escriben al final del método transaccional, **antes** del commit. Si el commit fallara, el log quedaría escrito igual.
 - Las lecturas no se loguean.
 
 ## Decisiones y por qué
@@ -60,6 +61,7 @@ Convenciones que se repiten:
 - La separación entre desarrollo y servidor depende de la exclusión del WAR: `logback-test.xml` vive en `src/main/resources`, y si se quitara `packagingExcludes` el servidor loguearía a consola en vez de a los archivos que publica la cátedra.
 - No hay ninguna llamada `LOGGER.debug`: el nivel DEBUG de desarrollo hoy no agrega mensajes propios.
 - No hay id de correlación por request.
+- La mayoría de los logs de éxito se escriben antes del commit (ver arriba): un commit que falle deja un log de algo que no quedó guardado.
 
 ## Preguntas de defensa
 
@@ -73,7 +75,7 @@ En `logs/` del contenedor, un archivo por día para la aplicación y otro para a
 Operaciones de negocio completadas y fallas, con ids. No datos personales ni secretos, y no lecturas.
 
 **¿Por qué algunos logs se emiten después del commit?**
-Para que el log no afirme una operación que después se revirtió.
+Para que el log no afirme una operación que después se revirtió. Solo seis lo hacen; los demás, como publicar o aceptar, se escriben al final del método, todavía dentro de la transacción.
 
 ## Evidencia de código
 
@@ -84,6 +86,16 @@ Para que el log no afirme una operación que después se revirtió.
 ### Configuración de consola
 
 {{file:webapp/src/main/resources/logback-test.xml}}
+
+### Un log dentro de la transacción y uno después del commit
+
+Publicar un post (PR #62):
+
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:267-272}}
+
+Crear una consulta:
+
+{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:130-133}}
 
 ### Exclusión del WAR
 

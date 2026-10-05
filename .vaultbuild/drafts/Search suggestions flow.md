@@ -48,6 +48,26 @@ Siempre `200 application/json`. Sin `q`, con `q` vacío o de más de 255 caracte
 6. El cliente lee `response.json()` y crea cada `<li>` con `createElement`, `textContent` y `setAttribute`. Un título con `<` o `&` se ve tal cual.
 7. En el buscador, elegir una sugerencia envía el formulario (`submitOnSelect`).
 
+```mermaid
+sequenceDiagram
+    participant J as autocomplete.js
+    participant C as SearchSuggestionController
+    participant S as PostServiceImpl
+    participant D as PostDao
+    J->>J: espera SEARCH_DELAY_MS, numera el pedido
+    J->>C: GET /search/suggestions?q=...
+    C->>S: findSearchSuggestions(q)
+    alt q vacío, sin texto útil o de más de 255
+        S-->>C: lista vacía
+    else
+        S->>S: SearchText.compact
+        S->>D: findSearchSuggestions (UNION, ranking, LIMIT 5)
+    end
+    C->>C: toDto con typeLabel según el Locale
+    C-->>J: 200 application/json
+    J->>J: descarta respuestas viejas, arma los li con textContent
+```
+
 ## Decisiones y por qué
 
 | Decisión | Alternativa | Motivo | Fuente |
@@ -87,8 +107,8 @@ Con un `CASE` en SQL: exacta, prefijo, prefijo de palabra, contiene.
 
 {{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java:16-34}}
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:58-82}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:60-84}}
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:197-203}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:199-205}}
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:177-188}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:179-190}}

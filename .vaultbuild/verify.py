@@ -134,8 +134,16 @@ R['filas del inventario'] = len(re.findall(r'^\| \[', inv, re.M))
 R['casillas del roadmap'] = len(re.findall(r'^- \[ \] ', road, re.M))
 if R['filas del inventario'] != len(tracked): errors.append('inventario incompleto')
 if R['casillas del roadmap'] != len(tracked): errors.append('roadmap incompleto')
+# El commit documentado puede estar adelante de la copia de trabajo (origin/main ya traido
+# y sin checkout): es error solo si HEAD u origin/main tienen commits que el vault no cubre.
 R['HEAD del repositorio'] = git('rev-parse', 'HEAD').strip()
-if R['HEAD del repositorio'] != COMMIT: errors.append('el repositorio avanzó: HEAD %s' % R['HEAD del repositorio'][:7])
+_remote = subprocess.run(['git', '--no-optional-locks', '-C', REPO, 'rev-parse', '--verify', '-q', 'origin/main'],
+                         capture_output=True, text=True).stdout.strip()
+R['origin/main'] = _remote or '(sin origin/main)'
+for _label, _ref in (('HEAD', R['HEAD del repositorio']), ('origin/main', _remote)):
+    if _ref and _ref != COMMIT and subprocess.run(['git', '--no-optional-locks', '-C', REPO, 'merge-base',
+                                                   '--is-ancestor', _ref, COMMIT]).returncode != 0:
+        errors.append('el repositorio avanzó: %s %s' % (_label, _ref[:7]))
 for k, v in R.items(): print('%-55s %s' % (k, v))
 print('\nERRORES: %d' % len(errors))
 for e in errors: print(' -', e)

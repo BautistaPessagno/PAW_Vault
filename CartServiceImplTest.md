@@ -4,15 +4,15 @@ categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java"]
 ---
 
 # CartServiceImplTest
 
-Tests de `CartServiceImpl` en `services`: 21 casos declarados. Cubre: agregar con cada motivo de rechazo, tope, pantalla de envío, envío parcial, nada para enviar y dirección nueva. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
+Tests de `CartServiceImpl` en `services`: 22 casos declarados. Cubre: agregar con cada motivo de rechazo (incluido un post que se vende antes del bloqueo), tope, pantalla de envío, envío parcial, nada para enviar y dirección nueva. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
 ## Guía de lectura
 
@@ -20,9 +20,10 @@ Datos y dependencias declaradas: `BUYER_ID`, `SELLER_ID`, `OTHER_SELLER_ID`, `PO
 
 Operaciones para localizar en la fuente: `post`, `detail`, `item`, `address`.
 
-Casos declarados: 21.
+Casos declarados: 22.
 
 - `testAddWhenPostIsContactableReturnsThePost`
+- `testAddWhenPostIsSoldAtLockReturnsUnavailableRejection`
 - `testAddWhenPostIsAlreadyInCartReturnsAlreadyInCartRejection`
 - `testAddWhenCartHasMaxSendableItemsReturnsCartFullRejection`
 - `testAddWhenCartAddRaceLosesReturnsAlreadyInCartRejection`
@@ -54,7 +55,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java>), líneas 1–412.
+Fuente exacta en `c3e2a4c`: [services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/CartServiceImplTest.java>), líneas 1–427.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -121,7 +122,7 @@ public class CartServiceImplTest {
     @Test
     public void testAddWhenPostIsContactableReturnsThePost() {
         // 1. Arrange
-        Mockito.when(postService.findById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
         Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.empty());
         Mockito.when(cartItemDao.contains(BUYER_ID, POST_ID)).thenReturn(false);
         Mockito.when(cartItemDao.countByUserId(BUYER_ID, CONTACTABLE, BLOCKING)).thenReturn(0);
@@ -135,9 +136,24 @@ public class CartServiceImplTest {
     }
 
     @Test
+    public void testAddWhenPostIsSoldAtLockReturnsUnavailableRejection() {
+        // 1. Arrange
+        Mockito.when(postService.lockById(POST_ID))
+                .thenReturn(post(POST_ID, SELLER_ID, PostStatus.SOLD));
+        Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.empty());
+
+        // 2. Exercise
+        final Executable add = () -> cartService.add(BUYER_ID, POST_ID);
+
+        // 3. Assert
+        final CartAddRejectedException exception = Assertions.assertThrows(CartAddRejectedException.class, add);
+        Assertions.assertEquals(CartAddRejectedException.Reason.UNAVAILABLE, exception.getReason());
+    }
+
+    @Test
     public void testAddWhenPostIsAlreadyInCartReturnsAlreadyInCartRejection() {
         // 1. Arrange
-        Mockito.when(postService.findById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
         Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.empty());
         Mockito.when(cartItemDao.contains(BUYER_ID, POST_ID)).thenReturn(true);
 
@@ -153,7 +169,7 @@ public class CartServiceImplTest {
     @Test
     public void testAddWhenCartHasMaxSendableItemsReturnsCartFullRejection() {
         // 1. Arrange
-        Mockito.when(postService.findById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
         Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.empty());
         Mockito.when(cartItemDao.contains(BUYER_ID, POST_ID)).thenReturn(false);
         Mockito.when(cartItemDao.countByUserId(BUYER_ID, CONTACTABLE, BLOCKING)).thenReturn(CartService.MAX_ITEMS);
@@ -169,7 +185,7 @@ public class CartServiceImplTest {
     @Test
     public void testAddWhenCartAddRaceLosesReturnsAlreadyInCartRejection() {
         // 1. Arrange
-        Mockito.when(postService.findById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
         Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.empty());
         Mockito.when(cartItemDao.contains(BUYER_ID, POST_ID)).thenReturn(false);
         Mockito.when(cartItemDao.countByUserId(BUYER_ID, CONTACTABLE, BLOCKING)).thenReturn(0);
@@ -187,7 +203,7 @@ public class CartServiceImplTest {
     @Test
     public void testAddWhenBuyerOwnsPostReturnsOwnPostRejection() {
         // 1. Arrange
-        Mockito.when(postService.findById(POST_ID)).thenReturn(post(POST_ID, BUYER_ID, PostStatus.AVAILABLE));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(POST_ID, BUYER_ID, PostStatus.AVAILABLE));
         Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.empty());
 
         // 2. Exercise
@@ -201,7 +217,7 @@ public class CartServiceImplTest {
     @Test
     public void testAddWhenPostIsReservedReturnsUnavailableRejection() {
         // 1. Arrange
-        Mockito.when(postService.findById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.RESERVED));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.RESERVED));
         Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.empty());
 
         // 2. Exercise
@@ -215,7 +231,7 @@ public class CartServiceImplTest {
     @Test
     public void testAddWhenBuyerHasOpenInquiryReturnsOpenInquiryExistsException() {
         // 1. Arrange
-        Mockito.when(postService.findById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
+        Mockito.when(postService.lockById(POST_ID)).thenReturn(post(POST_ID, SELLER_ID, PostStatus.AVAILABLE));
         Mockito.when(inquiryService.findOpenInquiryId(POST_ID, BUYER_ID)).thenReturn(Optional.of(OPEN_INQUIRY_ID));
 
         // 2. Exercise

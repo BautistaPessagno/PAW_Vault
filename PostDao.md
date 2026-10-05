@@ -4,19 +4,19 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java"]
 ---
 
 # PostDao
 
-Contrato de publicaciones: búsqueda y conteo con filtros, sugerencias, listados por publicante, lectura con bloqueo de una o varias filas, alta, edición, cambio de estado con guarda y borrado.
+Contrato de publicaciones: búsqueda y conteo con filtros, sugerencias, listados por publicante (el privado filtrado por un conjunto de estados, con conteo por estado para los chips), lectura con bloqueo de una o varias filas, alta, edición, cambio de estado con guarda y borrado.
 
 ## Guía de lectura
 
-Operaciones para localizar en la fuente: `search`, `countSearch`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `countAvailableByPublisherId`, `countByPublisherId`, `findById`, `findByIdForUpdate`, `findByIdsForUpdate`, `existsByUserIdAndAlbumId`, `create`, `update`, `updateWithImage`, `updateStatus`, `findOwnImageId`, `findAlbumCoverImageId`, `delete`.
+Operaciones para localizar en la fuente: `search`, `countSearch`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `countAvailableByPublisherId`, `countByPublisherId`, `countByStatusForPublisher`, `findById`, `findByIdForUpdate`, `findByIdsForUpdate`, `existsByUserIdAndAlbumId`, `create`, `update`, `updateWithImage`, `updateStatus`, `findOwnImageId`, `findAlbumCoverImageId`, `delete`.
 
 ## Conexiones
 
@@ -28,7 +28,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java>), líneas 1–60.
+Fuente exacta en `c3e2a4c`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PostDao.java>), líneas 1–65.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -42,6 +42,7 @@ import ar.edu.itba.paw.models.SearchSuggestion;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface PostDao {
@@ -53,14 +54,18 @@ public interface PostDao {
     // resuelve contra la columna search_phrase, sin traer la tabla entera.
     List<SearchSuggestion> findSearchSuggestions(String normalizedQuery, int limit);
 
-    List<PostSummary> findByPublisherId(long publisherId, int limit, int offset);
+    // Solo los Posts en statuses: "todas" es la lista completa.
+    List<PostSummary> findByPublisherId(long publisherId, Collection<PostStatus> statuses, int limit, int offset);
 
     List<PostSummary> findAvailableByPublisherId(long publisherId, int limit, int offset);
 
     int countAvailableByPublisherId(long publisherId);
 
-    // Total de publicaciones de un publicante, para numerar las paginas del perfil.
-    int countByPublisherId(long publisherId);
+    // Total de publicaciones de un publicante en statuses, para numerar las paginas del perfil.
+    int countByPublisherId(long publisherId, Collection<PostStatus> statuses);
+
+    // Para los filtros de "Mis publicaciones". Los estados sin Posts no estan en el mapa.
+    Map<PostStatus, Integer> countByStatusForPublisher(long publisherId);
 
     Optional<PostSummary> findById(long id);
 

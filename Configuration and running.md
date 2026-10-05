@@ -4,8 +4,8 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/resources/database.properties.example", "webapp/src/main/resources/mail.properties.example", "webapp/src/pampero/resources/database.properties.example", "webapp/src/pampero/resources/mail.properties.example", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java", "docs/setup.md", "tools/setup_local_postgres.sh", "tools/seed_local_data.sh", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java"]
 ---
@@ -112,7 +112,7 @@ Los dos archivos de propiedades, elegidos por el perfil Maven, y el context path
 
 ### Ejemplo de base (local)
 
-Fuente exacta en `8929aea`: [webapp/src/main/resources/database.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/database.properties.example>), líneas 1–4.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/resources/database.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/database.properties.example>), líneas 1–4.
 
 ```properties
 db.driver=org.postgresql.Driver
@@ -123,7 +123,7 @@ db.password=your_database_password
 
 ### Ejemplo de correo (local)
 
-Fuente exacta en `8929aea`: [webapp/src/main/resources/mail.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/mail.properties.example>), líneas 1–16.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/resources/mail.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/mail.properties.example>), líneas 1–16.
 
 ```properties
 mail.host=smtp.gmail.com
@@ -146,7 +146,7 @@ app.base-url=http://localhost:8080
 
 ### Lectura del SMTP
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 145–161.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 145–161.
 
 ```java
   @Bean
@@ -170,7 +170,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/
 
 ### Lectura de remitente y URL base
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 43–54.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 43–54.
 
 ```java
     @Autowired
@@ -198,4 +198,4 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Ema
 - [tools/setup_local_postgres.sh](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/setup_local_postgres.sh>)
 - [tools/seed_local_data.sh](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/seed_local_data.sh>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

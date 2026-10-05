@@ -4,8 +4,8 @@ categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java"]
 ---
@@ -28,10 +28,10 @@ Casos declarados: 10.
 - `testCreateWhenAlbumAlreadyExistsReturnsDuplicateKeyExceptionWithoutChanges`
 - `testCreateWhenTitleDiffersOnlyInCaseReturnsDuplicateKeyExceptionWithoutChanges`
 - `testCreateWhenReleaseYearDiffersReturnsPersistedAlbum`
-- `testCreateWhenGenreIsNullThrowsDataIntegrityViolationWithoutPersistingAlbum`
-- `testCreateWhenGenreIsUnknownThrowsDataIntegrityViolationWithoutPersistingAlbum`
+- `testCreateWhenGenreIsNullReturnsDataIntegrityViolationWithoutPersistingAlbum`
+- `testCreateWhenGenreIsUnknownReturnsDataIntegrityViolationWithoutPersistingAlbum`
 - `testUpdateMetadataWhenAlbumExistsReturnsPersistedAlbum`
-- `testUpdateMetadataWhenAlbumDoesNotExistThrowsIllegalStateException`
+- `testUpdateMetadataWhenAlbumDoesNotExistReturnsIllegalStateException`
 
 ## Conexiones
 
@@ -43,7 +43,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java>), líneas 1–212.
+Fuente exacta en `c3e2a4c`: [persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/AlbumJdbcDaoTest.java>), líneas 1–212.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -196,7 +196,7 @@ public class AlbumJdbcDaoTest {
     }
 
     @Test
-    public void testCreateWhenGenreIsNullThrowsDataIntegrityViolationWithoutPersistingAlbum() {
+    public void testCreateWhenGenreIsNullReturnsDataIntegrityViolationWithoutPersistingAlbum() {
         // 1. Arrange
         final int releaseYear = 1999;
 
@@ -209,7 +209,7 @@ public class AlbumJdbcDaoTest {
     }
 
     @Test
-    public void testCreateWhenGenreIsUnknownThrowsDataIntegrityViolationWithoutPersistingAlbum() {
+    public void testCreateWhenGenreIsUnknownReturnsDataIntegrityViolationWithoutPersistingAlbum() {
         // 1. Arrange
         final int releaseYear = 1999;
 
@@ -243,7 +243,7 @@ public class AlbumJdbcDaoTest {
     }
 
     @Test
-    public void testUpdateMetadataWhenAlbumDoesNotExistThrowsIllegalStateException() {
+    public void testUpdateMetadataWhenAlbumDoesNotExistReturnsIllegalStateException() {
         // 1. Arrange
         final long missingAlbumId = 999;
 

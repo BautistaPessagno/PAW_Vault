@@ -4,22 +4,22 @@ categories: ["Navigation"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 tags: ["codemap", "navigation"]
 ---
 
 # Home
 
-Este vault documenta quieroVinilos en el commit `8929aeaa59b250e6c7119212f96437e153e815ac`, inspeccionado el 4 de octubre de 2026. Todas las notas viven en la raíz; la carpeta `Categories` solo tiene vistas filtradas, así que una nota puede aparecer en varias categorías sin moverse.
+Este vault documenta quieroVinilos en el commit `c3e2a4cd23337bd35175d14ef551ba12a758a59d`, inspeccionado el 5 de octubre de 2026. Todas las notas viven en la raíz; la carpeta `Categories` solo tiene vistas filtradas, así que una nota puede aparecer en varias categorías sin moverse.
 
 ## Empezá por acá
 
 | Si querés... | Abrí |
 |---|---|
 | Saber qué es el proyecto y qué versión está documentada | [[Project snapshot]] |
-| Ver qué cambió desde el mapa anterior | [[Recent changes 2026-10-04]] |
+| Ver qué cambió desde el mapa anterior | [[Recent changes 2026-10-05]] (antes: [[Recent changes 2026-10-04]]) |
 | Ubicar una funcionalidad, sus rutas y sus clases | [[Feature map]] |
 | Leer todo el código en un orden que tenga sentido | [[Roadmap de lectura]] |
 | Preparar una defensa | [[Defense guide]] |
@@ -35,7 +35,7 @@ Este vault documenta quieroVinilos en el commit `8929aeaa59b250e6c7119212f96437e
 
 ## Flujos por funcionalidad
 
-Cada nota de flujo tiene la misma estructura: qué resuelve, herramientas, recorrido paso a paso, datos, decisiones con su fuente, concurrencia, límites, preguntas de defensa y código.
+Cada nota de flujo tiene la misma estructura: qué resuelve, herramientas, recorrido paso a paso con un diagrama Mermaid del flujo, datos, decisiones con su fuente, concurrencia, límites, preguntas de defensa y código.
 
 | Área | Notas |
 |---|---|
@@ -53,7 +53,7 @@ Cada nota de flujo tiene la misma estructura: qué resuelve, herramientas, recor
 | Correo | [[Mail delivery]] |
 | Transacciones y bloqueos | [[Transactions and concurrency]] |
 | Validación y respuestas de error | [[Validation and errors]] |
-| Paginación | [[Paginated listings]] |
+| Paginación y filtros por estado | [[Paginated listings]] · [[Status filters flow]] |
 | Idiomas | [[Localization]] |
 | Interfaz | [[UI components]] · [[UI styles and tokens]] · [[Views and assets]] |
 
@@ -63,7 +63,7 @@ Cada nota de flujo tiene la misma estructura: qué resuelve, herramientas, recor
 
 ## Notas de código
 
-Hay una nota por cada una de las 232 clases Java, con su resumen, sus métodos, quién la usa, sus tests y el código completo. Se llega por el buscador rápido con el nombre de la clase, o por [[Source inventory]], que lista los 460 archivos versionados y dónde está documentado cada uno. Las referencias entre notas de código son estáticas; el orden de ejecución lo dan las notas de flujo.
+Hay una nota por cada una de las 238 clases Java, con su resumen, sus métodos, quién la usa, sus tests y el código completo. Se llega por el buscador rápido con el nombre de la clase, o por [[Source inventory]], que lista los 472 archivos versionados y dónde está documentado cada uno. Las referencias entre notas de código son estáticas; el orden de ejecución lo dan las notas de flujo.
 
 ## Categorías
 
@@ -79,4 +79,4 @@ Hay una nota por cada una de las 232 clases Java, con su resumen, sus métodos, 
 
 [[Audit local 2026-09-17]] registra una auditoría manual sobre una rama anterior. [[Legacy user flow]] describe el esqueleto inicial. [[TODO cambios]] son apuntes personales tomados después de la defensa del sprint 2.
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación.
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación.

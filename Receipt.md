@@ -4,15 +4,15 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/Receipt.java"]
 ---
 
 # Receipt
 
-El comprobante de una venta: tipo de contenido y bytes. `getFilename` le pone la extensión que corresponde al tipo para que se descargue como un archivo reconocible.
+El comprobante de una venta: tipo de contenido y bytes. Copia el arreglo al construirse y al devolverlo, así nadie modifica el comprobante desde afuera. `getFilename` le pone la extensión que corresponde al tipo para que se descargue como un archivo reconocible.
 
 ## Guía de lectura
 
@@ -24,16 +24,18 @@ Operaciones para localizar en la fuente: `getContentType`, `getData`, `getFilena
 
 Referencias estáticas a tipos del proyecto: [[ReceiptRules]].
 
-Referenciado por: [[InquiryController]], [[InquiryDao]], [[InquiryJdbcDao]], [[InquiryJdbcDaoTest]], [[InquiryService]], [[InquiryServiceImpl]].
+Referenciado por: [[InquiryController]], [[InquiryDao]], [[InquiryJdbcDao]], [[InquiryJdbcDaoTest]], [[InquiryService]], [[InquiryServiceImpl]], [[ReceiptTest]].
 
 Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/Receipt.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Receipt.java>), líneas 1–25.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/Receipt.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Receipt.java>), líneas 1–27.
 
 ```java
 package ar.edu.itba.paw.models;
+
+import java.util.Arrays;
 
 // El comprobante que sube el comprador para una consulta en AWAITING_PAYMENT.
 public final class Receipt {
@@ -42,7 +44,7 @@ public final class Receipt {
 
     public Receipt(final String contentType, final byte[] data) {
         this.contentType = contentType;
-        this.data = data;
+        this.data = Arrays.copyOf(data, data.length);
     }
 
     public String getContentType() {
@@ -50,7 +52,7 @@ public final class Receipt {
     }
 
     public byte[] getData() {
-        return data;
+        return Arrays.copyOf(data, data.length);
     }
 
     // Con la extension que corresponde al tipo, para que se guarde como archivo reconocible.

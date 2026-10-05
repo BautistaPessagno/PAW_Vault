@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ContactForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java", "services/src/main/java/ar/edu/itba/paw/services/ContactRules.java", "models/src/main/java/ar/edu/itba/paw/models/ContactState.java", "models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/LineBreakNormalizingEditor.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/PostInterestNotification.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/OpenInquiryExistsException.java", "webapp/src/main/webapp/WEB-INF/views/post/contact.jsp"]
 ---
@@ -13,7 +13,7 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactCon
 # Contact flow
 
 > [!summary] En una frase
-> Una Cuenta verificada elige o carga una dirección de envío, opcionalmente escribe un mensaje, y eso crea la Consulta en `PENDING` con el precio congelado y avisa por correo al publicante.
+> Una Cuenta verificada elige o carga una dirección de envío, opcionalmente escribe un mensaje, y eso crea la Consulta en `PENDING` y avisa por correo al publicante; el precio de la venta se fija recién cuando el publicante acepta.
 
 ## Qué resuelve
 
@@ -51,9 +51,44 @@ El primer paso de una compra: `GET` y `POST /post/{id}/contact`. Lo que sigue es
    - `lockContactablePost`: bloquea el post y repite las tres validaciones del `GET`.
    - Con dirección guardada: tiene que ser del comprador y no estar archivada (`findActiveOwned`); si no, `AddressNotFoundException`.
    - Con dirección nueva: `addressService.create`, que bloquea la Cuenta y respeta el tope de 3. Se valida el post **antes** de guardar la dirección: si la consulta no puede entrar, no se escribe nada.
-   - `create`: normaliza el mensaje, inserta la consulta con `status = PENDING`, la dirección y **el precio actual del post**; si hay texto, lo inserta como primer Mensaje.
+   - `create`: normaliza el mensaje, inserta la consulta con `status = PENDING`, la dirección y **el precio actual del post** como respaldo (si el post se elimina, es el que queda; el de la venta lo fija `accept`, ver [[Inquiry and sale flow]]); si hay texto, lo inserta como primer Mensaje.
    - Registra el correo de "consulta nueva" para después del commit, con el idioma guardado del publicante.
 4. Controller: aviso flash `inquirySubmitted` y redirección a `/inquiries/sent`, la bandeja del comprador.
+
+```mermaid
+sequenceDiagram
+    participant B as Comprador
+    participant C as PostContactController
+    participant S as InquiryServiceImpl
+    participant P as PostService
+    participant A as AddressService
+    participant D as InquiryDao
+    participant M as EmailService
+    B->>C: GET /post/42/contact
+    C->>A: findShippingOptions
+    C->>S: findContactablePost (solo lectura)
+    alt Consulta abierta
+        S-->>C: OpenInquiryExistsException
+        C-->>B: 302 /inquiries/{id}#35;conversation
+    else no AVAILABLE o post propio
+        S-->>C: PostUnavailableException (409) / ForbiddenOperationException (403)
+    end
+    C-->>B: post/contact
+    B->>C: POST /post/42/contact (mensaje, dirección)
+    alt dirección guardada
+        C->>S: submit(postId, buyerId, mensaje, addressId)
+        S->>P: lockById (FOR UPDATE) + validateContactable
+        S->>A: findActiveOwned
+    else dirección nueva
+        C->>S: submitWithNewAddress
+        S->>P: lockById (FOR UPDATE) + validateContactable
+        S->>A: create (bloquea la Cuenta, tope 3)
+    end
+    S->>D: create (PENDING, precio actual)
+    S->>S: messageDao.create si hay texto
+    S-)M: afterCommit: sendPostInterestEmail (idioma del publicante)
+    C-->>B: 302 /inquiries/sent
+```
 
 ## Datos
 
@@ -71,7 +106,7 @@ El primer paso de una compra: `GET` y `POST /post/{id}/contact`. Lo que sigue es
 | La Consulta abierta se chequea antes que el estado del post | Si el post está reservado para él, igual tiene que llegar a su conversación | Comentario en [[InquiryServiceImpl]] |
 | Bloquear el post al consultar | Que no entre justo mientras se vende, y que dos envíos del mismo comprador no dupliquen | Comentario en [[InquiryServiceImpl]] |
 | Dirección nueva y consulta en una transacción | Si la consulta no entra, la dirección no ocupa un lugar del tope | Comentario en [[InquiryService]] |
-| El precio se copia a la consulta | Es el monto pactado aunque el post se edite | Migración V5 |
+| El precio se copia a la consulta solo como respaldo | Mientras está pendiente se muestra el precio actual del post; el monto pactado se fija al aceptar | ADR 0004, commit `7e073053` (antes: migración V5, que lo congelaba al consultar) |
 | El correo usa el idioma del publicante | Quien lo lee no es quien dispara el request | Comentario en [[InquiryServiceImpl]] |
 | El resumen del post ya trae correo e idioma del publicante | Evitar otra consulta para armar el aviso | Comentario en [[InquiryServiceImpl]] |
 | Los campos de dirección del formulario no llevan `@NotBlank` | Solo son obligatorios cuando no se eligió una guardada | Comentario en [[ShippingAddressForm]] |
@@ -108,7 +143,7 @@ El navegador cuenta un salto como un carácter en `maxlength` pero lo envía com
 
 Controller:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java>), líneas 46–125.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java>), líneas 46–125.
 
 ```java
     // Recorta antes de validar, para que @Size mida el valor real y no los espacios de mas.
@@ -195,7 +230,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 Service:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 66–133.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 68–135.
 
 ```java
     @Override
@@ -270,7 +305,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Inq
 
 La única definición de "se puede consultar", compartida con el carrito y la ficha:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>), líneas 9–44.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>), líneas 9–44.
 
 ```java
 /*
@@ -313,7 +348,7 @@ final class ContactRules {
 
 Cómo la traduce el contacto a excepciones:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 516–526.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 551–561.
 
 ```java
     // Un comprador tiene a lo sumo una Consulta abierta por post: si ya la tiene, va a esa
@@ -331,7 +366,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Inq
 
 Validador condicional:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java>), líneas 9–48.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java>), líneas 9–48.
 
 ```java
 public class ShippingAddressValidator implements ConstraintValidator<ValidShippingAddress, ShippingAddressForm> {
@@ -380,11 +415,11 @@ public class ShippingAddressValidator implements ConstraintValidator<ValidShippi
 
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/PostContactController.java>) · [[PostContactController]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ContactForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ContactForm.java>) · [[ContactForm]]
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java>)
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java>)
-- [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/ContactState.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ContactState.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java>)
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java>) · [[ShippingAddressForm]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java>) · [[ShippingAddressValidator]]
+- [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>) · [[ContactRules]]
+- [models/src/main/java/ar/edu/itba/paw/models/ContactState.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ContactState.java>) · [[ContactState]]
+- [models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ShippingOptions.java>) · [[ShippingOptions]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/form/LineBreakNormalizingEditor.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/LineBreakNormalizingEditor.java>) · [[LineBreakNormalizingEditor]]
 - [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>) · [[InquiryServiceImpl]]
 - [services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java>) · [[AddressServiceImpl]]
@@ -393,4 +428,4 @@ public class ShippingAddressValidator implements ConstraintValidator<ValidShippi
 - [services-contracts/src/main/java/ar/edu/itba/paw/services/OpenInquiryExistsException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/OpenInquiryExistsException.java>) · [[OpenInquiryExistsException]]
 - [webapp/src/main/webapp/WEB-INF/views/post/contact.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/post/contact.jsp>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

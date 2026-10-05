@@ -4,21 +4,21 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java"]
 ---
 
 # InquiryDetail
 
-La Consulta vista por una de sus partes, con su conversación y la reseña propia. Decide qué puede hacer quien mira (aceptar, subir comprobante, cancelar, escribir, calificar) con las mismas reglas que [[InquiryServiceImpl]] aplica antes de escribir. Ver [[Inquiry and sale flow]].
+La Consulta vista por una de sus partes, con su conversación y la reseña propia. Decide qué puede hacer quien mira (aceptar, subir comprobante, cancelar, escribir, calificar) con las mismas reglas que [[InquiryServiceImpl]] aplica antes de escribir, y expone la foto de la otra parte. Ver [[Inquiry and sale flow]].
 
 ## Guía de lectura
 
 Datos y dependencias declaradas: `inquiry`, `sellerView`, `viewerId`, `messages`, `ownReview`.
 
-Operaciones para localizar en la fuente: `getInquiry`, `isSellerView`, `getCounterpartyId`, `getCounterpartyUsername`, `getViewerId`, `getMessages`, `isSale`, `isCanWrite`, `isCanAccept`, `isCanReject`, `isOpen`, `isPaymentInfoVisible`, `isPaymentInfoMissing`, `isCanUploadReceipt`, `isReceiptRequested`, `isCanReviewReceipt`, `isCanCancel`, `isAddressVisible`, `isCanReview`, `getOwnReview`, `withOwnReview`.
+Operaciones para localizar en la fuente: `getInquiry`, `isSellerView`, `getCounterpartyId`, `getCounterpartyUsername`, `getCounterpartyAvatarImageId`, `getViewerId`, `getMessages`, `isSale`, `isCanWrite`, `isCanAccept`, `isCanReject`, `isOpen`, `isPaymentInfoVisible`, `isPaymentInfoMissing`, `isCanUploadReceipt`, `isReceiptRequested`, `isCanReviewReceipt`, `isCanCancel`, `isAddressVisible`, `isCanReview`, `getOwnReview`, `withOwnReview`.
 
 ## Conexiones
 
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java>), líneas 1–89.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java>), líneas 1–93.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -73,6 +73,10 @@ public final class InquiryDetail {
 
     public String getCounterpartyUsername() {
         return sellerView ? inquiry.getBuyerUsername() : inquiry.getSellerUsername();
+    }
+
+    public Long getCounterpartyAvatarImageId() {
+        return sellerView ? inquiry.getBuyerAvatarImageId() : inquiry.getSellerAvatarImageId();
     }
 
     // La vista marca los Mensajes propios comparando senderId con este id: EL no llama metodos con argumentos.

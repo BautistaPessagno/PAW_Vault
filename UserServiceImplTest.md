@@ -4,8 +4,8 @@ categories: ["Services", "Testing"]
 type: "test"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java"]
 ---
@@ -27,11 +27,11 @@ Casos declarados: 44.
 - `testUpdateAvatarWhenImageIsInvalidReturnsInvalidImageExceptionAndKeepsPrevious`
 - `testUpdateAvatarWhenUserDoesNotExistReturnsUserNotFoundException`
 - `testRegisterWhenEmailIsNewReturnsUnverifiedUserWithNormalizedEmailAndChosenUsername`
-- `testRegisterWhenAccountIsVerifiedThrowsDuplicateUserException`
-- `testRegisterWhenAccountIsUnverifiedWithPasswordThrowsDuplicateUserException`
+- `testRegisterWhenAccountIsVerifiedReturnsDuplicateUserException`
+- `testRegisterWhenAccountIsUnverifiedWithPasswordReturnsDuplicateUserException`
 - `testRegisterWhenAccountIsPendingReturnsCompletedUnverifiedUser`
-- `testRegisterWhenPendingAccountWasCompletedByAnotherRequestThrowsDuplicateUserException`
-- `testRegisterWhenAnotherRequestInsertedTheSameEmailThrowsDuplicateUserException`
+- `testRegisterWhenPendingAccountWasCompletedByAnotherRequestReturnsDuplicateUserException`
+- `testRegisterWhenAnotherRequestInsertedTheSameEmailReturnsDuplicateUserException`
 - `testVerifyEmailWhenTokenIsValidReturnsVerifiedUserAndConsumesTheLink`
 - `testVerifyEmailWhenTokenIsUnknownReturnsEmpty`
 - `testVerifyEmailWhenTokenIsMissingReturnsEmpty`
@@ -40,7 +40,7 @@ Casos declarados: 44.
 - `testResendVerificationWhenLastLinkIsRecentReturnsFalseAndKeepsIt`
 - `testResendVerificationWhenAccountIsUnverifiedReturnsTrueAfterReplacingThePreviousLink`
 - `testUpdateUsernameWhenValueHasSurroundingSpacesReturnsTrimmedUpdatedUser`
-- `testUpdateUsernameWhenUserDoesNotExistThrowsUserNotFoundException`
+- `testUpdateUsernameWhenUserDoesNotExistReturnsUserNotFoundException`
 - `testUpdatePaymentInfoWhenCbuHasSpacesReturnsUserWithNormalizedCbu`
 - `testUpdatePaymentInfoWhenCvuIsValidReturnsUpdatedUser`
 - `testUpdatePaymentInfoWhenClearingWithOpenSaleReturnsPaymentInfoRequiredException`
@@ -50,10 +50,10 @@ Casos declarados: 44.
 - `testUpdatePaymentInfoWhenCbuHasLettersReturnsInvalidPaymentInfoException`
 - `testUpdatePaymentInfoWhenAliasHasSpacesInsideReturnsInvalidPaymentInfoException`
 - `testChangePasswordWhenCurrentPasswordMatchesReturnsUserWithNewHashAndNotifiesAfterCommit`
-- `testChangePasswordWhenCurrentPasswordDoesNotMatchThrowsInvalidCurrentPasswordException`
-- `testChangePasswordWhenNewPasswordEqualsCurrentThrowsUnchangedPasswordException`
-- `testChangePasswordWhenUserDoesNotExistThrowsUserNotFoundException`
-- `testChangePasswordWhenHashWasReplacedConcurrentlyThrowsInvalidCurrentPasswordException`
+- `testChangePasswordWhenCurrentPasswordDoesNotMatchReturnsInvalidCurrentPasswordException`
+- `testChangePasswordWhenNewPasswordEqualsCurrentReturnsUnchangedPasswordException`
+- `testChangePasswordWhenUserDoesNotExistReturnsUserNotFoundException`
+- `testChangePasswordWhenHashWasReplacedConcurrentlyReturnsInvalidCurrentPasswordException`
 - `testRequestPasswordResetWhenAccountIsEnabledReturnsNormallyAfterStoringTokenAndSchedulingLink`
 - `testRequestPasswordResetWhenAccountIsUnverifiedWithPasswordReturnsNormallyAfterSchedulingLink`
 - `testRequestPasswordResetWhenEmailIsUnknownReturnsNormallyWithoutSendingLink`
@@ -64,7 +64,7 @@ Casos declarados: 44.
 - `testResetPasswordWhenTokenIsExpiredReturnsEmptyAndLeavesPasswordUntouched`
 - `testResetPasswordWhenTokenWasAlreadyConsumedReturnsEmpty`
 - `testResetPasswordWhenTokenDoesNotExistReturnsEmpty`
-- `testResetPasswordWhenNewPasswordEqualsCurrentThrowsUnchangedPasswordException`
+- `testResetPasswordWhenNewPasswordEqualsCurrentReturnsUnchangedPasswordException`
 - `testResetPasswordWhenTokenIsMissingReturnsEmpty`
 
 ## Conexiones
@@ -77,7 +77,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java>), líneas 1–938.
+Fuente exacta en `c3e2a4c`: [services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java>), líneas 1–938.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -265,7 +265,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testRegisterWhenAccountIsVerifiedThrowsDuplicateUserException() {
+    public void testRegisterWhenAccountIsVerifiedReturnsDuplicateUserException() {
         // 1. Arrange
         Mockito.when(userDao.findByEmail(NEW_EMAIL)).thenReturn(Optional.of(verifiedPublisher()));
 
@@ -282,7 +282,7 @@ public class UserServiceImplTest {
      * segundo registro pudiera pisarla, cualquiera se quedaria con la cuenta ajena.
      */
     @Test
-    public void testRegisterWhenAccountIsUnverifiedWithPasswordThrowsDuplicateUserException() {
+    public void testRegisterWhenAccountIsUnverifiedWithPasswordReturnsDuplicateUserException() {
         // 1. Arrange
         Mockito.when(userDao.findByEmail(NEW_EMAIL)).thenReturn(Optional.of(unverifiedUser()));
 
@@ -318,7 +318,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testRegisterWhenPendingAccountWasCompletedByAnotherRequestThrowsDuplicateUserException() {
+    public void testRegisterWhenPendingAccountWasCompletedByAnotherRequestReturnsDuplicateUserException() {
         // 1. Arrange
         Mockito.when(userDao.findByEmail(PENDING_EMAIL))
                 .thenReturn(Optional.of(pendingUser(PENDING_USER_ID, "legacy", PENDING_EMAIL, LANGUAGE)));
@@ -335,7 +335,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testRegisterWhenAnotherRequestInsertedTheSameEmailThrowsDuplicateUserException() {
+    public void testRegisterWhenAnotherRequestInsertedTheSameEmailReturnsDuplicateUserException() {
         // 1. Arrange
         Mockito.when(userDao.findByEmail(NEW_EMAIL)).thenReturn(Optional.empty());
         Mockito.when(passwordHasher.hash(RAW_PASSWORD)).thenReturn(PASSWORD_HASH);
@@ -471,7 +471,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testUpdateUsernameWhenUserDoesNotExistThrowsUserNotFoundException() {
+    public void testUpdateUsernameWhenUserDoesNotExistReturnsUserNotFoundException() {
         // 1. Arrange
         final long missingId = 999;
         Mockito.when(userDao.updateUsername(missingId, CHOSEN_USERNAME)).thenReturn(Optional.empty());
@@ -613,7 +613,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testChangePasswordWhenCurrentPasswordDoesNotMatchThrowsInvalidCurrentPasswordException() {
+    public void testChangePasswordWhenCurrentPasswordDoesNotMatchReturnsInvalidCurrentPasswordException() {
         // 1. Arrange
         final User current = verifiedPublisher();
         Mockito.when(userDao.findById(1)).thenReturn(Optional.of(current));
@@ -629,7 +629,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testChangePasswordWhenNewPasswordEqualsCurrentThrowsUnchangedPasswordException() {
+    public void testChangePasswordWhenNewPasswordEqualsCurrentReturnsUnchangedPasswordException() {
         // 1. Arrange
         final User current = verifiedPublisher();
         Mockito.when(userDao.findById(1)).thenReturn(Optional.of(current));
@@ -645,7 +645,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testChangePasswordWhenUserDoesNotExistThrowsUserNotFoundException() {
+    public void testChangePasswordWhenUserDoesNotExistReturnsUserNotFoundException() {
         // 1. Arrange
         final long missingId = 999;
         Mockito.when(userDao.findById(missingId)).thenReturn(Optional.empty());
@@ -658,7 +658,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testChangePasswordWhenHashWasReplacedConcurrentlyThrowsInvalidCurrentPasswordException() {
+    public void testChangePasswordWhenHashWasReplacedConcurrentlyReturnsInvalidCurrentPasswordException() {
         // 1. Arrange
         final User current = verifiedPublisher();
         Mockito.when(userDao.findById(1)).thenReturn(Optional.of(current));
@@ -862,7 +862,7 @@ public class UserServiceImplTest {
      * que el correo sigue sirviendo para elegir otra clave.
      */
     @Test
-    public void testResetPasswordWhenNewPasswordEqualsCurrentThrowsUnchangedPasswordException() {
+    public void testResetPasswordWhenNewPasswordEqualsCurrentReturnsUnchangedPasswordException() {
         // 1. Arrange
         Mockito.when(resetTokenDao.findByToken(TOKEN)).thenReturn(Optional.of(liveToken()));
         Mockito.when(userDao.findById(1)).thenReturn(Optional.of(currentUser()));

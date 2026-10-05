@@ -4,21 +4,21 @@ categories: ["Domain"]
 type: "code"
 module: "models"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java"]
 ---
 
 # InquirySummary
 
-La Consulta como la muestran la bandeja y el detalle: partes, álbum, precio congelado, último mensaje, estados de la consulta y del post, dirección y si hay comprobante. Trae las reglas de estado (`isCancellableBy`, `isSale`, `isConversationOpen`). Si el post fue eliminado, el álbum y el vendedor salen de la copia que guarda la consulta.
+La Consulta como la muestran la bandeja y el detalle: partes con su foto, álbum, precio (el actual del post mientras está pendiente y el fijado al aceptar después; ver ADR 0004), último mensaje, estados de la consulta y del post, dirección y si hay comprobante. Trae las reglas de estado (`isCancellableBy`, `isSale`, `isConversationOpen`). Si el post fue eliminado, el álbum y el vendedor salen de la copia que guarda la consulta.
 
 ## Guía de lectura
 
-Datos y dependencias declaradas: `id`, `postId`, `albumId`, `buyerId`, `sellerId`, `buyerUsername`, `buyerEmail`, `buyerLocale`, `sellerUsername`, `sellerPaymentInfo`, `title`, `artistName`, `coverImageId`, `price`, `lastMessage`, `status`, `postStatus`, `address`, `hasReceipt`.
+Datos y dependencias declaradas: `id`, `postId`, `albumId`, `buyerId`, `sellerId`, `buyerUsername`, `buyerEmail`, `buyerLocale`, `sellerUsername`, `sellerPaymentInfo`, `title`, `artistName`, `coverImageId`, `price`, `lastMessage`, `status`, `postStatus`, `address`, `hasReceipt`, `buyerAvatarImageId`, `sellerAvatarImageId`.
 
-Operaciones para localizar en la fuente: `getId`, `getPostId`, `getAlbumId`, `getBuyerId`, `getSellerId`, `getBuyerUsername`, `getBuyerEmail`, `getBuyerLocale`, `getSellerUsername`, `getSellerPaymentInfo`, `getTitle`, `getArtistName`, `getCoverImageId`, `getPrice`, `getLastMessage`, `getStatus`, `getPostStatus`, `getAddress`, `isHasReceipt`, `hasSellerPaymentInfo`, `withAddress`, `isPending`, `isPostAvailable`, `isPostDeleted`, `isAwaitingPayment`, `isPaymentSubmitted`, `isCancellableBy`, `isSale`, `isConversationOpen`.
+Operaciones para localizar en la fuente: `getId`, `getPostId`, `getAlbumId`, `getBuyerId`, `getSellerId`, `getBuyerUsername`, `getBuyerEmail`, `getBuyerLocale`, `getSellerUsername`, `getSellerPaymentInfo`, `getTitle`, `getArtistName`, `getCoverImageId`, `getPrice`, `getLastMessage`, `getStatus`, `getPostStatus`, `getAddress`, `getBuyerAvatarImageId`, `getSellerAvatarImageId`, `isHasReceipt`, `hasSellerPaymentInfo`, `withAddress`, `isPending`, `isPostAvailable`, `isPostDeleted`, `isAwaitingPayment`, `isPaymentSubmitted`, `isCancellableBy`, `isSale`, `isConversationOpen`.
 
 ## Conexiones
 
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java>), líneas 1–107.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java>), líneas 1–115.
 
 ```java
 package ar.edu.itba.paw.models;
@@ -56,8 +56,8 @@ public final class InquirySummary {
     private final String title;
     private final String artistName;
     private final Long coverImageId;
-    // El precio al consultar; en consultas anteriores a guardarlo, el actual del post. null si
-    // ademas el post fue eliminado.
+    // Precio actual mientras esta pendiente y precio fijado al aceptar. Las consultas legacy
+    // conservan el fallback del post; null si no existe ni snapshot ni publicacion.
     private final Integer price;
     // null mientras la Conversacion esta vacia.
     private final Message lastMessage;
@@ -65,6 +65,8 @@ public final class InquirySummary {
     private final PostStatus postStatus;
     private final Address address;
     private final boolean hasReceipt;
+    private final Long buyerAvatarImageId;
+    private final Long sellerAvatarImageId;
 
     public InquirySummary(final long id, final Long postId, final long albumId, final long buyerId,
                           final long sellerId, final String buyerUsername, final String buyerEmail,
@@ -73,7 +75,9 @@ public final class InquirySummary {
                           final Long coverImageId, final Integer price, final Message lastMessage,
                           final InquiryStatus status, final PostStatus postStatus,
                           // null en las consultas anteriores a la direccion de envio.
-                          final Address address, final boolean hasReceipt) {
+                          final Address address, final boolean hasReceipt,
+                          // null si la Cuenta no tiene foto o no esta verificada.
+                          final Long buyerAvatarImageId, final Long sellerAvatarImageId) {
         this.id = id;
         this.postId = postId;
         this.albumId = albumId;
@@ -93,6 +97,8 @@ public final class InquirySummary {
         this.postStatus = postStatus;
         this.address = address;
         this.hasReceipt = hasReceipt;
+        this.buyerAvatarImageId = buyerAvatarImageId;
+        this.sellerAvatarImageId = sellerAvatarImageId;
     }
 
     public long getId() { return id; }
@@ -113,13 +119,15 @@ public final class InquirySummary {
     public InquiryStatus getStatus() { return status; }
     public PostStatus getPostStatus() { return postStatus; }
     public Address getAddress() { return address; }
+    public Long getBuyerAvatarImageId() { return buyerAvatarImageId; }
+    public Long getSellerAvatarImageId() { return sellerAvatarImageId; }
     public boolean isHasReceipt() { return hasReceipt; }
     public boolean hasSellerPaymentInfo() { return sellerPaymentInfo.isPresent(); }
 
     public InquirySummary withAddress(final Address newAddress) {
         return new InquirySummary(id, postId, albumId, buyerId, sellerId, buyerUsername, buyerEmail, buyerLocale,
                 sellerUsername, sellerPaymentInfo, title, artistName, coverImageId, price, lastMessage, status,
-                postStatus, newAddress, hasReceipt);
+                postStatus, newAddress, hasReceipt, buyerAvatarImageId, sellerAvatarImageId);
     }
 
     // La bandeja solo ofrece aceptar o rechazar mientras la consulta sigue abierta y el

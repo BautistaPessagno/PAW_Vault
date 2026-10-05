@@ -4,8 +4,8 @@ categories: ["Persistence"]
 type: "guide"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/main/resources/db/migration/V1__esquema_inicial.sql", "persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql", "persistence/src/main/resources/db/migration/V7__mensajes_de_consulta.sql", "persistence/src/main/resources/db/migration/V8__post_gallery.sql", "persistence/src/main/resources/db/migration/V10__sale_reviews.sql", "persistence/src/main/resources/db/migration/V11__carrito.sql", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
@@ -119,7 +119,7 @@ erDiagram
 | `album_id`, `seller_id` | Copia de a qué álbum y a quién se le consultó, para que la bandeja siga mostrando algo sin el post |
 | `buyer_id` | NOT NULL |
 | `address_id` | Dirección de envío elegida (V5) |
-| `price` | Precio congelado al consultar (V5); `NULL` en consultas anteriores |
+| `price` | Precio guardado al consultar (V5) y reemplazado al aceptar por el del post bloqueado (`startSale`, ADR 0004, sin cambio de esquema); `NULL` en consultas anteriores a V5 |
 | `status` | `CHECK` con los seis estados de [[InquiryStatus]] (V5) |
 | `receipt_content_type`, `receipt_data`, `receipt_uploaded_at` | Comprobante: uno por consulta, se reemplaza entero |
 | `created_at` | |
@@ -168,7 +168,7 @@ Las reglas de la segunda mitad no tienen restricción porque dependen de contar 
 | Comprobante dentro de `inquiries` | Hay uno por consulta y se reemplaza entero | Comentario de V5 |
 | La venta es una etapa de la consulta, no otra tabla | Mismos participantes y misma publicación; cambia solo el estado | `CONTEXT.md` |
 | `inquiries.post_id` nullable con copia de álbum y vendedor | Que la bandeja del comprador sobreviva a la eliminación del post | Comentario de V1 |
-| Precio congelado en la consulta | Es el monto a transferir aunque después se edite el post | Comentario de V5 |
+| Precio guardado en la consulta | Es el monto a transferir aunque después se edite el post. Desde el PR #56 se fija al aceptar; al consultar queda solo como respaldo | Comentario de V5; ADR 0004 |
 | Direcciones archivadas, no borradas | Una consulta puede seguir apuntándola | Comentario de V5 |
 | `ON DELETE CASCADE` solo en `post_images` y `cart_items` | Son datos descartables que no tienen sentido sin el post | Comentario de V11 |
 
@@ -201,7 +201,7 @@ No con una restricción, sino con un `UPDATE` condicional sobre el estado dentro
 
 ### Tablas base (V1)
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 70–105.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 70–105.
 
 ```sql
 CREATE TABLE posts (
@@ -244,7 +244,7 @@ CREATE TABLE inquiries (
 
 ### Carrito (V11)
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>), líneas 1–12.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>), líneas 1–12.
 
 ```sql
 -- El carrito de cada Cuenta: los Posts que eligio para consultar juntos. La clave compuesta
@@ -263,7 +263,7 @@ CREATE INDEX cart_items_post_id_idx ON cart_items (post_id);
 
 ### Bean de Flyway
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 97–113.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>), líneas 97–113.
 
 ```java
   /*
@@ -295,4 +295,4 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/
 - [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>)
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>) · [[WebConfig]]
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

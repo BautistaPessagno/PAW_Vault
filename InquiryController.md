@@ -4,25 +4,25 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java"]
 ---
 
 # InquiryController
 
-Bandejas, página de la consulta y un endpoint por transición de la venta, además de mensajes, reseñas y descarga del comprobante con headers de seguridad. Cada endpoint lleva su `@PreAuthorize`. Ver [[Inquiry and sale flow]].
+Bandejas con filtro por estado (`status`), página de la consulta y un endpoint por transición de la venta, además de mensajes, reseñas y descarga del comprobante con headers de seguridad. Cada endpoint lleva su `@PreAuthorize`. Aceptar sin datos de cobro manda al perfil con `returnInquiryId` para volver a la venta. Ver [[Inquiry and sale flow]] y [[Status filters flow]].
 
 ## Guía de lectura
 
 Datos y dependencias declaradas: `inquiryService`.
 
-Operaciones para localizar en la fuente: `initTextBinder`, `received`, `sent`, `accept`, `reject`, `detail`, `detailView`, `sendMessage`, `saveReview`, `removeReview`, `uploadReceipt`, `receipt`, `confirm`, `requestReceipt`, `cancel`, `missingPaymentInfo`, `invalidState`.
+Operaciones para localizar en la fuente: `initTextBinder`, `received`, `sent`, `filteredView`, `accept`, `reject`, `detail`, `detailView`, `sendMessage`, `saveReview`, `removeReview`, `uploadReceipt`, `receipt`, `confirm`, `requestReceipt`, `cancel`, `invalidState`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[AuthenticatedUser]], [[InquiryDetail]], [[InquiryService]], [[InvalidInquiryStateException]], [[InvalidMessageException]], [[InvalidReceiptException]], [[LineBreakNormalizingEditor]], [[MessageForm]], [[MessageRules]], [[MissingPaymentInfoException]], [[Receipt]], [[ReceiptForm]], [[ReviewForm]], [[ReviewRules]].
+Referencias estáticas a tipos del proyecto: [[AuthenticatedUser]], [[FilterCounts]], [[InquiryDetail]], [[InquiryService]], [[InquiryStatusFilter]], [[InvalidInquiryStateException]], [[InvalidMessageException]], [[InvalidReceiptException]], [[LineBreakNormalizingEditor]], [[MessageForm]], [[MessageRules]], [[MissingPaymentInfoException]], [[Receipt]], [[ReceiptForm]], [[ReviewForm]], [[ReviewRules]].
 
 Referenciado por: sin referencias léxicas desde otros archivos Java.
 
@@ -30,12 +30,14 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java>), líneas 1–279.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java>), líneas 1–298.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
+import ar.edu.itba.paw.models.FilterCounts;
 import ar.edu.itba.paw.models.InquiryDetail;
+import ar.edu.itba.paw.models.InquiryStatusFilter;
 import ar.edu.itba.paw.models.MessageRules;
 import ar.edu.itba.paw.models.Receipt;
 import ar.edu.itba.paw.models.ReviewRules;
@@ -101,26 +103,41 @@ public class InquiryController {
         binder.registerCustomEditor(String.class, "body", new LineBreakNormalizingEditor());
     }
 
-    // Cada vista trae su propia pagina, y los dos totales de la sub-nav salen del service.
+    // Cada vista trae su propia pagina, y los dos totales de la sub-nav salen del service: el de la
+    // bandeja abierta es el total de sus chips, asi no se cuenta dos veces.
+    // Sin status, la bandeja muestra todas las consultas.
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView received(@AuthenticationPrincipal final AuthenticatedUser currentUser,
+                                 @RequestParam(name = "status", required = false) final InquiryStatusFilter status,
                                  @RequestParam(name = "page", defaultValue = "1") final int pageNumber) {
         final long userId = currentUser.getId();
-        final ModelAndView modelAndView = new ModelAndView("inquiry/received");
-        modelAndView.addObject("receivedPage", inquiryService.findReceivedGroupedByPost(userId, pageNumber));
-        modelAndView.addObject("receivedCount", inquiryService.countReceivedBy(userId));
+        final ModelAndView modelAndView = filteredView("inquiry/received", status);
+        modelAndView.addObject("receivedPage", inquiryService.findReceivedGroupedByPost(userId, status, pageNumber));
+        final FilterCounts<InquiryStatusFilter> filterCounts = inquiryService.countReceivedByFilter(userId);
+        modelAndView.addObject("filterCounts", filterCounts);
+        modelAndView.addObject("receivedCount", filterCounts.getTotal());
         modelAndView.addObject("sentCount", inquiryService.countSentBy(userId));
         return modelAndView;
     }
 
     @RequestMapping(value = "/sent", method = RequestMethod.GET)
     public ModelAndView sent(@AuthenticationPrincipal final AuthenticatedUser currentUser,
+                             @RequestParam(name = "status", required = false) final InquiryStatusFilter status,
                              @RequestParam(name = "page", defaultValue = "1") final int pageNumber) {
         final long userId = currentUser.getId();
-        final ModelAndView modelAndView = new ModelAndView("inquiry/sent");
-        modelAndView.addObject("sentPage", inquiryService.findSentGroupedByPost(userId, pageNumber));
-        modelAndView.addObject("sentCount", inquiryService.countSentBy(userId));
+        final ModelAndView modelAndView = filteredView("inquiry/sent", status);
+        modelAndView.addObject("sentPage", inquiryService.findSentGroupedByPost(userId, status, pageNumber));
+        final FilterCounts<InquiryStatusFilter> filterCounts = inquiryService.countSentByFilter(userId);
+        modelAndView.addObject("filterCounts", filterCounts);
+        modelAndView.addObject("sentCount", filterCounts.getTotal());
         modelAndView.addObject("receivedCount", inquiryService.countReceivedBy(userId));
+        return modelAndView;
+    }
+
+    private static ModelAndView filteredView(final String viewName, final InquiryStatusFilter status) {
+        final ModelAndView modelAndView = new ModelAndView(viewName);
+        modelAndView.addObject("statusFilter", status);
+        modelAndView.addObject("statusFilters", InquiryStatusFilter.values());
         return modelAndView;
     }
 
@@ -129,7 +146,13 @@ public class InquiryController {
     public ModelAndView accept(@PathVariable("inquiryId") final long inquiryId,
                                @AuthenticationPrincipal final AuthenticatedUser currentUser,
                                final RedirectAttributes redirectAttributes) {
-        inquiryService.accept(inquiryId, currentUser.getId());
+        try {
+            inquiryService.accept(inquiryId, currentUser.getId());
+        } catch (final MissingPaymentInfoException e) {
+            redirectAttributes.addAttribute("missingPayment", "");
+            redirectAttributes.addAttribute("returnInquiryId", inquiryId);
+            return new ModelAndView("redirect:/profile#account");
+        }
         redirectAttributes.addFlashAttribute("saleNotice", "inquiry.sale.accepted");
         return new ModelAndView("redirect:/inquiries/" + inquiryId);
     }
@@ -186,7 +209,8 @@ public class InquiryController {
     public ModelAndView sendMessage(@PathVariable("inquiryId") final long inquiryId,
                                     @AuthenticationPrincipal final AuthenticatedUser currentUser,
                                     @Valid @ModelAttribute("messageForm") final MessageForm messageForm,
-                                    final BindingResult bindingResult) {
+                                    final BindingResult bindingResult,
+                                    final RedirectAttributes redirectAttributes) {
         try {
             inquiryService.sendMessage(inquiryId, currentUser.getId(), messageForm.getBody());
         } catch (final InvalidMessageException e) {
@@ -195,6 +219,7 @@ public class InquiryController {
             }
             return detailView(inquiryId, currentUser.getId(), new ReceiptForm(), messageForm, null);
         }
+        redirectAttributes.addFlashAttribute("messageSent", true);
         return new ModelAndView("redirect:/inquiries/" + inquiryId + "#conversation");
     }
 
@@ -298,12 +323,6 @@ public class InquiryController {
         inquiryService.cancel(inquiryId, currentUser.getId());
         redirectAttributes.addFlashAttribute("saleNotice", "inquiry.sale.cancelled");
         return new ModelAndView("redirect:/inquiries/" + inquiryId);
-    }
-
-    // Sin datos de cobro no se puede aceptar: el perfil abre la fila para cargarlos.
-    @ExceptionHandler(MissingPaymentInfoException.class)
-    public ModelAndView missingPaymentInfo() {
-        return new ModelAndView("redirect:/profile?missingPayment#account");
     }
 
     @ExceptionHandler(InvalidInquiryStateException.class)

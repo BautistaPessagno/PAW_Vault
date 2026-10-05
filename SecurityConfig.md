@@ -4,8 +4,8 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java"]
 ---
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>), líneas 1–153.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>), líneas 1–153.
 
 ```java
 package ar.edu.itba.paw.webapp.config;
@@ -122,7 +122,7 @@ public class SecurityConfig {
      * cuenta verificada). Quien puede operar sobre un recurso ajeno lo decide un @PreAuthorize en
      * el controller: @postAccess (Publicante o administrador) para editar y eliminar un Post, y
      * @inquiryAccess y @addressAccess para la Venta y la libreta. Los services vuelven a chequear la
-     * pertenencia de la Venta y de la libreta antes de escribir, y responden 403 o 404.
+     * pertenencia de Posts, Venta y libreta antes de escribir, y responden 403 o 404.
      *
      * Las rutas de cuenta verificada se definen una sola vez: las usan la regla de acceso y el
      * AccessDeniedHandler que manda a la pagina de "verifica tu correo".

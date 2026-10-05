@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ProfileForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ChangePasswordForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/AvatarForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/AvatarFormValidator.java", "services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/AuthenticationSessions.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/UserJdbcDao.java", "persistence/src/main/resources/db/migration/V9__user_avatars.sql", "webapp/src/main/webapp/WEB-INF/views/profile/index.jsp", "webapp/src/main/webapp/js/account-edit.js"]
 ---
@@ -13,7 +13,7 @@ sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileControl
 # Profile flow
 
 > [!summary] En una frase
-> `/profile` es la página privada de la Cuenta: nombre, foto, contraseña, datos de cobro, direcciones, sus publicaciones paginadas y el botón de cerrar sesión; cada fila se edita en el lugar con su propio POST.
+> `/profile` es la página privada de la Cuenta: nombre, foto, contraseña, datos de cobro, direcciones, sus publicaciones paginadas y filtrables por estado, y el botón de cerrar sesión; cada fila se edita en el lugar con su propio POST.
 
 ## Qué resuelve
 
@@ -37,7 +37,7 @@ Todo lo que una Cuenta administra de sí misma. Exige `VERIFIED` completo (`/pro
 
 ### Ver: `GET /profile`
 
-`profileView` junta: la Cuenta, su apariencia (nombre y foto), la página de **todas** sus publicaciones (15 por página, cualquier estado), las direcciones activas y los formularios. Parámetros de la URL abren secciones: `editAddress` precarga una dirección propia, `missingPayment` abre los datos de cobro, `addressLimit` y `avatarTooLarge` muestran avisos. El formulario de cobro se precarga con lo guardado, porque enviarlo vacío borraría los datos.
+`profileView` junta: la Cuenta, su apariencia (nombre y foto), la página de sus publicaciones (15 por página; sin filtro, en cualquier estado), los chips para filtrarlas por estado con su cantidad, las direcciones activas y los formularios. `postStatus` (`AVAILABLE`, `RESERVED` o `SOLD`) filtra la lista y viaja en los enlaces de página y en los de cada publicación, para que volver desde la ficha conserve el filtro ([[Status filters flow]]). Parámetros de la URL abren secciones: `editAddress` precarga una dirección propia, `missingPayment` abre los datos de cobro (y `returnInquiryId`, si se llegó desde "Aceptar", hace que guardarlos vuelva a la venta: [[Addresses and payment flow]]), `addressLimit` y `avatarTooLarge` muestran avisos. El formulario de cobro se precarga con lo guardado, porque enviarlo vacío borraría los datos.
 
 ### Nombre: `POST /profile`
 
@@ -67,6 +67,35 @@ Todo lo que una Cuenta administra de sí misma. Exige `VERIFIED` completo (`/pro
 
 Un `<form method="post" action="/logout">` con `sec:csrfInput`, al pie del perfil.
 
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant C as ProfileController
+    participant U as UserServiceImpl
+    participant D as UserDao
+    participant I as ImageService
+    participant M as EmailService
+    B->>C: POST /profile/avatar (multipart)
+    C->>U: updateAvatar
+    U->>D: findAccountAppearanceByIdForUpdate
+    U->>I: create (o nada si se quita)
+    U->>D: updateAvatarImageId
+    U->>I: delete (la anterior, si nada más la usa)
+    C-->>B: 302 /profile#35;avatar
+    B->>C: POST /profile/password
+    C->>U: changePassword
+    alt la actual no coincide
+        U-->>C: InvalidCurrentPasswordException
+    else la nueva es igual a la actual
+        U-->>C: UnchangedPasswordException
+    else válido
+        U->>D: updatePasswordIfMatches (WHERE password_hash = leído)
+        U-)M: afterCommit: sendPasswordChangedEmail
+        C->>C: logoutEverywhere
+        C-->>B: 302 /login?passwordChanged
+    end
+```
+
 ## Datos
 
 `users.username`, `users.password_hash`, `users.avatar_image_id` (V9, FK a `images`), más lo de [[Addresses and payment flow]].
@@ -81,15 +110,17 @@ Un `<form method="post" action="/logout">` con `sec:csrfInput`, al pie del perfi
 | No recortar los campos de contraseña | Recortar cambiaría la clave que se valida | Comentario en [[ProfileController]] |
 | Refrescar el principal al cambiar el nombre | La cabecera lee el nombre del principal | Comentario en [[AuthenticationSessions]] |
 | Bloquear la fila al cambiar la foto | Cada cambio borra la foto que leyó; sin orden quedaría una huérfana | Comentario en [[UserServiceImpl]] |
-| La foto vieja se borra solo si nadie la referencia | Borrado incondicional | La misma tabla `images` sirve a posts, álbumes y avatares | SQL de [[ImageJdbcDao]] |
-| El error de foto vuelve como aviso y reabre el diálogo | Volver a dibujar el formulario | La foto se cambia desde un diálogo | Comentario en [[ProfileController]] |
-| El formulario de cobro siempre muestra lo guardado | Formulario vacío | Guardar sin tocarlo borraría los datos | Comentario en [[ProfileController]] |
+| La foto vieja se borra solo si nadie la referencia | La misma tabla `images` sirve a posts, álbumes y avatares. Alternativa descartada: borrado incondicional | SQL de [[ImageJdbcDao]] |
+| El error de foto vuelve como aviso y reabre el diálogo | La foto se cambia desde un diálogo. Alternativa descartada: volver a dibujar el formulario | Comentario en [[ProfileController]] |
+| El formulario de cobro siempre muestra lo guardado | Guardar sin tocarlo borraría los datos. Alternativa descartada: formulario vacío | Comentario en [[ProfileController]] |
+| Un POST que vuelve a dibujar el perfil con un error muestra las publicaciones sin filtro | Solo `GET /profile` recibe el filtro; la sobrecarga de `profileView` sin estado pasa `null`. Alternativa descartada: conservar `postStatus` en cada formulario | Comentario en [[ProfileController]] |
 
 ## Concurrencia y casos borde
 
 - Dos cambios de clave a la vez desde dos pestañas: gana uno; el otro ve "clave actual inválida".
 - Dos cambios de foto a la vez: se ordenan por el bloqueo; no quedan imágenes sueltas.
 - Página de publicaciones fuera de rango: 404.
+- `postStatus` con un valor que no es un estado: 400, porque Spring no puede convertirlo al enum ([[Validation and errors]]).
 
 ## Límites conocidos
 
@@ -115,7 +146,7 @@ Se borra de `images` si ningún post, álbum ni Cuenta la usa.
 
 Cambio de contraseña:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 145–170.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 153–178.
 
 ```java
     @RequestMapping(value = "/password", method = RequestMethod.POST)
@@ -146,7 +177,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
     }
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 232–251.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 232–251.
 
 ```java
     @Override
@@ -173,7 +204,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Use
 
 Foto de perfil:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 89–105.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 89–105.
 
 ```java
     @Override
@@ -197,18 +228,27 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Use
 
 Armado de la vista:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 242–271.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 280–318.
 
 ```java
+    // Los POST que re-renderizan el perfil con un error vuelven al listado sin filtro.
     private ModelAndView profileView(final long userId, final OpenSection openSection, final int pageNumber,
                                      final Long editingAddressId) {
+        return profileView(userId, openSection, pageNumber, editingAddressId, null);
+    }
+
+    private ModelAndView profileView(final long userId, final OpenSection openSection, final int pageNumber,
+                                     final Long editingAddressId, final PostStatus postStatus) {
         final User user = userService.findById(userId).orElseThrow(UserNotFoundException::new);
         final ShippingOptions shipping = addressService.findShippingOptions(userId);
         final ModelAndView modelAndView = new ModelAndView("profile/index");
         modelAndView.addObject("profileUser", user);
         modelAndView.addObject("accountAppearance", userService.findAccountAppearanceById(userId)
                 .orElseThrow(UserNotFoundException::new));
-        modelAndView.addObject("postPage", postService.findByPublisherId(userId, pageNumber));
+        modelAndView.addObject("postPage", postService.findByPublisherId(userId, postStatus, pageNumber));
+        modelAndView.addObject("postStatusFilter", postStatus);
+        modelAndView.addObject("postStatusCounts", postService.countByStatusForPublisher(userId));
+        modelAndView.addObject("postStatuses", PostStatus.values());
         modelAndView.addObject("postOrigin", PostOrigin.PRIVATE_PROFILE);
         modelAndView.addObject("acceptedImageTypes", ImageRules.ACCEPTED_CONTENT_TYPES);
         modelAndView.addObject("maxImageBytes", ImageRules.MAX_IMAGE_BYTES);
@@ -234,7 +274,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 Redirecciones del filtro multipart:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>), líneas 18–49.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>), líneas 18–49.
 
 ```java
     @Override
@@ -286,4 +326,4 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/securit
 - [webapp/src/main/webapp/WEB-INF/views/profile/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/profile/index.jsp>)
 - [webapp/src/main/webapp/js/account-edit.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/account-edit.js>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

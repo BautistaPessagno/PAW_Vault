@@ -4,15 +4,15 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence-contracts"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ReviewDao.java"]
 ---
 
 # ReviewDao
 
-Contrato de reseñas: buscar la de un autor en una venta, listar las activas de una Cuenta, estadísticas, crear, actualizar (reactivando) y desactivar.
+Contrato de reseñas: buscar la de un autor en una venta, listar las activas de una Cuenta por rol y con `LIMIT`/`OFFSET`, estadísticas por rol, crear, actualizar (reactivando) y desactivar.
 
 ## Guía de lectura
 
@@ -20,7 +20,7 @@ Operaciones para localizar en la fuente: `findByInquiryAndAuthor`, `findActiveBy
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Review]], [[ReviewStats]].
+Referencias estáticas a tipos del proyecto: [[Review]], [[ReviewStats]], [[ReviewSubjectRole]].
 
 Referenciado por: [[ReviewJdbcDao]], [[ReviewJdbcDaoTest]], [[ReviewServiceImpl]], [[ReviewServiceImplTest]].
 
@@ -28,13 +28,14 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ReviewDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ReviewDao.java>), líneas 1–21.
+Fuente exacta en `c3e2a4c`: [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ReviewDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/ReviewDao.java>), líneas 1–22.
 
 ```java
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.Review;
 import ar.edu.itba.paw.models.ReviewStats;
+import ar.edu.itba.paw.models.ReviewSubjectRole;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,9 +43,9 @@ import java.util.Optional;
 public interface ReviewDao {
     Optional<Review> findByInquiryAndAuthor(long inquiryId, long authorId);
 
-    List<Review> findActiveBySubjectId(long subjectId, int limit);
+    List<Review> findActiveBySubjectId(long subjectId, ReviewSubjectRole role, int limit, int offset);
 
-    ReviewStats statsBySubjectId(long subjectId);
+    ReviewStats statsBySubjectId(long subjectId, ReviewSubjectRole role);
 
     Review create(long inquiryId, long authorId, long subjectId, int rating, String body);
 

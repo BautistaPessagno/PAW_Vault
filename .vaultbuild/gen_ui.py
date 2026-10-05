@@ -65,7 +65,7 @@ for t in tags:
     us = ', '.join(short(p) for p in u[:6]) + (' y %d más' % (len(u) - 6) if len(u) > 6 else '') if u else '—'
     o.append('| `%s` | %s | %s | %s |' % (name(t), HN.H.get(t, '').rstrip('.'), a, us))
 o.append('''
-"Lo usan" se calculó buscando `<ui:nombre` en las vistas y en los demás tags de `8929aea`.
+"Lo usan" se calculó buscando `<ui:nombre` en las vistas y en los demás tags de `c3e2a4c`.
 
 ## Decisiones y por qué
 
@@ -117,9 +117,9 @@ FLOW = {'auth': 'Authentication flow', 'cart': 'Cart flow', 'error': 'Validation
         'landing': 'Landing flow', 'publish': 'Publish flow'}
 FLOWV = {'post/detail': 'Post detail flow', 'post/contact': 'Contact flow', 'profile/index': 'Profile flow', 'profile/public': 'Public profile flow',
          'auth/forgot-password': 'Password recovery flow', 'auth/reset-password': 'Password recovery flow'}
-JSUSE = {'submit-once': 'Todas las páginas (lo carga `head.tag`)', 'catalog': 'Todas las páginas; actúa en el catálogo',
+JSUSE = {'submit-once': 'Todas las páginas (lo carga `head.tag`)', 'catalog': 'Todas las páginas; actúa en los formularios `data-auto-submit` (orden del catálogo y rol de las reseñas del perfil público)',
          'confirm-action': 'Todas las páginas; actúa donde hay `data-confirm-message`', 'autocomplete': 'Todas las páginas; actúa en el buscador y en el campo de artista',
-         'post-gallery': 'Ficha (`pageScript`)', 'account-edit': 'Perfil privado (`pageScript`)', 'publish-preview': 'Publicar y editar (lo carga la propia vista)'}
+         'post-gallery': 'Ficha (`pageScript`)', 'sale-detail': 'Página de la venta (`pageScript`)', 'account-edit': 'Perfil privado (`pageScript`)', 'publish-preview': 'Publicar y editar (lo carga la propia vista)'}
 o = []
 o.append('''> [!summary] En una frase
 > %d vistas JSP, %d scripts y %d imágenes: las vistas solo componen componentes y muestran lo que el controller dejó en el modelo, y cada script mejora algo que ya funciona sin JavaScript.

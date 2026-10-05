@@ -4,10 +4,10 @@ categories: ["Operations"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
-sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/logback-test.xml", "services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java", "webapp/pom.xml"]
+sources: ["webapp/src/main/resources/logback.xml", "webapp/src/main/resources/logback-test.xml", "services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "webapp/pom.xml"]
 ---
 
 # Logging
@@ -42,7 +42,7 @@ Hay `LOGGER` en ocho services ([[UserServiceImpl]], [[InquiryServiceImpl]], [[Po
 
 | Nivel | Cantidad | Uso |
 |---|---|---|
-| INFO | 39 | Una operación de negocio que terminó: registro, verificación, publicación, consulta, cambio de estado, correo enviado |
+| INFO | 41 | Una operación de negocio que terminó: registro, verificación, publicación y edición de un post, consulta, cambio de estado, correo enviado |
 | WARN | 9 | Algo esperable que no salió: intento rechazado, pool saturado, archivo demasiado grande |
 | ERROR | 7 | Fallas de infraestructura, sobre todo de SMTP, con la excepción |
 
@@ -51,7 +51,8 @@ Convenciones que se repiten:
 - `private static final Logger LOGGER = LoggerFactory.getLogger(Clase.class)`.
 - Mensajes parametrizados (`"... userId={}"`), nunca concatenación: el texto no se arma si el nivel está apagado.
 - Se loguean **ids**, no datos personales: ni correos, ni tokens, ni contraseñas.
-- Los logs de éxito se emiten **después del commit** ([[TransactionCallbacks]]): si la transacción se revierte, no queda un log que afirme algo que no pasó.
+- Seis logs de éxito se emiten **después del commit** con [[TransactionCallbacks]]: crear una consulta, verificar el correo, enviar el enlace de verificación o de recuperación, y cambiar o recuperar la contraseña. Si la transacción se revierte, no queda un log que afirme algo que no pasó.
+- El resto, entre ellos los de aceptar, rechazar, confirmar, cancelar, y los de publicar y editar un post que sumó el PR #62 (`c60be91e`), se escriben al final del método transaccional, **antes** del commit. Si el commit fallara, el log quedaría escrito igual.
 - Las lecturas no se loguean.
 
 ## Decisiones y por qué
@@ -70,6 +71,7 @@ Convenciones que se repiten:
 - La separación entre desarrollo y servidor depende de la exclusión del WAR: `logback-test.xml` vive en `src/main/resources`, y si se quitara `packagingExcludes` el servidor loguearía a consola en vez de a los archivos que publica la cátedra.
 - No hay ninguna llamada `LOGGER.debug`: el nivel DEBUG de desarrollo hoy no agrega mensajes propios.
 - No hay id de correlación por request.
+- La mayoría de los logs de éxito se escriben antes del commit (ver arriba): un commit que falle deja un log de algo que no quedó guardado.
 
 ## Preguntas de defensa
 
@@ -83,13 +85,13 @@ En `logs/` del contenedor, un archivo por día para la aplicación y otro para a
 Operaciones de negocio completadas y fallas, con ids. No datos personales ni secretos, y no lecturas.
 
 **¿Por qué algunos logs se emiten después del commit?**
-Para que el log no afirme una operación que después se revirtió.
+Para que el log no afirme una operación que después se revirtió. Solo seis lo hacen; los demás, como publicar o aceptar, se escriben al final del método, todavía dentro de la transacción.
 
 ## Evidencia de código
 
 ### Configuración de producción
 
-Fuente exacta en `8929aea`: [webapp/src/main/resources/logback.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback.xml>), líneas 1–45.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/resources/logback.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback.xml>), líneas 1–45.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -141,7 +143,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/resources/logback.xml](</Users/baut
 
 ### Configuración de consola
 
-Fuente exacta en `8929aea`: [webapp/src/main/resources/logback-test.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback-test.xml>), líneas 1–16.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/resources/logback-test.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/resources/logback-test.xml>), líneas 1–16.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -162,9 +164,35 @@ Fuente exacta en `8929aea`: [webapp/src/main/resources/logback-test.xml](</Users
 </configuration>
 ```
 
+### Un log dentro de la transacción y uno después del commit
+
+Publicar un post (PR #62):
+
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 267–272.
+
+```java
+            if (imageIds.size() > 1) {
+                imageService.replaceGallery(post.getId(), extrasOf(imageIds));
+            }
+            LOGGER.info("Published post postId={} publisherId={} albumId={} images={}",
+                    post.getId(), publisher.getId(), album.getId(), imageIds.size());
+            return post;
+```
+
+Crear una consulta:
+
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 130–133.
+
+```java
+        TransactionCallbacks.afterCommit(() -> {
+            LOGGER.info("Created inquiry inquiryId={} postId={} buyerId={}", inquiry.getId(), post.getId(), buyerId);
+            emailService.sendPostInterestEmail(notification, publisherLocale);
+        });
+```
+
 ### Exclusión del WAR
 
-Fuente exacta en `8929aea`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>), líneas 153–159.
+Fuente exacta en `c3e2a4c`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/pom.xml>), líneas 153–159.
 
 ```xml
         <plugin>
@@ -184,4 +212,4 @@ Fuente exacta en `8929aea`: [webapp/pom.xml](</Users/bautistapessagno/Desktop/pr
 - [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>) · [[InquiryServiceImpl]]
 - [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>) · [[EmailServiceImpl]]
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

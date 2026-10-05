@@ -4,10 +4,10 @@ categories: ["History"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
-sources: ["CONTEXT.md", "README.md", "TODO.md", "docs/setup.md", "docs/adr/0001-establish-quiero-vinilos-domain.md", "docs/adr/0002-own-the-album-catalog-locally.md", "docs/adr/0003-conversation-inside-the-inquiry.md", "docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md", "docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md", "docs/specs/feature_venta-con-comprobante_20260924.md", "docs/plans/carrito-consultas.md"]
+sources: ["CONTEXT.md", "README.md", "TODO.md", "docs/setup.md", "docs/adr/0001-establish-quiero-vinilos-domain.md", "docs/adr/0002-own-the-album-catalog-locally.md", "docs/adr/0003-conversation-inside-the-inquiry.md", "docs/adr/0004-freeze-sale-price-at-acceptance.md", "docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md", "docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md", "docs/specs/feature_venta-con-comprobante_20260924.md", "docs/plans/carrito-consultas.md"]
 ---
 
 # History and specifications
@@ -52,6 +52,7 @@ El glosario distingue **Cambio de contraseña** (con sesión, probando la actual
 | 0001 | El producto es quieroVinilos, un marketplace de vinilos usados entre particulares; el lenguaje sale de `CONTEXT.md` y las restricciones técnicas, de la cursada | Nombres de modelos, tablas y textos |
 | 0002 | El catálogo de álbumes es propio, sin depender de un servicio externo | [[Artist]] y [[Album]] se crean al publicar, con `findOrCreate` ([[Publish flow]]) |
 | 0003 | Comprador y publicante hablan dentro de la Consulta | Una conversación por consulta, sin tiempo real, sin `Reply-To` en los correos ([[Conversation flow]], [[Mail delivery]]) |
+| 0004 | El precio de la venta se fija al aceptar la Consulta, no al crearla | Mientras está `PENDING` la bandeja muestra el precio actual del post; `startSale` lo copia al aceptar ([[Inquiry and sale flow]]) |
 
 ## Especificaciones y planes
 
@@ -98,9 +99,10 @@ El issue `observaciones-sprint-2/01` recoge cuatro de las observaciones de la de
 | 23 de septiembre | Búsqueda y filtros del catálogo (PR #35) |
 | 24 al 30 de septiembre | Venta con comprobante, direcciones, datos de cobro (PR #40, #44, #42); Flyway (PR #38) |
 | 2 de octubre | Cuenta verificada y observaciones del sprint 2 (PR #43); conversación (PR #45) |
-| 4 de octubre | Galería, avatares, perfiles públicos y reseñas (PR #46); carrito (PR #47); lógica fuera de los controllers (PR #48) |
+| 4 de octubre | Galería, avatares, perfiles públicos y reseñas (PR #46); carrito (PR #47); lógica fuera de los controllers (PR #48). Es el estado del mapa anterior del vault (`8929aea`) |
+| 5 de octubre | Correcciones: tapas del carrito, regreso al perfil, autorización en el service, orden de bloqueos y comprobante inmutable (PR #49 a #53); volver a la venta y precio fijado al aceptar (PR #55, #56, ADR 0004), conversación y reseñas por rol (PR #54, #57, #58); quitar fotos con una X, filtros por estado en bandejas y publicaciones, logs y 400 de datos inválidos (PR #59 a #62) |
 
-El detalle por commit está en [[Recent changes 2026-10-04]].
+El detalle por commit está en [[Recent changes 2026-10-05]] (desde `8929aea`) y [[Recent changes 2026-10-04]] (desde `f12af08`).
 
 ## Notas históricas del vault
 
@@ -110,7 +112,7 @@ Las notas con `status: historical` conservan clases que ya no existen: [[HelloWo
 
 ### ADR 0002
 
-Fuente exacta en `8929aea`: [docs/adr/0002-own-the-album-catalog-locally.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>), líneas 1–3.
+Fuente exacta en `c3e2a4c`: [docs/adr/0002-own-the-album-catalog-locally.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>), líneas 1–3.
 
 ```markdown
 # Own the album catalog locally
@@ -120,12 +122,30 @@ quieroVinilos stores its album catalog and cover assets inside this project inst
 
 ### ADR 0003
 
-Fuente exacta en `8929aea`: [docs/adr/0003-conversation-inside-the-inquiry.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0003-conversation-inside-the-inquiry.md>), líneas 1–3.
+Fuente exacta en `c3e2a4c`: [docs/adr/0003-conversation-inside-the-inquiry.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0003-conversation-inside-the-inquiry.md>), líneas 1–3.
 
 ```markdown
 # Keep buyer and publisher talking inside the Inquiry
 
 Earlier specs (`feature_contacto-post`, `entrega-intermedia/06-selling-flow`) kept in-app replies out of scope and let the publisher answer by email through the inquiry mail's `Reply-To`. We now give every Inquiry exactly one Conversation of immutable Messages, refreshed by reload with one notification email per Message, and drop the `Reply-To` so neither party learns the other's email and the Conversation is the single record of what was agreed. We rejected a pre-purchase thread per Post (a second aggregate with its own access rules and inbox) and real-time delivery (WebSocket/polling infrastructure not justified for this stage).
+```
+
+### ADR 0004
+
+Fuente exacta en `c3e2a4c`: [docs/adr/0004-freeze-sale-price-at-acceptance.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0004-freeze-sale-price-at-acceptance.md>), líneas 1–11.
+
+```markdown
+# Freeze the sale price when the seller accepts
+
+A pending inquiry follows the current publication price, including inbox summaries.
+Its initial snapshot remains a fallback if the publication disappears. Acceptance
+locks the publication and writes that locked price together with the transition
+from PENDING to AWAITING_PAYMENT in one conditional update. Reservation and this
+transition share the service transaction: a failed transition rolls both back.
+
+After acceptance, all sale states retain the agreed snapshot. Existing accepted
+sales are not rewritten; legacy rows without a snapshot keep their previous
+publication fallback. No schema change is required.
 ```
 
 ## Archivos para seguir el flujo
@@ -137,9 +157,10 @@ Earlier specs (`feature_contacto-post`, `entrega-intermedia/06-selling-flow`) ke
 - [docs/adr/0001-establish-quiero-vinilos-domain.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0001-establish-quiero-vinilos-domain.md>)
 - [docs/adr/0002-own-the-album-catalog-locally.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>)
 - [docs/adr/0003-conversation-inside-the-inquiry.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0003-conversation-inside-the-inquiry.md>)
+- [docs/adr/0004-freeze-sale-price-at-acceptance.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0004-freeze-sale-price-at-acceptance.md>)
 - [docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md>)
 - [docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md>)
 - [docs/specs/feature_venta-con-comprobante_20260924.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/specs/feature_venta-con-comprobante_20260924.md>)
 - [docs/plans/carrito-consultas.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/plans/carrito-consultas.md>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

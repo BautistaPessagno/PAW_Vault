@@ -9,7 +9,7 @@ ORDER = [
  ('Venta', ['Inquiry and sale flow', 'Contact flow', 'Conversation flow', 'Reviews flow', 'Cart flow', 'Addresses and payment flow']),
  ('Catálogo y publicaciones', ['Landing flow', 'Search suggestions flow', 'Post detail flow', 'Publish flow', 'Edit and delete flow', 'Cover image flow', 'Gallery flow']),
  ('Perfiles', ['Profile flow', 'Public profile flow']),
- ('Arquitectura y datos', ['Domain and identity', 'Architecture', 'Startup and dependency injection', 'Database schema', 'Schema history and seeds', 'Transactions and concurrency', 'Validation and errors', 'Paginated listings']),
+ ('Arquitectura y datos', ['Domain and identity', 'Architecture', 'Startup and dependency injection', 'Database schema', 'Schema history and seeds', 'Transactions and concurrency', 'Validation and errors', 'Paginated listings', 'Status filters flow']),
  ('Interfaz', ['UI components', 'UI styles and tokens', 'Views and assets']),
  ('Operación', ['Build and dependencies', 'Configuration and running', 'Localization', 'Logging', 'Testing and evidence']),
 ]

@@ -4,25 +4,25 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java"]
 ---
 
 # PostServiceImpl
 
-Publicaciones. Busca con normalización y filtros saneados, contando antes de listar. Publica y edita artista, álbum, fotos y post en una transacción, traduciendo las carreras a errores de negocio. Elimina desenganchando las consultas. Expone bloqueo y transiciones para la venta con propagación `MANDATORY`. Ver [[Landing flow]], [[Publish flow]] y [[Edit and delete flow]].
+Publicaciones. Busca con normalización y filtros saneados, contando antes de listar. Publica y edita artista, álbum, fotos y post en una transacción, traduciendo las carreras a errores de negocio, y deja un log INFO de cada alta y edición. Editar y eliminar exigen, en el service, ser el publicante o ADMIN (`requireEditable`) y que el post siga disponible. Elimina desenganchando las consultas. "Mis publicaciones" se filtra por estado. Expone bloqueo y transiciones para la venta con propagación `MANDATORY`. Ver [[Landing flow]], [[Publish flow]], [[Edit and delete flow]] y [[Status filters flow]].
 
 ## Guía de lectura
 
 Datos y dependencias declaradas: `LOGGER`, `SUGGESTION_LIMIT`, `PROFILE_PAGE_SIZE`, `CATALOG_PAGE_SIZE`, `MAX_QUERY_LENGTH`, `postDao`, `inquiryDao`, `userService`, `artistService`, `albumService`, `imageService`.
 
-Operaciones para localizar en la fuente: `findById`, `lockById`, `lockByIds`, `reserve`, `release`, `markSold`, `findDetail`, `findPublisherId`, `findEditableById`, `findUploadedImageIds`, `leadImageThenGallery`, `findAlbumCoverImageId`, `search`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `normalize`, `validYearOrNull`, `validPriceOrNull`, `publish`, `update`, `delete`, `createImages`, `extrasOf`, `requireGallerySize`, `requireAvailable`, `requireValidPostData`, `blankToNull`.
+Operaciones para localizar en la fuente: `findById`, `lockById`, `lockByIds`, `reserve`, `release`, `markSold`, `findDetail`, `findPublisherId`, `findEditableById`, `findUploadedImageIds`, `leadImageThenGallery`, `findAlbumCoverImageId`, `search`, `findSearchSuggestions`, `findByPublisherId`, `countByStatusForPublisher`, `findAvailableByPublisherId`, `normalize`, `validYearOrNull`, `validPriceOrNull`, `publish`, `update`, `delete`, `createImages`, `extrasOf`, `requireGallerySize`, `requireEditable`, `requireAvailable`, `requireValidPostData`, `blankToNull`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Album]], [[AlbumService]], [[Artist]], [[ArtistService]], [[ConcurrentPublishException]], [[Condition]], [[DuplicatePostException]], [[DuplicatePostKeyException]], [[Genre]], [[ImageRules]], [[ImageService]], [[ImageUpload]], [[InquiryDao]], [[InvalidImageException]], [[InvalidPostDataException]], [[InvalidSearchQueryException]], [[Pagination]], [[Post]], [[PostDao]], [[PostDetail]], [[PostNotFoundException]], [[PostPage]], [[PostSearchCriteria]], [[PostService]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[PublicUserProfile]], [[SearchResult]], [[SearchSuggestion]], [[SearchText]], [[User]], [[UserNotFoundException]], [[UserService]], [[VinylInputRules]].
+Referencias estáticas a tipos del proyecto: [[Album]], [[AlbumService]], [[Artist]], [[ArtistService]], [[ConcurrentPublishException]], [[Condition]], [[DuplicatePostException]], [[DuplicatePostKeyException]], [[FilterCounts]], [[ForbiddenOperationException]], [[Genre]], [[ImageRules]], [[ImageService]], [[ImageUpload]], [[InquiryDao]], [[InvalidImageException]], [[InvalidPostDataException]], [[InvalidSearchQueryException]], [[Pagination]], [[Post]], [[PostDao]], [[PostDetail]], [[PostNotFoundException]], [[PostPage]], [[PostSearchCriteria]], [[PostService]], [[PostSort]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[PublicUserProfile]], [[SearchResult]], [[SearchSuggestion]], [[SearchText]], [[User]], [[UserNotFoundException]], [[UserRole]], [[UserService]], [[VinylInputRules]].
 
 Referenciado por: [[PostServiceImplTest]].
 
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 1–391.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 1–413.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -38,6 +38,7 @@ package ar.edu.itba.paw.services;
 import ar.edu.itba.paw.models.Album;
 import ar.edu.itba.paw.models.Artist;
 import ar.edu.itba.paw.models.Condition;
+import ar.edu.itba.paw.models.FilterCounts;
 import ar.edu.itba.paw.models.Genre;
 import ar.edu.itba.paw.models.ImageUpload;
 import ar.edu.itba.paw.models.ImageRules;
@@ -53,6 +54,7 @@ import ar.edu.itba.paw.models.SearchResult;
 import ar.edu.itba.paw.models.SearchSuggestion;
 import ar.edu.itba.paw.models.SearchText;
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.models.UserRole;
 import ar.edu.itba.paw.models.VinylInputRules;
 import ar.edu.itba.paw.persistence.DuplicatePostKeyException;
 import ar.edu.itba.paw.persistence.InquiryDao;
@@ -162,8 +164,8 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public PostSummary findEditableById(final long postId) {
-        return requireAvailable(postDao.findById(postId).orElseThrow(PostNotFoundException::new));
+    public PostSummary findEditableById(final long postId, final long actorId) {
+        return requireEditable(postDao.findById(postId).orElseThrow(PostNotFoundException::new), actorId);
     }
 
     @Override
@@ -224,11 +226,20 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public PostPage findByPublisherId(final long publisherId, final int pageNumber) {
-        final int totalPages = Pagination.pagesFor(postDao.countByPublisherId(publisherId), PROFILE_PAGE_SIZE);
+    public PostPage findByPublisherId(final long publisherId, final PostStatus status, final int pageNumber) {
+        // Sin filtro, "Mis publicaciones" muestra los Posts en cualquier estado.
+        final List<PostStatus> statuses = status == null ? List.of(PostStatus.values()) : List.of(status);
+        final int totalPages = Pagination.pagesFor(postDao.countByPublisherId(publisherId, statuses),
+                PROFILE_PAGE_SIZE);
         final int offset = Pagination.offsetFor(pageNumber, PROFILE_PAGE_SIZE, totalPages);
-        final List<PostSummary> posts = postDao.findByPublisherId(publisherId, PROFILE_PAGE_SIZE, offset);
+        final List<PostSummary> posts = postDao.findByPublisherId(publisherId, statuses, PROFILE_PAGE_SIZE, offset);
         return new PostPage(posts, pageNumber, totalPages);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FilterCounts<PostStatus> countByStatusForPublisher(final long publisherId) {
+        return new FilterCounts<>(postDao.countByStatusForPublisher(publisherId));
     }
 
     @Override
@@ -291,6 +302,8 @@ public class PostServiceImpl implements PostService {
             if (imageIds.size() > 1) {
                 imageService.replaceGallery(post.getId(), extrasOf(imageIds));
             }
+            LOGGER.info("Published post postId={} publisherId={} albumId={} images={}",
+                    post.getId(), publisher.getId(), album.getId(), imageIds.size());
             return post;
         } catch (final DuplicatePostKeyException e) {
             throw new DuplicatePostException();
@@ -304,13 +317,13 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostSummary update(final long postId, final String title,
+    public PostSummary update(final long postId, final long actorId, final String title,
                               final String artistName, final int releaseYear, final Genre genre, final int price,
                               final String description, final Condition condition, final Integer pressingYear,
                               final String zone, final List<ImageUpload> images,
                               final List<Long> removedImageIds) {
+        requireEditable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new), actorId);
         requireValidPostData(releaseYear, price, pressingYear);
-        requireAvailable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new));
         final List<Long> oldImageIds = findUploadedImageIds(postId);
         final Set<Long> removed = removedImageIds == null ? Set.of() : new HashSet<>(removedImageIds);
         if (!oldImageIds.containsAll(removed)) {
@@ -342,6 +355,7 @@ public class PostServiceImpl implements PostService {
                     imageService.delete(removedId);
                 }
             }
+            LOGGER.info("Updated post postId={} actorId={} galleryChanged={}", postId, actorId, galleryChanged);
             return postDao.findById(postId).orElseThrow(PostNotFoundException::new);
         } catch (final DuplicatePostKeyException e) {
             throw new DuplicatePostException();
@@ -356,8 +370,8 @@ public class PostServiceImpl implements PostService {
     // publicacion se va con ella; la portada del album es del album y queda.
     @Override
     @Transactional
-    public int delete(final long postId) {
-        requireAvailable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new));
+    public int delete(final long postId, final long actorId) {
+        requireEditable(postDao.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new), actorId);
         final List<Long> uploadedImageIds = findUploadedImageIds(postId);
         final int detached = inquiryDao.detachFromPost(postId);
         if (!postDao.delete(postId)) {
@@ -391,6 +405,14 @@ public class PostServiceImpl implements PostService {
         if (size > ImageRules.MAX_GALLERY_IMAGES) {
             throw new InvalidImageException();
         }
+    }
+
+    private PostSummary requireEditable(final PostSummary post, final long actorId) {
+        if (post.getUserId() != actorId && userService.findById(actorId)
+                .filter(user -> user.getRole() == UserRole.ADMIN).isEmpty()) {
+            throw new ForbiddenOperationException();
+        }
+        return requireAvailable(post);
     }
 
     private static PostSummary requireAvailable(final PostSummary post) {

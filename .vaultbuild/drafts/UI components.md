@@ -1,10 +1,10 @@
 @title: UI components
 @categories: Web
 @module: webapp
-@files: webapp/src/main/webapp/WEB-INF/tags/account-nav.tag, webapp/src/main/webapp/WEB-INF/tags/address-fields.tag, webapp/src/main/webapp/WEB-INF/tags/address.tag, webapp/src/main/webapp/WEB-INF/tags/avatar.tag, webapp/src/main/webapp/WEB-INF/tags/back-link.tag, webapp/src/main/webapp/WEB-INF/tags/brand.tag, webapp/src/main/webapp/WEB-INF/tags/button.tag, webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag, webapp/src/main/webapp/WEB-INF/tags/h1.tag, webapp/src/main/webapp/WEB-INF/tags/h3.tag, webapp/src/main/webapp/WEB-INF/tags/head.tag, webapp/src/main/webapp/WEB-INF/tags/icon.tag, webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag, webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag, webapp/src/main/webapp/WEB-INF/tags/input-control.tag, webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag, webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag, webapp/src/main/webapp/WEB-INF/tags/p.tag, webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag, webapp/src/main/webapp/WEB-INF/tags/pagination.tag, webapp/src/main/webapp/WEB-INF/tags/post-badge.tag, webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag, webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag, webapp/src/main/webapp/WEB-INF/tags/select-control.tag, webapp/src/main/webapp/WEB-INF/tags/select.tag, webapp/src/main/webapp/WEB-INF/tags/site-header.tag, webapp/src/main/webapp/WEB-INF/tags/span.tag, webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag, webapp/src/main/webapp/WEB-INF/tags/text-input.tag, webapp/src/main/webapp/WEB-INF/tags/textarea.tag, webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag
+@files: webapp/src/main/webapp/WEB-INF/tags/account-nav.tag, webapp/src/main/webapp/WEB-INF/tags/address-fields.tag, webapp/src/main/webapp/WEB-INF/tags/address.tag, webapp/src/main/webapp/WEB-INF/tags/avatar.tag, webapp/src/main/webapp/WEB-INF/tags/back-link.tag, webapp/src/main/webapp/WEB-INF/tags/brand.tag, webapp/src/main/webapp/WEB-INF/tags/button.tag, webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag, webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag, webapp/src/main/webapp/WEB-INF/tags/h1.tag, webapp/src/main/webapp/WEB-INF/tags/h3.tag, webapp/src/main/webapp/WEB-INF/tags/head.tag, webapp/src/main/webapp/WEB-INF/tags/icon.tag, webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag, webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag, webapp/src/main/webapp/WEB-INF/tags/input-control.tag, webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag, webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag, webapp/src/main/webapp/WEB-INF/tags/p.tag, webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag, webapp/src/main/webapp/WEB-INF/tags/pagination.tag, webapp/src/main/webapp/WEB-INF/tags/post-badge.tag, webapp/src/main/webapp/WEB-INF/tags/rating.tag, webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag, webapp/src/main/webapp/WEB-INF/tags/review-content.tag, webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag, webapp/src/main/webapp/WEB-INF/tags/select-control.tag, webapp/src/main/webapp/WEB-INF/tags/select.tag, webapp/src/main/webapp/WEB-INF/tags/site-header.tag, webapp/src/main/webapp/WEB-INF/tags/span.tag, webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag, webapp/src/main/webapp/WEB-INF/tags/text-input.tag, webapp/src/main/webapp/WEB-INF/tags/textarea.tag, webapp/src/main/webapp/WEB-INF/tags/user-byline.tag, webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag
 
 > [!summary] En una frase
-> Las páginas no repiten HTML: se arman con 31 componentes propios (tag files de JSP) que encapsulan el marcado, el escape de datos, las URL y los textos traducidos.
+> Las páginas no repiten HTML: se arman con 35 componentes propios (tag files de JSP) que encapsulan el marcado, el escape de datos, las URL y los textos traducidos.
 
 ## Herramientas
 
@@ -34,11 +34,12 @@
 | `account-nav` | Menú de la cuenta en la cabecera | — | site-header |
 | `address-fields` | Campos de una dirección | — | cart/index, post/contact, profile/index |
 | `address` | Muestra una dirección, completa o recortada | `address` | cart/index, inquiry/detail, inquiry/received, post/contact, profile/index |
-| `avatar` | Foto o inicial | `imageId`, `userId`, `name`, `size`, `alt`, `preview` | post/detail, profile/index, profile/public |
-| `back-link` | Enlace de volver | `href`, `label`, `page`, `fragment` | inquiry/detail, post/detail |
+| `avatar` | Foto o inicial | `imageId`, `userId`, `name`, `size`, `alt`, `preview` | user-byline, profile/index, profile/public |
+| `back-link` | Enlace de volver | `href`, `label`, `page`, `postStatus`, `fragment` | inquiry/detail, post/detail |
 | `brand` | Marca | `size` | site-header, auth/forgot-password, auth/login, auth/register, auth/reset-password, auth/verify-required y 1 más |
 | `button` | Botón o enlace con variantes | `label`, `variant`, `size`, `type`, `href`, `url`, `id`, `icon`, `data`, `name`, `value` | account-nav, confirm-dialog, resend-verification, site-header, auth/forgot-password, auth/login y 18 más |
 | `confirm-dialog` | Diálogo de confirmación | `title`, `confirmLabel`, `confirmVariant` | inquiry/detail, post/detail, profile/index |
+| `filter-chips` | Chips de filtro con su cantidad; el chip activo lleva a la URL sin filtro | `baseUrl`, `paramName`, `values`, `active`, `counts`, `messagePrefix`, `label`, `fragment` | inquiry/received, inquiry/sent, profile/index |
 | `h1` | Título | `text`, `tone` | cart/index, error/400, error/403, error/404, error/409, inquiry/detail y 8 más |
 | `h3` | Subtítulo con nivel configurable | `text`, `level` | inbox-group-header, vinyl-card, cart/index |
 | `head` | Cabecera HTML común: estilos y scripts | `titleCode`, `pageScript` | auth/forgot-password, auth/login, auth/register, auth/reset-password, auth/verify-required, auth/verify y 14 más |
@@ -49,21 +50,24 @@
 | `inquiry-nav` | Pestañas recibidas y enviadas | `active`, `receivedCount`, `sentCount` | inquiry/received, inquiry/sent |
 | `inquiry-status` | Estado de la consulta como texto | `status` | inquiry/detail, inquiry/received, inquiry/sent |
 | `p` | Párrafo | `text`, `variant` | inbox-group-header, vinyl-card, auth/verify-required, cart/index, error/400, error/403 y 4 más |
-| `pagination-link` | Un enlace de página | `baseUrl`, `extraParams`, `page`, `fragment`, `label`, `rel` | pagination |
-| `pagination` | Flechas que conservan parámetros y ancla | `currentPage`, `hasPrevious`, `hasNext`, `baseUrl`, `extraParams`, `fragment`, `ariaLabel` | inquiry/received, inquiry/sent, landing/index, profile/index, profile/public |
+| `pagination-link` | Un enlace de página | `baseUrl`, `extraParams`, `page`, `pageParam`, `fragment`, `label`, `rel` | pagination |
+| `pagination` | Flechas que conservan parámetros y ancla | `currentPage`, `hasPrevious`, `hasNext`, `baseUrl`, `pageParam`, `extraParams`, `fragment`, `ariaLabel` | inquiry/received, inquiry/sent, landing/index, profile/index, profile/public |
 | `post-badge` | Estado de una publicación | `deleted`, `status`, `showAvailable`, `variant` | inbox-group-header, vinyl-card, post/detail |
+| `rating` | Estrellas de solo lectura con relleno parcial para promedios | `value`, `maxRating`, `label` | review-content, profile/public |
 | `resend-verification` | Botón de reenvío: POST con CSRF | `variant` | site-header, auth/verify-required, auth/verify |
-| `segmented-control` | Grupo de radios | `name`, `legend`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required` | landing/index, publish/index |
+| `review-content` | Puntaje, comentario y, opcional, autor de una reseña | `review`, `maxRating`, `showAuthor` | inquiry/detail, profile/public |
+| `segmented-control` | Grupo de radios | `name`, `legend`, `hideLegend`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required` | landing/index, profile/public, publish/index |
 | `select-control` | Select sin ligar | `id`, `name`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `labelledBy`, `describedBy`, `cssClass`, `hasError`, `placeholderOnly` | select, landing/index |
 | `select` | Select ligado | `path`, `label`, `items`, `messagePrefix`, `emptyLabel`, `placeholderOnly` | address-fields, landing/index, publish/index |
 | `site-header` | Barra superior: marca, buscador, acciones, aviso de verificación | `query`, `formId` | cart/index, inquiry/detail, inquiry/received, inquiry/sent, landing/index, post/contact y 4 más |
 | `span` | Texto en línea | `text`, `variant` | vinyl-card, post/detail |
 | `star-rating-input` | Estrellas como radios accesibles | `path`, `legend`, `max`, `valueCode` | inquiry/detail |
 | `text-input` | Campo ligado a un form con etiqueta, pista y error | `path`, `label`, `type`, `maxLength`, `min`, `max`, `suggestionsId`, `sourceUrl`, `hint`, `autofocus`, `placeholder`, `hideLabel`, `describedBy`, `externalErrorsId` | address-fields, auth/forgot-password, auth/login, auth/register, auth/reset-password, landing/index y 2 más |
-| `textarea` | Área de texto ligada | `path`, `label`, `maxLength`, `id` | inquiry/detail, post/contact, publish/index |
+| `textarea` | Área de texto ligada | `path`, `label`, `maxLength`, `id`, `rows`, `hideLabel` | inquiry/detail, post/contact, publish/index |
+| `user-byline` | Foto y nombre de una Cuenta con enlace a su perfil público | `userId`, `username`, `imageId` | review-content, inquiry/detail, post/detail |
 | `vinyl-card` | La tarjeta de un vinilo; el componente más reutilizado | `item`, `variant`, `href`, `hrefParams`, `title`, `artistName`, `price`, `coverUrl`, `preview`, `showStatus` | landing/index, post/contact, profile/index, profile/public, publish/index |
 
-"Lo usan" se calculó buscando `<ui:nombre` en las vistas y en los demás tags de `8929aea`.
+"Lo usan" se calculó buscando `<ui:nombre` en las vistas y en los demás tags de `c3e2a4c`.
 
 ## Decisiones y por qué
 
@@ -124,7 +128,7 @@ Atributos: `imageId`, `userId` (obligatorio), `name` (obligatorio), `size`, `alt
 
 Enlace de volver.
 
-Atributos: `href`, `label`, `page`, `fragment`.
+Atributos: `href`, `label`, `page`, `postStatus`, `fragment`.
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/back-link.tag}}
 
@@ -151,6 +155,14 @@ Diálogo de confirmación.
 Atributos: `title` (obligatorio), `confirmLabel` (obligatorio), `confirmVariant`.
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag}}
+
+### filter-chips
+
+Chips de filtro con su cantidad; el chip activo lleva a la URL sin filtro.
+
+Atributos: `baseUrl` (obligatorio), `paramName` (obligatorio), `values` (obligatorio), `active`, `counts` (obligatorio), `messagePrefix` (obligatorio), `label` (obligatorio), `fragment`.
+
+{{file:webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag}}
 
 ### h1
 
@@ -236,7 +248,7 @@ Atributos: `text` (obligatorio), `variant`.
 
 Un enlace de página.
 
-Atributos: `baseUrl` (obligatorio), `extraParams`, `page` (obligatorio), `fragment`, `label` (obligatorio), `rel`.
+Atributos: `baseUrl` (obligatorio), `extraParams`, `page` (obligatorio), `pageParam`, `fragment`, `label` (obligatorio), `rel`.
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag}}
 
@@ -244,7 +256,7 @@ Atributos: `baseUrl` (obligatorio), `extraParams`, `page` (obligatorio), `fragme
 
 Flechas que conservan parámetros y ancla.
 
-Atributos: `currentPage` (obligatorio), `hasPrevious` (obligatorio), `hasNext` (obligatorio), `baseUrl` (obligatorio), `extraParams`, `fragment`, `ariaLabel` (obligatorio).
+Atributos: `currentPage` (obligatorio), `hasPrevious` (obligatorio), `hasNext` (obligatorio), `baseUrl` (obligatorio), `pageParam`, `extraParams`, `fragment`, `ariaLabel` (obligatorio).
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/pagination.tag}}
 
@@ -256,6 +268,14 @@ Atributos: `deleted`, `status`, `showAvailable`, `variant`.
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/post-badge.tag}}
 
+### rating
+
+Estrellas de solo lectura con relleno parcial para promedios.
+
+Atributos: `value` (obligatorio), `maxRating` (obligatorio), `label` (obligatorio).
+
+{{file:webapp/src/main/webapp/WEB-INF/tags/rating.tag}}
+
 ### resend-verification
 
 Botón de reenvío: POST con CSRF.
@@ -264,11 +284,19 @@ Atributos: `variant`.
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag}}
 
+### review-content
+
+Puntaje, comentario y, opcional, autor de una reseña.
+
+Atributos: `review` (obligatorio), `maxRating` (obligatorio), `showAuthor`.
+
+{{file:webapp/src/main/webapp/WEB-INF/tags/review-content.tag}}
+
 ### segmented-control
 
 Grupo de radios.
 
-Atributos: `name` (obligatorio), `legend` (obligatorio), `items` (obligatorio), `messagePrefix` (obligatorio), `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required`.
+Atributos: `name` (obligatorio), `legend` (obligatorio), `hideLegend`, `items` (obligatorio), `messagePrefix` (obligatorio), `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required`.
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag}}
 
@@ -324,9 +352,17 @@ Atributos: `path` (obligatorio), `label` (obligatorio), `type`, `maxLength`, `mi
 
 Área de texto ligada.
 
-Atributos: `path` (obligatorio), `label` (obligatorio), `maxLength`, `id`.
+Atributos: `path` (obligatorio), `label` (obligatorio), `maxLength`, `id`, `rows`, `hideLabel`.
 
 {{file:webapp/src/main/webapp/WEB-INF/tags/textarea.tag}}
+
+### user-byline
+
+Foto y nombre de una Cuenta con enlace a su perfil público.
+
+Atributos: `userId` (obligatorio), `username` (obligatorio), `imageId`.
+
+{{file:webapp/src/main/webapp/WEB-INF/tags/user-byline.tag}}
 
 ### vinyl-card
 

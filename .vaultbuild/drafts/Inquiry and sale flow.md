@@ -1,13 +1,13 @@
 @title: Inquiry and sale flow
 @categories: Flows, Web, Services, Persistence
-@files: webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java, services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java, services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java, services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java, persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java, models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java, models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java, models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java, models/src/main/java/ar/edu/itba/paw/models/PostStatus.java, models/src/main/java/ar/edu/itba/paw/models/ReceiptRules.java, webapp/src/main/java/ar/edu/itba/paw/webapp/security/InquiryAccessHandler.java, webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ReceiptValidator.java, persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql, webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp
+@files: webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java, services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java, services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java, services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java, persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java, persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java, models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java, models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java, models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java, models/src/main/java/ar/edu/itba/paw/models/PostStatus.java, models/src/main/java/ar/edu/itba/paw/models/ReceiptRules.java, webapp/src/main/java/ar/edu/itba/paw/webapp/security/InquiryAccessHandler.java, webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ReceiptValidator.java, persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql, docs/adr/0004-freeze-sale-price-at-acceptance.md, webapp/src/main/webapp/WEB-INF/views/inquiry/detail.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/received.jsp, webapp/src/main/webapp/WEB-INF/views/inquiry/sent.jsp
 
 > [!summary] En una frase
-> Aceptar una consulta reserva el vinilo; el comprador transfiere por fuera y sube el comprobante; el publicante lo revisa y confirma, y recién ahí el vinilo queda vendido y las demás consultas se rechazan.
+> Aceptar una consulta reserva el vinilo y fija el precio de la venta; el comprador transfiere por fuera y sube el comprobante; el publicante lo revisa y confirma, y recién ahí el vinilo queda vendido y las demás consultas se rechazan.
 
 ## Qué resuelve
 
-La venta de un ejemplar único entre dos Cuentas, sin pasarela de pago. Reemplaza al flujo de septiembre, donde "aceptar" vendía en el acto. Entró con los PR #40, #44 y #42 (perfil con datos de cobro, dirección de envío, comprobante). Cómo nace la consulta está en [[Contact flow]] (de a una) y en [[Cart flow]] (varias juntas); la conversación, en [[Conversation flow]]; las reseñas, en [[Reviews flow]].
+La venta de un ejemplar único entre dos Cuentas, sin pasarela de pago. Reemplaza al flujo de septiembre, donde "aceptar" vendía en el acto. Entró con los PR #40, #44 y #42 (perfil con datos de cobro, dirección de envío, comprobante); el PR #56 movió el momento en que se fija el precio y el #55 agregó la vuelta a la venta después de cargar los datos de cobro. Cómo nace la consulta está en [[Contact flow]] (de a una) y en [[Cart flow]] (varias juntas); la conversación, en [[Conversation flow]]; las reseñas, en [[Reviews flow]].
 
 ## Herramientas
 
@@ -63,6 +63,8 @@ Mientras el post está reservado, las demás consultas pendientes quedan esperan
 
 Recibidas y enviadas. Las dos agrupan por publicación y paginan **por grupo** (5 por página): varias consultas sobre el mismo ejemplar son una entrada y nunca quedan partidas entre páginas. El DAO lo resuelve en dos sentencias, sin N+1: primero las claves de grupo de la página, después todas las consultas de esas claves. Cada fila trae el último Mensaje por `LEFT JOIN` contra una subconsulta agregada. Ver [[Paginated listings]].
 
+Desde el PR #60 cada bandeja se puede filtrar con `?status=` por cuatro grupos de estados ([[InquiryStatusFilter]]): pendientes, en curso (espera de pago y pago informado), confirmadas y cerradas (rechazadas o canceladas). Las dos sentencias filtran por estado, así un grupo sin consultas que coincidan no ocupa lugar en la página y un grupo mixto muestra solo las que coinciden. Los chips muestran cuántas consultas hay en cada filtro. Ver [[Status filters flow]].
+
 ### Aceptar: `POST /inquiries/{id}/accept`
 
 1. `VERIFIED` por URL y `@inquiryAccess.isSeller` por recurso.
@@ -71,9 +73,9 @@ Recibidas y enviadas. Las dos agrupan por publicación y paginan **por grupo** (
    - `lockPost`: `SELECT id FROM posts WHERE id = ? FOR UPDATE`. Si el post fue eliminado, 409.
    - Exige consulta `PENDING` y post `AVAILABLE`. El estado se mira **antes** que los datos de cobro: una consulta que ya no se puede aceptar es un conflicto, no un motivo para mandar a cargar el CBU.
    - `userService.lockById(sellerId)` bloquea la fila de la Cuenta y lee de ahí los datos de cobro. Sin ellos, `MissingPaymentInfoException`.
-   - `postService.reserve` y `move(PENDING → AWAITING_PAYMENT)`, los dos con guarda de estado.
+   - `postService.reserve` (`AVAILABLE → RESERVED`) y `inquiryDao.startSale(inquiryId, post.getPrice())`: un solo `UPDATE` que pasa la consulta de `PENDING` a `AWAITING_PAYMENT` **y** guarda en `inquiries.price` el precio del post bloqueado. Los dos tienen guarda de estado; si cualquiera no afecta filas, `InvalidInquiryStateException` y el rollback deshace la reserva.
    - Registra el correo `ACCEPTED` para el comprador.
-3. El controller redirige a la página de la venta con un aviso. Si faltaban datos de cobro, redirige a `/profile?missingPayment#account`, que abre esa fila.
+3. El controller redirige a la página de la venta con un aviso. Si faltaban datos de cobro, atrapa `MissingPaymentInfoException` y redirige a `/profile?missingPayment=&returnInquiryId={id}#account`: el perfil abre la fila de cobro y, al guardarla, vuelve a la venta ([[Addresses and payment flow]]).
 
 ### Subir el comprobante: `POST /inquiries/{id}/receipt`
 
@@ -108,9 +110,14 @@ sequenceDiagram
     C->>S: accept(42, sellerId)
     S->>D: findSummaryById
     S->>P: lockById (FOR UPDATE)
-    S->>S: PENDING y AVAILABLE, datos de cobro
+    S->>S: PENDING y AVAILABLE
+    S->>S: userService.lockById, datos de cobro
+    alt sin CBU ni alias
+        S-->>C: MissingPaymentInfoException
+        C-->>V: 302 /profile?missingPayment=&returnInquiryId=42
+    end
     S->>P: reserve (AVAILABLE→RESERVED)
-    S->>D: updateStatus (PENDING→AWAITING_PAYMENT)
+    S->>D: startSale (PENDING→AWAITING_PAYMENT, price = precio del post bloqueado)
     S-)M: afterCommit: ACCEPTED al comprador
     C-->>V: 302 /inquiries/42
     Note over V,M: el comprador sube el comprobante (PAYMENT_SUBMITTED)
@@ -128,7 +135,7 @@ Migración V5:
 {{code:persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql:1-50}}
 
 - El comprobante vive **en la fila de la consulta** (`receipt_content_type`, `receipt_data`, `receipt_uploaded_at`): uno por consulta, se reemplaza entero.
-- `inquiries.price` congela el precio publicado al consultar: es el monto a transferir aunque el publicante edite el post después.
+- `inquiries.price` se escribe dos veces. Al consultar guarda el precio publicado, que solo sirve de respaldo si el post desaparece. Al aceptar, `startSale` lo reemplaza por el precio del post bloqueado: desde ahí es el monto a transferir aunque el publicante edite el post. Mientras la consulta está `PENDING`, el resumen muestra el precio **actual** del post (`CASE WHEN i.status = 'PENDING' AND p.id IS NOT NULL THEN p.price ELSE COALESCE(i.price, p.price) END`). No hubo cambio de esquema (ADR 0004).
 - `inquiries.address_id` apunta a la dirección elegida; una dirección nunca se borra, se archiva.
 
 ## Qué ve cada parte
@@ -155,7 +162,8 @@ Migración V5:
 | Datos de cobro leídos de la fila bloqueada | Usar los del resumen | No cruzarse con un `updatePaymentInfo` que los esté borrando | Comentario en [[InquiryServiceImpl]] |
 | Guardar el comprobante y cambiar el estado en una sentencia | Dos sentencias | Evita un comprobante guardado sin transición | Comentario en [[InquiryJdbcDao]] |
 | Comprobante en la tabla de consultas | Reusar la tabla `images` | Es un dato privado de la venta, con sus propias reglas de acceso y de tipo | Inferencia a partir del esquema |
-| Precio congelado en la consulta | Leer siempre el del post | Es lo que se pactó transferir | Comentario en la migración V5 |
+| Precio fijado al aceptar | Congelarlo al consultar, como hasta `8929aea` | Una consulta pendiente todavía no es un acuerdo: sigue el precio publicado. Se fija con el post bloqueado y en la misma sentencia que la transición, así una falla deshace también la reserva | ADR 0004, commit `7e073053` |
+| Aceptar sin datos de cobro vuelve a la venta | Redirigir al perfil y que el vendedor vuelva solo | El vendedor carga el CBU y sigue donde estaba. `findSaleToResume` solo confirma que la consulta es suya: es contexto de navegación, no autoriza a aceptar | Comentario en [[InquiryService]], commits `25f95bc9` y `97f489b3` |
 | Dirección parcial hasta aceptar | Mostrar siempre la completa | "Publicar un vinilo no puede servir para juntar domicilios" | Comentario en [[InquiryServiceImpl]] |
 | `ACCEPTED` conserva su nombre | Renombrar a `CONFIRMED` | No migrar consultas existentes | Comentario en [[InquiryStatus]] |
 | `CHECK` sobre `inquiries.status` | Solo el enum de Java | Un valor fuera del enum rompería `valueOf` al leer | Comentario en la migración V5 |
@@ -169,7 +177,9 @@ Migración V5:
 - **Doble clic en "subir"**: el segundo `saveReceipt` no encuentra `AWAITING_PAYMENT` y da 409.
 - **Aceptar y vaciar datos de cobro a la vez**: los dos bloquean la fila de la Cuenta; uno ve el resultado del otro.
 - **Post eliminado**: `lockPost` lanza 409. Solo se elimina un post `AVAILABLE`, así que nunca hay una venta abierta sobre un post eliminado.
-- **Fallo a mitad de una transición**: la excepción deshace todo; por ejemplo, si `reserve` anduvo y `move` no, el post vuelve a `AVAILABLE`.
+- **Fallo a mitad de una transición**: la excepción deshace todo; por ejemplo, si `reserve` anduvo y `startSale` no, el post vuelve a `AVAILABLE` y no sale ningún correo (lo cubre `testAcceptWhenTransitionFailsReturnsConflictWithoutNotification`).
+- **El publicante edita el precio mientras hay consultas pendientes**: las bandejas muestran el precio nuevo. Editar también bloquea el post (`findByIdForUpdate`), así que una aceptación simultánea lee el precio de antes o el de después, nunca uno a medias.
+- **Consultas aceptadas antes del PR #56**: conservan el precio que ya tenían; no se reescriben.
 - **Orden de bloqueos**: siempre post primero y Cuenta después.
 
 ## Límites conocidos
@@ -194,6 +204,9 @@ El `UPDATE` condicional evita la escritura incorrecta. El bloqueo además ordena
 **¿Dónde se guarda el comprobante y quién lo ve?**
 En columnas de la consulta. Lo ven solo las dos partes; se sirve con `nosniff`, sin caché y con sandbox si es imagen.
 
+**¿Qué precio paga el comprador si el vendedor cambia el precio después de la consulta?**
+El vigente al aceptar. Mientras la consulta está pendiente se muestra el precio actual del post; `accept` bloquea el post y `startSale` copia ese precio a la consulta en el mismo `UPDATE` que la pasa a espera de pago. Desde ahí no cambia (ADR 0004).
+
 **¿Qué estado HTTP devuelve una transición inválida?**
 409, con la vista `error/409`.
 
@@ -204,36 +217,48 @@ La transición quedó guardada. El aviso se pierde y la otra parte lo ve al entr
 
 Aceptar:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:255-285}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:281-313}}
+
+Fijar el precio junto con la transición:
+
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:362-366}}
+
+Precio del resumen según el estado:
+
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:94-97}}
+
+La decisión registrada:
+
+{{file:docs/adr/0004-freeze-sale-price-at-acceptance.md}}
 
 Comprobante, pedir otro, confirmar y cancelar:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:299-369}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:327-397}}
 
 Auxiliares de pertenencia, bloqueo y transición:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:466-514}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:501-549}}
 
 Transiciones del post, con propagación `MANDATORY`:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:79-110}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:81-112}}
 
 Guardas de estado en SQL:
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:293-307}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:340-354}}
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:270-276}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:297-303}}
 
-Bandeja paginada por grupo en dos sentencias:
+Bandeja paginada por grupo en dos sentencias, filtradas por estado:
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:265-291}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:308-338}}
 
 Reglas de la vista:
 
-{{code:models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java:51-81}}
+{{code:models/src/main/java/ar/edu/itba/paw/models/InquiryDetail.java:55-85}}
 
 Endpoints y handlers de 409:
 
-{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java:92-110}}
+{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java:109-133}}
 
-{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java:268-279}}
+{{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/InquiryController.java:293-297}}

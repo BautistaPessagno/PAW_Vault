@@ -10,3 +10,7 @@
 # Restos locales del generador del vault
 .vaultbuild/__pycache__/
 .vaultbuild/mermaid_blocks.json
+
+# Configuración local de plugins de Obsidian
+.obsidian/plugins/
+.obsidian/community-plugins.json

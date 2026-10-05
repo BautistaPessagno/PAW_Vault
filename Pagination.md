@@ -4,8 +4,8 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/Pagination.java"]
 ---
@@ -22,13 +22,13 @@ Operaciones para localizar en la fuente: `pagesFor`, `offsetFor`.
 
 Referencias estáticas a tipos del proyecto: [[PageNotFoundException]].
 
-Referenciado por: [[InquiryServiceImpl]], [[PaginationTest]], [[PostServiceImpl]].
+Referenciado por: [[InquiryServiceImpl]], [[PaginationTest]], [[PostServiceImpl]], [[ReviewServiceImpl]].
 
 Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pagination.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/Pagination.java>), líneas 1–35.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/Pagination.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/Pagination.java>), líneas 1–35.
 
 ```java
 package ar.edu.itba.paw.services;

@@ -4,8 +4,8 @@ categories: ["Services", "Persistence", "Flows"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "models/src/main/java/ar/edu/itba/paw/models/EmailVerificationToken.java", "models/src/main/java/ar/edu/itba/paw/models/PasswordResetToken.java", "persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/EmailVerificationTokenDao.java", "persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/EmailVerificationTokenJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java", "persistence/src/main/resources/db/migration/V1__esquema_inicial.sql", "persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql", "services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java"]
 ---
@@ -41,7 +41,7 @@ Los dos primeros son código del equipo y son el tema de esta nota. Los otros do
 
 `generateToken()` pide 32 bytes a `SecureRandom` y los codifica en Base64 para URL sin relleno. Son 256 bits de entropía y 43 caracteres de texto. La columna `token` es `VARCHAR(64)`, así que sobra lugar. No lleva el id de la Cuenta, ni fecha, ni firma: es opaco. Toda la información asociada (de quién es, cuándo se creó, cuándo vence) está en la fila de la tabla.
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 36–45.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 36–45.
 
 ```java
     // 32 bytes aleatorios: adivinar un enlace de verificacion no es viable por fuerza bruta.
@@ -56,7 +56,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Use
     private static final Duration RESEND_COOLDOWN = Duration.ofMinutes(1);
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 354–358.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 354–358.
 
 ```java
     private static String generateToken() {
@@ -117,7 +117,7 @@ En los dos casos "usado" significa que la fila se borra: no hay columna `used`. 
 
 Tablas originales, de la migración V1:
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 21–37.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 21–37.
 
 ```sql
 CREATE TABLE email_verification_tokens (
@@ -141,7 +141,7 @@ CREATE TABLE password_reset_tokens (
 
 La fecha del enlace de verificación llegó en V6, junto con el cambio de nombre de `enabled` a `verified`:
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql>), líneas 1–9.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql>), líneas 1–9.
 
 ```sql
 -- La columna enabled siempre guardo si la cuenta verifico su correo: desde que la cuenta
@@ -214,7 +214,7 @@ En [[EmailServiceImpl]], con `app.base-url` de `mail.properties`. Tiene que incl
 
 Emisión del token de verificación:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 213–222.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 213–222.
 
 ```java
     // Borra los enlaces anteriores antes de crear el nuevo: solo vale el ultimo que se mando.
@@ -231,7 +231,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Use
 
 Emisión del token de recuperación:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 260–292.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 260–292.
 
 ```java
     @Override
@@ -271,7 +271,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Use
 
 Consumo del token de recuperación:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 294–328.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java>), líneas 294–328.
 
 ```java
     @Override
@@ -313,7 +313,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Use
 
 DAO de recuperación:
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java>), líneas 46–85.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PasswordResetTokenJdbcDao.java>), líneas 46–85.
 
 ```java
     @Override
@@ -360,7 +360,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 DAO de verificación:
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/EmailVerificationTokenJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/EmailVerificationTokenJdbcDao.java>), líneas 43–74.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/EmailVerificationTokenJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/EmailVerificationTokenJdbcDao.java>), líneas 43–74.
 
 ```java
     @Override
@@ -399,7 +399,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 Armado de los enlaces:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 74–89.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>), líneas 74–89.
 
 ```java
     @Async
@@ -433,4 +433,4 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Ema
 - [persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql>)
 - [services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/EmailServiceImpl.java>) · [[EmailServiceImpl]]
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

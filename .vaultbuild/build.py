@@ -18,9 +18,9 @@ REPO = _first(os.environ.get('PAW_REPO'), os.path.join(os.path.dirname(VAULT), '
 # Ruta absoluta del repo en la maquina del usuario: es la que llevan los enlaces de las notas.
 ABS = os.environ.get('PAW_REPO_LINK', '/Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b')
 # Commit documentado y fecha de inspeccion: se cambian en cada actualizacion del vault.
-COMMIT = os.environ.get('PAW_COMMIT', '8929aeaa59b250e6c7119212f96437e153e815ac')
+COMMIT = os.environ.get('PAW_COMMIT', 'c3e2a4cd23337bd35175d14ef551ba12a758a59d')
 SHORT = COMMIT[:7]
-SNAPSHOT = os.environ.get('PAW_SNAPSHOT', '2026-10-04')
+SNAPSHOT = os.environ.get('PAW_SNAPSHOT', '2026-10-05')
 LANG = {'java': 'java', 'sql': 'sql', 'xml': 'xml', 'jsp': 'jsp', 'tag': 'jsp', 'js': 'javascript',
         'css': 'css', 'properties': 'properties', 'html': 'html', 'py': 'python', 'sh': 'bash',
         'md': 'markdown', 'tsv': 'text', 'svg': 'xml', 'example': 'properties'}

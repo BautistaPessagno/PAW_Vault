@@ -4,8 +4,8 @@ categories: ["Navigation"]
 type: "index"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 tags: ["codemap", "navigation"]
 ---
@@ -13,9 +13,9 @@ tags: ["codemap", "navigation"]
 # Source inventory
 
 > [!summary] En una frase
-> Registro de los 460 archivos versionados en `8929aea`: dónde está cada uno, qué nota del vault lo explica y en qué etapa del [[Roadmap de lectura]] se lee.
+> Registro de los 472 archivos versionados en `c3e2a4c`: dónde está cada uno, qué nota del vault lo explica y en qué etapa del [[Roadmap de lectura]] se lee.
 
-Se genera a partir de `git ls-tree`; el generador falla si un archivo no tiene nota asignada. Las 232 clases Java tienen una nota propia con su código completo. Los demás archivos se explican en una nota temática, que en muchos casos también embebe su contenido.
+Se genera a partir de `git ls-tree`; el generador falla si un archivo no tiene nota asignada. Las 238 clases Java tienen una nota propia con su código completo. Los demás archivos se explican en una nota temática, que en muchos casos también embebe su contenido.
 
 No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni el estado interno de Git.
 
@@ -28,9 +28,9 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | .claude | 27 |
 | .codex | 18 |
 | database | 3 |
-| docs | 32 |
+| docs | 33 |
 | models | 4 |
-| models · Java | 53 |
+| models · Java | 57 |
 | persistence | 15 |
 | persistence · Java | 13 |
 | persistence · Java de test | 14 |
@@ -38,13 +38,13 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | persistence-contracts · Java | 14 |
 | services | 10 |
 | services · Java | 15 |
-| services · Java de test | 14 |
+| services · Java de test | 16 |
 | services-contracts | 3 |
 | services-contracts · Java | 43 |
 | tools | 5 |
-| webapp | 77 |
+| webapp | 82 |
 | webapp · Java | 66 |
-| **Total** | **460** |
+| **Total** | **472** |
 
 ## (raíz)
 
@@ -157,6 +157,7 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [docs/adr/0001-establish-quiero-vinilos-domain.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0001-establish-quiero-vinilos-domain.md>) | [[History and specifications]] | 0 |
 | [docs/adr/0002-own-the-album-catalog-locally.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>) | [[History and specifications]] | 0 |
 | [docs/adr/0003-conversation-inside-the-inquiry.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0003-conversation-inside-the-inquiry.md>) | [[History and specifications]] | 0 |
+| [docs/adr/0004-freeze-sale-price-at-acceptance.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0004-freeze-sale-price-at-acceptance.md>) | [[History and specifications]] | 0 |
 | [docs/issues/01-mostrar-primer-album-en-landing.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/issues/01-mostrar-primer-album-en-landing.md>) | [[History and specifications]] | 16 |
 | [docs/issues/02-completar-catalogo-inicial.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/issues/02-completar-catalogo-inicial.md>) | [[History and specifications]] | 16 |
 | [docs/issues/03-terminar-landing-editorial-responsive.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/issues/03-terminar-landing-editorial-responsive.md>) | [[History and specifications]] | 16 |
@@ -212,6 +213,7 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [models/ContactState.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ContactState.java>) | [[ContactState]] | 3 |
 | [models/EmailRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/EmailRules.java>) | [[EmailRules]] | 3 |
 | [models/EmailVerificationToken.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/EmailVerificationToken.java>) | [[EmailVerificationToken]] | 3 |
+| [models/FilterCounts.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/FilterCounts.java>) | [[FilterCounts]] | 3 |
 | [models/Genre.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Genre.java>) | [[Genre]] | 3 |
 | [models/Image.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Image.java>) | [[Image]] | 3 |
 | [models/ImageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ImageRules.java>) | [[ImageRules]] | 3 |
@@ -222,6 +224,7 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [models/InquiryPage.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryPage.java>) | [[InquiryPage]] | 3 |
 | [models/InquiryParties.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryParties.java>) | [[InquiryParties]] | 3 |
 | [models/InquiryStatus.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryStatus.java>) | [[InquiryStatus]] | 3 |
+| [models/InquiryStatusFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquiryStatusFilter.java>) | [[InquiryStatusFilter]] | 3 |
 | [models/InquirySummary.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/InquirySummary.java>) | [[InquirySummary]] | 3 |
 | [models/Message.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Message.java>) | [[Message]] | 3 |
 | [models/MessageRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/MessageRules.java>) | [[MessageRules]] | 3 |
@@ -243,8 +246,10 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [models/Receipt.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Receipt.java>) | [[Receipt]] | 3 |
 | [models/ReceiptRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ReceiptRules.java>) | [[ReceiptRules]] | 3 |
 | [models/Review.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Review.java>) | [[Review]] | 3 |
+| [models/ReviewPage.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ReviewPage.java>) | [[ReviewPage]] | 3 |
 | [models/ReviewRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ReviewRules.java>) | [[ReviewRules]] | 3 |
 | [models/ReviewStats.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ReviewStats.java>) | [[ReviewStats]] | 3 |
+| [models/ReviewSubjectRole.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ReviewSubjectRole.java>) | [[ReviewSubjectRole]] | 3 |
 | [models/SearchResult.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchResult.java>) | [[SearchResult]] | 3 |
 | [models/SearchSuggestion.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java>) | [[SearchSuggestion]] | 3 |
 | [models/SearchSuggestionType.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchSuggestionType.java>) | [[SearchSuggestionType]] | 3 |
@@ -386,9 +391,11 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [services/ImageServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ImageServiceImplTest.java>) | [[ImageServiceImplTest]] | 7 |
 | [services/InMemoryImageService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/InMemoryImageService.java>) | [[InMemoryImageService]] | 7 |
 | [services/InquiryServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/InquiryServiceImplTest.java>) | [[InquiryServiceImplTest]] | 9 |
+| [services/InquiryStatusFilterTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/InquiryStatusFilterTest.java>) | [[InquiryStatusFilterTest]] | 9 |
 | [services/PaginationTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PaginationTest.java>) | [[PaginationTest]] | 4 |
 | [services/PostServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PostServiceImplTest.java>) | [[PostServiceImplTest]] | 4 |
 | [services/PublicProfileServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/PublicProfileServiceImplTest.java>) | [[PublicProfileServiceImplTest]] | 10 |
+| [services/ReceiptTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ReceiptTest.java>) | [[ReceiptTest]] | 9 |
 | [services/ReviewServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/ReviewServiceImplTest.java>) | [[ReviewServiceImplTest]] | 10 |
 | [services/UserServiceImplTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/test/java/ar/edu/itba/paw/services/UserServiceImplTest.java>) | [[UserServiceImplTest]] | 5 |
 
@@ -481,6 +488,7 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [webapp/src/main/webapp/WEB-INF/tags/brand.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/brand.tag>) | [[UI components]] | 13 |
 | [webapp/src/main/webapp/WEB-INF/tags/button.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>) | [[UI components]] | 13 |
 | [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>) | [[UI components]] | 9 |
+| [webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag>) | [[UI components]] | 9 |
 | [webapp/src/main/webapp/WEB-INF/tags/h1.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>) | [[UI components]] | 13 |
 | [webapp/src/main/webapp/WEB-INF/tags/h3.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>) | [[UI components]] | 13 |
 | [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>) | [[UI components]] | 13 |
@@ -494,7 +502,9 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag>) | [[UI components]] | 4 |
 | [webapp/src/main/webapp/WEB-INF/tags/pagination.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination.tag>) | [[UI components]] | 4 |
 | [webapp/src/main/webapp/WEB-INF/tags/post-badge.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/post-badge.tag>) | [[UI components]] | 4 |
+| [webapp/src/main/webapp/WEB-INF/tags/rating.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/rating.tag>) | [[UI components]] | 10 |
 | [webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag>) | [[UI components]] | 5 |
+| [webapp/src/main/webapp/WEB-INF/tags/review-content.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/review-content.tag>) | [[UI components]] | 10 |
 | [webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag>) | [[UI components]] | 13 |
 | [webapp/src/main/webapp/WEB-INF/tags/select-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select-control.tag>) | [[UI components]] | 13 |
 | [webapp/src/main/webapp/WEB-INF/tags/select.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>) | [[UI components]] | 13 |
@@ -503,6 +513,7 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag>) | [[UI components]] | 10 |
 | [webapp/src/main/webapp/WEB-INF/tags/text-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>) | [[UI components]] | 13 |
 | [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>) | [[UI components]] | 13 |
+| [webapp/src/main/webapp/WEB-INF/tags/user-byline.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/user-byline.tag>) | [[UI components]] | 10 |
 | [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>) | [[UI components]] | 4 |
 | [webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/forgot-password.jsp>) | [[Views and assets]] · [[Authentication flow]] | 5 |
 | [webapp/src/main/webapp/WEB-INF/views/auth/login.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/auth/login.jsp>) | [[Views and assets]] · [[Authentication flow]] | 5 |
@@ -536,6 +547,7 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [webapp/src/main/webapp/js/confirm-action.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/confirm-action.js>) | [[Views and assets]] | 9 |
 | [webapp/src/main/webapp/js/post-gallery.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/post-gallery.js>) | [[Views and assets]] | 8 |
 | [webapp/src/main/webapp/js/publish-preview.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/publish-preview.js>) | [[Views and assets]] | 7 |
+| [webapp/src/main/webapp/js/sale-detail.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/sale-detail.js>) | [[Views and assets]] | 9 |
 | [webapp/src/main/webapp/js/submit-once.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/submit-once.js>) | [[Views and assets]] | 9 |
 | [webapp/src/pampero/resources/database.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/pampero/resources/database.properties.example>) | [[Configuration and running]] | 1 |
 | [webapp/src/pampero/resources/mail.properties.example](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/pampero/resources/mail.properties.example>) | [[Configuration and running]] | 1 |
@@ -611,4 +623,4 @@ No se incluyen archivos ignorados (propiedades con credenciales, compilados) ni 
 | [validation/ValidReceipt.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ValidReceipt.java>) | [[ValidReceipt]] | 9 |
 | [validation/ValidShippingAddress.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ValidShippingAddress.java>) | [[ValidShippingAddress]] | 8 |
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

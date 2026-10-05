@@ -4,21 +4,21 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java"]
 ---
 
 # InquiryJdbcDao
 
-Consultas con Spring JDBC. El resumen sale de un `JOIN` que cubre posts eliminados con `COALESCE` y trae el último mensaje con una subconsulta agregada. La bandeja se pagina por grupo en dos sentencias. Las transiciones y el comprobante son `UPDATE` con guarda de estado. `createAll` inserta en lote.
+Consultas con Spring JDBC. El resumen sale de un `JOIN` que cubre posts eliminados con `COALESCE`, trae el último mensaje con una subconsulta agregada y el avatar de cada parte solo si está verificada; el precio es el del post mientras la consulta está `PENDING`. La bandeja se pagina por grupo en dos sentencias que filtran por estado con `IN (...)`; `countByStatus` agrupa con `GROUP BY i.status`. Las transiciones, `startSale` y el comprobante son `UPDATE` con guarda de estado. `createAll` inserta en lote.
 
 ## Guía de lectura
 
 Datos y dependencias declaradas: `ROW_MAPPER`, `SELECT`, `SUMMARY_ROW_MAPPER`, `PARTIES_ROW_MAPPER`, `RECEIPT_ROW_MAPPER`, `GROUP_KEY`, `GROUP_FROM`, `SUMMARY_SELECT`, `SELLER_WHERE`, `BUYER_WHERE`, `OPEN_STATUS_NAMES`, `jdbcTemplate`, `jdbcInsert`.
 
-Operaciones para localizar en la fuente: `readNullableLong`, `readNullableInt`, `readNullablePostStatus`, `readAddress`, `readLastMessage`, `create`, `createAll`, `findById`, `findByIdForUpdate`, `findOpenIdByPostAndBuyer`, `findPostIdsWithOpenInquiry`, `placeholders`, `findByBuyerId`, `findBySellerId`, `countGroupsByBuyerId`, `countGroupsBySellerId`, `findGroupPage`, `updateStatus`, `saveReceipt`, `findReceipt`, `findSummaryById`, `findPartiesById`, `hasOpenSalesBySellerId`, `findPendingByPostId`, `countByBuyerId`, `countBySellerId`, `rejectOtherPending`, `detachFromPost`.
+Operaciones para localizar en la fuente: `readNullableLong`, `readNullableInt`, `readNullablePostStatus`, `readAddress`, `readLastMessage`, `create`, `createAll`, `findById`, `findByIdForUpdate`, `findOpenIdByPostAndBuyer`, `findPostIdsWithOpenInquiry`, `placeholders`, `findByBuyerId`, `findBySellerId`, `countGroupsByBuyerId`, `countGroupsBySellerId`, `countByStatusForBuyer`, `countByStatusForSeller`, `statusFilter`, `parameters`, `countGroups`, `countByStatus`, `findGroupPage`, `updateStatus`, `saveReceipt`, `findReceipt`, `startSale`, `findSummaryById`, `findPartiesById`, `hasOpenSalesBySellerId`, `findPendingByPostId`, `countByBuyerId`, `countBySellerId`, `rejectOtherPending`, `detachFromPost`.
 
 ## Conexiones
 
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>), líneas 1–373.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>), líneas 1–426.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -58,6 +58,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +97,9 @@ public class InquiryJdbcDao implements InquiryDao {
             InquiryStatus.valueOf(resultSet.getString("inquiry_status")),
             readNullablePostStatus(resultSet, "post_status"),
             readAddress(resultSet, rowNum),
-            resultSet.getBoolean("has_receipt")
+            resultSet.getBoolean("has_receipt"),
+            readNullableLong(resultSet, "buyer_avatar_image_id"),
+            readNullableLong(resultSet, "seller_avatar_image_id")
     );
 
     private static final RowMapper<InquiryParties> PARTIES_ROW_MAPPER = (resultSet, rowNum) ->
@@ -118,11 +121,15 @@ public class InquiryJdbcDao implements InquiryDao {
     private static final String SUMMARY_SELECT = "SELECT i.id AS inquiry_id, p.id AS post_id, "
             + "a.id AS album_id, seller.id AS seller_id, "
             + "buyer.username AS buyer_username, seller.username AS seller_username, "
+            + "CASE WHEN buyer.verified THEN buyer.avatar_image_id ELSE NULL END AS buyer_avatar_image_id, "
+            + "CASE WHEN seller.verified THEN seller.avatar_image_id ELSE NULL END AS seller_avatar_image_id, "
             + "a.title AS album_title, ar.name AS artist_name, "
             + "COALESCE(p.image_id, a.cover_image_id) AS post_image_id, "
             + "i.status AS inquiry_status, p.status AS post_status, "
             + "i.buyer_id AS buyer_id, buyer.email AS buyer_email, buyer.preferred_locale AS buyer_locale, "
-            + "seller.cbu AS seller_cbu, seller.alias AS seller_alias, COALESCE(i.price, p.price) AS inquiry_price, "
+            + "seller.cbu AS seller_cbu, seller.alias AS seller_alias, "
+            + "CASE WHEN i.status = 'PENDING' AND p.id IS NOT NULL THEN p.price "
+            + "ELSE COALESCE(i.price, p.price) END AS inquiry_price, "
             + "CASE WHEN i.receipt_uploaded_at IS NULL THEN FALSE ELSE TRUE END AS has_receipt, "
             + AddressJdbcDao.columns("ad") + ", " + MessageJdbcDao.columns("m") + " "
             + GROUP_FROM
@@ -276,53 +283,93 @@ public class InquiryJdbcDao implements InquiryDao {
     }
 
     @Override
-    public List<InquirySummary> findByBuyerId(final long buyerId, final int groupLimit, final int groupOffset) {
-        return findGroupPage(BUYER_WHERE, buyerId, groupLimit, groupOffset);
+    public List<InquirySummary> findByBuyerId(final long buyerId, final Collection<InquiryStatus> statuses,
+                                              final int groupLimit, final int groupOffset) {
+        return findGroupPage(BUYER_WHERE, buyerId, statuses, groupLimit, groupOffset);
     }
 
     @Override
-    public List<InquirySummary> findBySellerId(final long sellerId, final int groupLimit, final int groupOffset) {
-        return findGroupPage(SELLER_WHERE, sellerId, groupLimit, groupOffset);
+    public List<InquirySummary> findBySellerId(final long sellerId, final Collection<InquiryStatus> statuses,
+                                               final int groupLimit, final int groupOffset) {
+        return findGroupPage(SELLER_WHERE, sellerId, statuses, groupLimit, groupOffset);
     }
 
     @Override
-    public int countGroupsByBuyerId(final long buyerId) {
-        return jdbcTemplate.queryForObject("SELECT COUNT(DISTINCT " + GROUP_KEY + ") " + GROUP_FROM + BUYER_WHERE,
-                Integer.class, buyerId);
+    public int countGroupsByBuyerId(final long buyerId, final Collection<InquiryStatus> statuses) {
+        return countGroups(BUYER_WHERE, buyerId, statuses);
     }
 
     @Override
-    public int countGroupsBySellerId(final long sellerId) {
-        return jdbcTemplate.queryForObject("SELECT COUNT(DISTINCT " + GROUP_KEY + ") " + GROUP_FROM + SELLER_WHERE,
-                Integer.class, sellerId);
+    public int countGroupsBySellerId(final long sellerId, final Collection<InquiryStatus> statuses) {
+        return countGroups(SELLER_WHERE, sellerId, statuses);
+    }
+
+    @Override
+    public Map<InquiryStatus, Integer> countByStatusForBuyer(final long buyerId) {
+        return countByStatus(BUYER_WHERE, buyerId);
+    }
+
+    @Override
+    public Map<InquiryStatus, Integer> countByStatusForSeller(final long sellerId) {
+        return countByStatus(SELLER_WHERE, sellerId);
+    }
+
+    // where termina en el filtro de la Cuenta; esto le suma el de estados con un placeholder por estado.
+    private static String statusFilter(final Collection<InquiryStatus> statuses) {
+        return "AND i.status IN (" + placeholders(statuses.size()) + ") ";
+    }
+
+    private static List<Object> parameters(final long userId, final Collection<InquiryStatus> statuses) {
+        final List<Object> parameters = new ArrayList<>();
+        parameters.add(userId);
+        statuses.forEach(status -> parameters.add(status.name()));
+        return parameters;
+    }
+
+    private int countGroups(final String where, final long userId, final Collection<InquiryStatus> statuses) {
+        return jdbcTemplate.queryForObject("SELECT COUNT(DISTINCT " + GROUP_KEY + ") " + GROUP_FROM + where
+                + statusFilter(statuses), Integer.class, parameters(userId, statuses).toArray());
+    }
+
+    private Map<InquiryStatus, Integer> countByStatus(final String where, final long userId) {
+        final Map<InquiryStatus, Integer> counts = new EnumMap<>(InquiryStatus.class);
+        jdbcTemplate.query("SELECT i.status, COUNT(*) AS total " + GROUP_FROM + where + "GROUP BY i.status",
+                (RowCallbackHandler) resultSet -> counts.put(InquiryStatus.valueOf(resultSet.getString("status")),
+                        resultSet.getInt("total")),
+                userId);
+        return Collections.unmodifiableMap(counts);
     }
 
     /*
      * Dos sentencias acotadas, sin N+1: primero la pagina de claves de grupo ordenada por
      * la consulta mas nueva de cada grupo, despues todas las consultas de esas claves. La
-     * lista de claves se bindea con un placeholder por clave.
+     * lista de claves se bindea con un placeholder por clave. Las dos sentencias filtran por
+     * estado: asi un grupo sin consultas que coincidan no ocupa lugar en la pagina.
      *
      * El id es serial y se asigna al insertar: "mas nueva" es "id mas alto". Las dos
      * sentencias ordenan por id, asi el orden de los grupos coincide con el de sus filas
      * incluso cuando dos consultas comparten created_at.
      */
     private List<InquirySummary> findGroupPage(final String where, final long userId,
+                                               final Collection<InquiryStatus> statuses,
                                                final int groupLimit, final int groupOffset) {
+        final String filteredWhere = where + statusFilter(statuses);
+        final List<Object> keyParameters = parameters(userId, statuses);
+        keyParameters.add(groupLimit);
+        keyParameters.add(groupOffset);
         final List<String> keys = jdbcTemplate.queryForList(
                 "SELECT g.group_key FROM (SELECT " + GROUP_KEY + " AS group_key, "
-                        + "MAX(i.id) AS last_id " + GROUP_FROM + where
+                        + "MAX(i.id) AS last_id " + GROUP_FROM + filteredWhere
                         + "GROUP BY " + GROUP_KEY + ") g ORDER BY g.last_id DESC LIMIT ? OFFSET ?",
-                String.class, userId, groupLimit, groupOffset);
+                String.class, keyParameters.toArray());
         if (keys.isEmpty()) {
             return List.of();
         }
-        final String placeholders = String.join(", ", Collections.nCopies(keys.size(), "?"));
-        final List<Object> parameters = new ArrayList<>();
-        parameters.add(userId);
-        parameters.addAll(keys);
-        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT + where + "AND " + GROUP_KEY
-                        + " IN (" + placeholders + ") ORDER BY i.id DESC",
-                SUMMARY_ROW_MAPPER, parameters.toArray()));
+        final List<Object> rowParameters = parameters(userId, statuses);
+        rowParameters.addAll(keys);
+        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT + filteredWhere + "AND " + GROUP_KEY
+                        + " IN (" + placeholders(keys.size()) + ") ORDER BY i.id DESC",
+                SUMMARY_ROW_MAPPER, rowParameters.toArray()));
     }
 
     @Override
@@ -345,6 +392,12 @@ public class InquiryJdbcDao implements InquiryDao {
     public Optional<Receipt> findReceipt(final long id) {
         return jdbcTemplate.query("SELECT receipt_content_type, receipt_data FROM inquiries "
                 + "WHERE id = ? AND receipt_data IS NOT NULL", RECEIPT_ROW_MAPPER, id).stream().findFirst();
+    }
+
+    @Override
+    public boolean startSale(final long inquiryId, final int price) {
+        return jdbcTemplate.update("UPDATE inquiries SET status = ?, price = ? WHERE id = ? AND status = ?",
+                InquiryStatus.AWAITING_PAYMENT.name(), price, inquiryId, InquiryStatus.PENDING.name()) == 1;
     }
 
     @Override

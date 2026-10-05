@@ -4,8 +4,8 @@ categories: ["Persistence", "History"]
 type: "guide"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/test/resources/populator.sql", "persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java", "database/seed_dev_posts.sql", "database/demo_posts.tsv", "tools/seed_local_data.sh", "tools/sql/demo-users.sql", "tools/setup_local_postgres.sh", "persistence/src/main/resources/db/migration/V1__esquema_inicial.sql", "persistence/src/main/resources/db/migration/V2__email_unico_en_users.sql", "persistence/src/main/resources/db/migration/V3__fks_de_posts_y_albums.sql", "persistence/src/main/resources/db/migration/V4__titulo_normalizado_en_albums.sql", "persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql", "persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql", "persistence/src/main/resources/db/migration/V7__mensajes_de_consulta.sql", "persistence/src/main/resources/db/migration/V8__post_gallery.sql", "persistence/src/main/resources/db/migration/V9__user_avatars.sql", "persistence/src/main/resources/db/migration/V10__sale_reviews.sql", "persistence/src/main/resources/db/migration/V11__carrito.sql", "database/users.sql"]
 ---
@@ -55,7 +55,7 @@ V7 es la única que **mueve datos**: copia cada `inquiries.message` no nulo a `i
 
 ### V1
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 1–105.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 1–105.
 
 ```sql
 -- Esquema de quieroVinilos tal como estaba en produccion al pasar a Flyway.
@@ -167,7 +167,7 @@ CREATE TABLE inquiries (
 
 ### V2
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V2__email_unico_en_users.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V2__email_unico_en_users.sql>), líneas 1–4.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V2__email_unico_en_users.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V2__email_unico_en_users.sql>), líneas 1–4.
 
 ```sql
 -- El login y el registro identifican la cuenta por email. En produccion la tabla users
@@ -178,7 +178,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_email_key ON users (email);
 
 ### V3
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V3__fks_de_posts_y_albums.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V3__fks_de_posts_y_albums.sql>), líneas 1–6.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V3__fks_de_posts_y_albums.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V3__fks_de_posts_y_albums.sql>), líneas 1–6.
 
 ```sql
 -- Referencias que el esquema nunca declaro. Antes de agregarlas se verifico que ni
@@ -191,7 +191,7 @@ ALTER TABLE albums ADD CONSTRAINT albums_cover_image_fk FOREIGN KEY (cover_image
 
 ### V4
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V4__titulo_normalizado_en_albums.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V4__titulo_normalizado_en_albums.sql>), líneas 1–12.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V4__titulo_normalizado_en_albums.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V4__titulo_normalizado_en_albums.sql>), líneas 1–12.
 
 ```sql
 -- La identidad de un album es (artista, titulo, anio) sin distinguir mayusculas. Produccion
@@ -210,7 +210,7 @@ ALTER TABLE albums ADD CONSTRAINT albums_artist_normalized_title_year_key
 
 ### V5
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql>), líneas 1–50.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V5__venta_con_comprobante.sql>), líneas 1–50.
 
 ```sql
 -- Venta con comprobante de pago: datos de cobro, libreta de direcciones, reserva del post
@@ -267,7 +267,7 @@ ALTER TABLE inquiries ADD CONSTRAINT inquiries_status_check
 
 ### V6
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql>), líneas 1–9.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V6__cuenta_verificada.sql>), líneas 1–9.
 
 ```sql
 -- La columna enabled siempre guardo si la cuenta verifico su correo: desde que la cuenta
@@ -283,7 +283,7 @@ ALTER TABLE email_verification_tokens ADD COLUMN created_at TIMESTAMP DEFAULT NO
 
 ### V7
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V7__mensajes_de_consulta.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V7__mensajes_de_consulta.sql>), líneas 1–18.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V7__mensajes_de_consulta.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V7__mensajes_de_consulta.sql>), líneas 1–18.
 
 ```sql
 -- Cada Consulta tiene su Conversacion. El texto con el que se creaba la Consulta pasa a ser
@@ -308,7 +308,7 @@ ALTER TABLE inquiries DROP COLUMN message;
 
 ### V8
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V8__post_gallery.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V8__post_gallery.sql>), líneas 1–13.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V8__post_gallery.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V8__post_gallery.sql>), líneas 1–13.
 
 ```sql
 -- posts.image_id remains the primary photo; album.cover_image_id remains the fallback.
@@ -328,7 +328,7 @@ CREATE TABLE post_images (
 
 ### V9
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V9__user_avatars.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V9__user_avatars.sql>), líneas 1–3.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V9__user_avatars.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V9__user_avatars.sql>), líneas 1–3.
 
 ```sql
 ALTER TABLE users ADD COLUMN avatar_image_id INTEGER;
@@ -338,7 +338,7 @@ ALTER TABLE users ADD CONSTRAINT users_avatar_image_fk
 
 ### V10
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V10__sale_reviews.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V10__sale_reviews.sql>), líneas 1–17.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V10__sale_reviews.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V10__sale_reviews.sql>), líneas 1–17.
 
 ```sql
 CREATE TABLE reviews (
@@ -362,7 +362,7 @@ CREATE INDEX reviews_subject_active_idx ON reviews (subject_id, active, created_
 
 ### V11
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>), líneas 1–12.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>), líneas 1–12.
 
 ```sql
 -- El carrito de cada Cuenta: los Posts que eligio para consultar juntos. La clave compuesta
@@ -387,7 +387,7 @@ Contiene cuentas en cada situación que los tests necesitan (verificada con dato
 
 El archivo no se embebe acá: incluye hashes de contraseñas de prueba. Se lee en el repositorio. La configuración que lo carga:
 
-Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java>), líneas 1–59.
+Fuente exacta en `c3e2a4c`: [persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/TestConfiguration.java>), líneas 1–59.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -488,4 +488,4 @@ Porque HSQLDB no admite índices sobre expresiones y las migraciones tienen que 
 - [tools/sql/demo-users.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/sql/demo-users.sql>)
 - [tools/setup_local_postgres.sh](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/tools/setup_local_postgres.sh>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

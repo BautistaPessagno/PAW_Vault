@@ -4,21 +4,21 @@ categories: ["Persistence"]
 type: "code"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java"]
 ---
 
 # PostJdbcDao
 
-Publicaciones con Spring JDBC. Arma el `WHERE` de búsqueda agregando cláusulas fijas con parámetros, comparte ese `WHERE` entre listar y contar, ordena desde un `switch` sobre [[PostSort]], escapa los comodines de `LIKE`, bloquea filas con `FOR UPDATE` (una o varias en orden de id) y cambia estado con guarda.
+Publicaciones con Spring JDBC. Arma el `WHERE` de búsqueda agregando cláusulas fijas con parámetros, comparte ese `WHERE` entre listar y contar, ordena desde un `switch` sobre [[PostSort]], escapa los comodines de `LIKE`, bloquea filas con `FOR UPDATE` (una o varias en orden de id) y cambia estado con guarda. El listado del perfil privado filtra por estado con `IN (...)` y cuenta por estado con `GROUP BY status`.
 
 ## Guía de lectura
 
 Datos y dependencias declaradas: `ROW_MAPPER`, `SEARCH_SUGGESTION_ROW_MAPPER`, `SUGGESTION_RANK`, `FIND_SUGGESTIONS_QUERY`, `SUMMARY_SELECT`, `COUNT_SELECT`, `LIKE_ESCAPE`, `LIKE_ESCAPE_CLAUSE`, `NEWEST_FIRST`, `UPDATE_POST`, `jdbcTemplate`, `jdbcInsert`.
 
-Operaciones para localizar en la fuente: `readNullableInt`, `readNullableLong`, `readCondition`, `search`, `countSearch`, `searchWhere`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `countAvailableByPublisherId`, `countByPublisherId`, `orderBy`, `escapeLike`, `findById`, `findByIdForUpdate`, `findByIdsForUpdate`, `existsByUserIdAndAlbumId`, `create`, `update`, `updateWithImage`, `updateStatus`, `findOwnImageId`, `findAlbumCoverImageId`, `delete`.
+Operaciones para localizar en la fuente: `readNullableInt`, `readNullableLong`, `readCondition`, `search`, `countSearch`, `searchWhere`, `findSearchSuggestions`, `findByPublisherId`, `findAvailableByPublisherId`, `countAvailableByPublisherId`, `countByPublisherId`, `countByStatusForPublisher`, `placeholders`, `publisherParameters`, `orderBy`, `escapeLike`, `findById`, `findByIdForUpdate`, `findByIdsForUpdate`, `existsByUserIdAndAlbumId`, `create`, `update`, `updateWithImage`, `updateStatus`, `findOwnImageId`, `findAlbumCoverImageId`, `delete`.
 
 ## Conexiones
 
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 1–373.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 1–400.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -46,6 +46,7 @@ import ar.edu.itba.paw.models.SearchSuggestionType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
@@ -56,6 +57,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -238,10 +240,14 @@ public class PostJdbcDao implements PostDao {
     }
 
     @Override
-    public List<PostSummary> findByPublisherId(final long publisherId, final int limit, final int offset) {
-        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT
-                        + "WHERE p.user_id = ? ORDER BY " + NEWEST_FIRST + " LIMIT ? OFFSET ?",
-                ROW_MAPPER, publisherId, limit, offset));
+    public List<PostSummary> findByPublisherId(final long publisherId, final Collection<PostStatus> statuses,
+                                               final int limit, final int offset) {
+        final List<Object> parameters = publisherParameters(publisherId, statuses);
+        parameters.add(limit);
+        parameters.add(offset);
+        return List.copyOf(jdbcTemplate.query(SUMMARY_SELECT + "WHERE p.user_id = ? AND p.status IN ("
+                        + placeholders(statuses.size()) + ") ORDER BY " + NEWEST_FIRST + " LIMIT ? OFFSET ?",
+                ROW_MAPPER, parameters.toArray()));
     }
 
     @Override
@@ -258,9 +264,30 @@ public class PostJdbcDao implements PostDao {
     }
 
     @Override
-    public int countByPublisherId(final long publisherId) {
-        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM posts WHERE user_id = ?",
-                Integer.class, publisherId);
+    public int countByPublisherId(final long publisherId, final Collection<PostStatus> statuses) {
+        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM posts WHERE user_id = ? AND status IN ("
+                + placeholders(statuses.size()) + ")", Integer.class, publisherParameters(publisherId, statuses).toArray());
+    }
+
+    @Override
+    public Map<PostStatus, Integer> countByStatusForPublisher(final long publisherId) {
+        final Map<PostStatus, Integer> counts = new EnumMap<>(PostStatus.class);
+        jdbcTemplate.query("SELECT status, COUNT(*) AS total FROM posts WHERE user_id = ? GROUP BY status",
+                (RowCallbackHandler) resultSet -> counts.put(PostStatus.valueOf(resultSet.getString("status")),
+                        resultSet.getInt("total")),
+                publisherId);
+        return Collections.unmodifiableMap(counts);
+    }
+
+    private static String placeholders(final int count) {
+        return String.join(", ", Collections.nCopies(count, "?"));
+    }
+
+    private static List<Object> publisherParameters(final long publisherId, final Collection<PostStatus> statuses) {
+        final List<Object> parameters = new ArrayList<>();
+        parameters.add(publisherId);
+        statuses.forEach(status -> parameters.add(status.name()));
+        return parameters;
     }
 
     // Cada criterio mapea a un ORDER BY fijo: al SQL nunca entra texto del usuario.

@@ -4,25 +4,25 @@ categories: ["Web"]
 type: "code"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java"]
 ---
 
 # ProfileController
 
-Perfil privado: nombre, foto, contraseña, datos de cobro y libreta de direcciones, con las publicaciones propias paginadas. Cada fila es un POST propio. Ver [[Profile flow]] y [[Addresses and payment flow]].
+Perfil privado: nombre, foto, contraseña, datos de cobro y libreta de direcciones, con las publicaciones propias paginadas y filtrables por estado (`postStatus`). Cada fila es un POST propio. Si se llegó desde una venta (`returnInquiryId`), guardar los datos de cobro vuelve a esa venta. Ver [[Profile flow]], [[Addresses and payment flow]] y [[Status filters flow]].
 
 ## Guía de lectura
 
-Datos y dependencias declaradas: `userService`, `postService`, `addressService`, `sessionRegistry`.
+Datos y dependencias declaradas: `userService`, `postService`, `addressService`, `inquiryService`, `sessionRegistry`.
 
-Operaciones para localizar en la fuente: `initBinder`, `addressForm`, `profile`, `update`, `updateAvatar`, `changePassword`, `updatePayment`, `createAddress`, `editAddress`, `deleteAddress`, `profileView`, `paymentFormOf`, `fill`, `addressLimitExceeded`.
+Operaciones para localizar en la fuente: `initBinder`, `addressForm`, `profile`, `update`, `updateAvatar`, `changePassword`, `updatePayment`, `createAddress`, `editAddress`, `deleteAddress`, `paymentView`, `paymentReturnId`, `profileView`, `paymentFormOf`, `fill`, `addressLimitExceeded`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Address]], [[AddressForm]], [[AddressLimitExceededException]], [[AddressService]], [[AuthenticatedUser]], [[AuthenticationSessions]], [[AvatarForm]], [[ChangePasswordForm]], [[ImageRules]], [[InvalidCurrentPasswordException]], [[PaymentForm]], [[PaymentInfoRequiredException]], [[PostOrigin]], [[PostService]], [[ProfileForm]], [[Province]], [[ShippingOptions]], [[UnchangedPasswordException]], [[User]], [[UserNotFoundException]], [[UserService]].
+Referencias estáticas a tipos del proyecto: [[Address]], [[AddressForm]], [[AddressLimitExceededException]], [[AddressService]], [[AuthenticatedUser]], [[AuthenticationSessions]], [[AvatarForm]], [[ChangePasswordForm]], [[ImageRules]], [[InquiryService]], [[InvalidCurrentPasswordException]], [[PaymentForm]], [[PaymentInfoRequiredException]], [[PostOrigin]], [[PostService]], [[PostStatus]], [[ProfileForm]], [[Province]], [[ShippingOptions]], [[UnchangedPasswordException]], [[User]], [[UserNotFoundException]], [[UserService]].
 
 Referenciado por: sin referencias léxicas desde otros archivos Java.
 
@@ -30,19 +30,21 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 1–300.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ProfileController.java>), líneas 1–347.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.models.Address;
 import ar.edu.itba.paw.models.ImageRules;
+import ar.edu.itba.paw.models.PostStatus;
 import ar.edu.itba.paw.models.Province;
 import ar.edu.itba.paw.models.ShippingOptions;
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.AddressLimitExceededException;
 import ar.edu.itba.paw.services.AddressService;
 import ar.edu.itba.paw.services.InvalidCurrentPasswordException;
+import ar.edu.itba.paw.services.InquiryService;
 import ar.edu.itba.paw.services.PaymentInfoRequiredException;
 import ar.edu.itba.paw.services.PostService;
 import ar.edu.itba.paw.services.UnchangedPasswordException;
@@ -87,15 +89,18 @@ public class ProfileController {
     private final UserService userService;
     private final PostService postService;
     private final AddressService addressService;
+    private final InquiryService inquiryService;
     private final SessionRegistry sessionRegistry;
 
     @Autowired
     public ProfileController(final UserService userService, final PostService postService,
-                             final AddressService addressService, final SessionRegistry sessionRegistry) {
+                             final AddressService addressService, final SessionRegistry sessionRegistry,
+                             final InquiryService inquiryService) {
         this.userService = userService;
         this.postService = postService;
         this.addressService = addressService;
         this.sessionRegistry = sessionRegistry;
+        this.inquiryService = inquiryService;
     }
 
     // Solo los formularios nuevos: en changePasswordForm, recortar espacios cambiaria la clave que se valida.
@@ -117,8 +122,10 @@ public class ProfileController {
                                 @ModelAttribute("addressForm") final AddressForm addressForm,
                                 @RequestParam(name = "editAddress", required = false) final Long editAddressId,
                                 @RequestParam(name = "missingPayment", required = false) final String missingPayment,
+                                @RequestParam(name = "returnInquiryId", required = false) final String returnInquiryId,
                                 @RequestParam(name = "addressLimit", required = false) final String addressLimit,
                                 @RequestParam(name = "avatarTooLarge", required = false) final String avatarTooLarge,
+                                @RequestParam(name = "postStatus", required = false) final PostStatus postStatus,
                                 @RequestParam(name = "page", defaultValue = "1") final int pageNumber) {
         form.setUsername(currentUser.getDisplayName());
         // Editar precarga el formulario de la libreta con la direccion elegida, si es propia y vigente.
@@ -134,7 +141,8 @@ public class ProfileController {
             openSection = editing.isPresent() ? OpenSection.ADDRESSES : OpenSection.NONE;
         }
         final ModelAndView modelAndView = profileView(currentUser.getId(), openSection, pageNumber,
-                editing.map(Address::getId).orElse(null));
+                editing.map(Address::getId).orElse(null), postStatus);
+        modelAndView.addObject("returnInquiryId", paymentReturnId(returnInquiryId, currentUser.getId()));
         if (addressLimit != null) {
             modelAndView.addObject("addressLimitReached", true);
         }
@@ -211,16 +219,28 @@ public class ProfileController {
                                       @ModelAttribute("profileForm") final ProfileForm profileForm,
                                       @ModelAttribute("changePasswordForm") final ChangePasswordForm changePasswordForm,
                                       final RedirectAttributes redirectAttributes,
+                                      @RequestParam(name = "returnInquiryId", required = false) final String returnInquiryId,
                                       @RequestParam(name = "page", defaultValue = "1") final int pageNumber) {
         profileForm.setUsername(currentUser.getDisplayName());
+        final Long destination = paymentReturnId(returnInquiryId, currentUser.getId());
         if (bindingResult.hasErrors()) {
-            return profileView(currentUser.getId(), OpenSection.PAYMENT, pageNumber, null);
+            return paymentView(currentUser.getId(), pageNumber, destination);
         }
+        final User updatedUser;
         try {
-            userService.updatePaymentInfo(currentUser.getId(), form.getCbu(), form.getAlias());
+            updatedUser = userService.updatePaymentInfo(currentUser.getId(), form.getCbu(), form.getAlias());
         } catch (final PaymentInfoRequiredException e) {
             bindingResult.rejectValue("cbu", "payment.required.openSale");
-            return profileView(currentUser.getId(), OpenSection.PAYMENT, pageNumber, null);
+            return paymentView(currentUser.getId(), pageNumber, destination);
+        }
+        if (destination != null) {
+            if (!updatedUser.hasPaymentInfo()) {
+                final ModelAndView view = paymentView(currentUser.getId(), pageNumber, destination);
+                view.addObject("paymentMissing", true);
+                return view;
+            }
+            redirectAttributes.addFlashAttribute("saleNotice", "inquiry.sale.payment.updated");
+            return new ModelAndView("redirect:/inquiries/" + destination + "#sale-actions");
         }
         redirectAttributes.addFlashAttribute("paymentUpdated", true);
         return new ModelAndView("redirect:/profile#account");
@@ -274,15 +294,42 @@ public class ProfileController {
         return new ModelAndView("redirect:/profile#addresses");
     }
 
+    private ModelAndView paymentView(final long userId, final int pageNumber, final Long returnInquiryId) {
+        final ModelAndView view = profileView(userId, OpenSection.PAYMENT, pageNumber, null);
+        view.addObject("returnInquiryId", returnInquiryId);
+        return view;
+    }
+
+    // Un valor mal formado solo pierde el regreso a la venta: no debe impedir abrir el perfil.
+    private Long paymentReturnId(final String value, final long userId) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return inquiryService.findSaleToResume(Long.parseLong(value), userId).orElse(null);
+        } catch (final NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // Los POST que re-renderizan el perfil con un error vuelven al listado sin filtro.
     private ModelAndView profileView(final long userId, final OpenSection openSection, final int pageNumber,
                                      final Long editingAddressId) {
+        return profileView(userId, openSection, pageNumber, editingAddressId, null);
+    }
+
+    private ModelAndView profileView(final long userId, final OpenSection openSection, final int pageNumber,
+                                     final Long editingAddressId, final PostStatus postStatus) {
         final User user = userService.findById(userId).orElseThrow(UserNotFoundException::new);
         final ShippingOptions shipping = addressService.findShippingOptions(userId);
         final ModelAndView modelAndView = new ModelAndView("profile/index");
         modelAndView.addObject("profileUser", user);
         modelAndView.addObject("accountAppearance", userService.findAccountAppearanceById(userId)
                 .orElseThrow(UserNotFoundException::new));
-        modelAndView.addObject("postPage", postService.findByPublisherId(userId, pageNumber));
+        modelAndView.addObject("postPage", postService.findByPublisherId(userId, postStatus, pageNumber));
+        modelAndView.addObject("postStatusFilter", postStatus);
+        modelAndView.addObject("postStatusCounts", postService.countByStatusForPublisher(userId));
+        modelAndView.addObject("postStatuses", PostStatus.values());
         modelAndView.addObject("postOrigin", PostOrigin.PRIVATE_PROFILE);
         modelAndView.addObject("acceptedImageTypes", ImageRules.ACCEPTED_CONTENT_TYPES);
         modelAndView.addObject("maxImageBytes", ImageRules.MAX_IMAGE_BYTES);

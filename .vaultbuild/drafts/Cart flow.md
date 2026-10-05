@@ -42,9 +42,9 @@ Todas exigen Cuenta verificada (`/cart` y `/cart/**` están en `VERIFIED_PATHS`)
 
 1. El botón está en la ficha, al lado de "Consultar", y solo aparece si [[PostContactOptions]] dice que el post se puede consultar y todavía no está en el carrito ([[Post detail flow]]). Es un formulario POST con `sec:csrfInput` y un campo oculto `from` con el listado de origen.
 2. `CartServiceImpl.add`, en una transacción:
-   - Lee el post (404 si no existe) y busca una Consulta abierta de esa Cuenta sobre ese post.
+   - `postService.lockById` bloquea el post (404 si no existe) y busca una Consulta abierta de esa Cuenta sobre ese post. Hasta `8929aea` solo lo leía; desde el PR #52 lo bloquea para tomar los bloqueos en el mismo orden que el contacto y el envío (post primero, Cuenta después) y para que el estado validado siga vigente al insertar.
    - `ContactRules.stateOf` decide: Consulta abierta → `OpenInquiryExistsException`; post propio o no disponible → `CartAddRejectedException` con su motivo.
-   - `userService.lockById` bloquea la fila de la Cuenta: dos agregados simultáneos se ordenan.
+   - `userService.lockById` bloquea después la fila de la Cuenta: dos agregados simultáneos se ordenan.
    - Si ya estaba en el carrito, rechazo `ALREADY_IN_CART`. Si ya hay 20 consultables, `CART_FULL`. "Repetido" gana sobre "lleno": el aviso es más preciso.
    - `cartItemDao.add`; si igual chocara contra la clave primaria, devuelve `false` y se trata como repetido.
 3. Éxito: aviso `cart.added` y redirección a `/` con la query de origen, pasada por `ListingQueries.sanitize`.
@@ -77,7 +77,15 @@ sequenceDiagram
     participant P as PostService
     participant I as InquiryService
     participant D as CartItemDao
+    participant U as UserService
     participant M as EmailService
+    B->>C: POST /cart/add/{postId}
+    C->>S: add(userId, postId)
+    S->>P: lockById (FOR UPDATE, primero el post)
+    S->>S: ContactRules.stateOf
+    S->>U: lockById (después la Cuenta)
+    S->>D: contains, tope de 20, add
+    C-->>B: 302 / con la query de origen
     B->>C: POST /cart/checkout
     C->>S: checkout(userId, addressId)
     S->>D: findByUserId (solo consultables)
@@ -96,7 +104,7 @@ sequenceDiagram
 
 {{file:persistence/src/main/resources/db/migration/V11__carrito.sql}}
 
-La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio: el carrito muestra el actual, y la Consulta lo congela al enviarse.
+La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio: el carrito muestra el actual, y la Consulta sigue mostrando el del post hasta que el publicante acepta y lo fija ([[Inquiry and sale flow]]).
 
 ## Decisiones y por qué
 
@@ -109,6 +117,7 @@ La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio
 | Tope de 20 sobre lo visible, no absoluto | Tope sobre filas guardadas | Un post oculto no debería impedir agregar; a cambio, el carrito puede mostrar más de 20 si reaparecen | Comentario en [[CartService]] |
 | Bloquear la Cuenta al agregar | Confiar en la clave primaria | Para que el conteo del tope sea correcto con dos agregados simultáneos | Comentario en [[CartServiceImpl]] |
 | Bloquear los posts en orden de id | Bloquear en el orden del carrito | Dos transacciones que comparten posts no se traban entre sí | Comentario en [[PostDao]] |
+| Agregar bloquea el post antes que la Cuenta | Bloquear solo la Cuenta | Contacto y envío ya toman post y después Cuenta; invertir ese orden en otra transacción puede trabar a las dos. Además el post no puede venderse entre la validación y el insert | Comentario en [[CartServiceImpl]]; commit `e12c0e39` |
 | Volver a decidir con los posts bloqueados | Confiar en lo que mostró la pantalla | El carrito pudo quedar desactualizado mientras estaba abierto | Comentario en [[CartServiceImpl]] |
 | Envío parcial: se manda lo que se puede y se informa lo omitido | Todo o nada | Que un vinilo que se reservó no frene las demás consultas | Comentario en [[CartCheckoutResult]] |
 | La dirección se resuelve después de saber que hay algo para enviar | Crearla primero | Un envío vacío no deja una dirección nueva en la libreta | Comentario en [[CartServiceImpl]] |
@@ -123,6 +132,7 @@ La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio
 ## Concurrencia y casos borde
 
 - **Dos agregados a la vez**: el bloqueo de la Cuenta los ordena; el segundo cuenta después del primero.
+- **Agregar mientras el vendedor acepta otra consulta del mismo post**: los dos bloquean el post; si gana la aceptación, el agregado ve el post `RESERVED` y lo rechaza como `UNAVAILABLE` (lo cubre `testAddWhenPostIsSoldAtLockReturnsUnavailableRejection`).
 - **Un post del carrito se reserva mientras el carrito está abierto**: al enviar se omite y queda guardado; el resultado lo informa.
 - **Dos envíos del mismo carrito** (doble clic, dos pestañas): el segundo espera los bloqueos de los posts, ve las Consultas abiertas que creó el primero y termina en "nada para enviar".
 - **Dos compradores envían carritos con posts en común**: los dos bloquean en orden de id, así que uno espera al otro sin interbloqueo; los dos pueden consultar el mismo post.
@@ -131,7 +141,6 @@ La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio
 
 ## Límites conocidos
 
-- **Portadas rotas en el carrito (inferencia estática).** `cart/index.jsp` arma la imagen con `/covers/{imageId}`, pero en `8929aea` ningún controller atiende esa ruta: el PR #46 pasó las imágenes a `/post/{postId}/images/{imageId}`. Un vinilo con foto mostraría la imagen rota en el carrito. No se ejecutó la aplicación para confirmarlo.
 - El carrito puede mostrar más de 20 ítems si reaparecen posts que estaban ocultos.
 - No se puede escribir un mensaje al enviar desde el carrito.
 - Cada vista de página con sesión verificada hace un `COUNT` para la cabecera.
@@ -164,11 +173,11 @@ Uno, con los cinco y un enlace a cada Consulta.
 
 Agregar:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java:51-83}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java:51-85}}
 
 Enviar:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java:143-198}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java:145-200}}
 
 Regla compartida:
 
@@ -176,13 +185,13 @@ Regla compartida:
 
 Consultas en lote y un aviso por publicante:
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:135-164}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java:137-166}}
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:167-201}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java:174-208}}
 
 Bloqueo de varios posts en orden:
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:278-291}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:305-318}}
 
 Filtro del carrito en SQL:
 

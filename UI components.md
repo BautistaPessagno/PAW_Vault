@@ -4,16 +4,16 @@ categories: ["Web"]
 type: "guide"
 module: "webapp"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
-sources: ["webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/address-fields.tag", "webapp/src/main/webapp/WEB-INF/tags/address.tag", "webapp/src/main/webapp/WEB-INF/tags/avatar.tag", "webapp/src/main/webapp/WEB-INF/tags/back-link.tag", "webapp/src/main/webapp/WEB-INF/tags/brand.tag", "webapp/src/main/webapp/WEB-INF/tags/button.tag", "webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag", "webapp/src/main/webapp/WEB-INF/tags/h1.tag", "webapp/src/main/webapp/WEB-INF/tags/h3.tag", "webapp/src/main/webapp/WEB-INF/tags/head.tag", "webapp/src/main/webapp/WEB-INF/tags/icon.tag", "webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag", "webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag", "webapp/src/main/webapp/WEB-INF/tags/input-control.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag", "webapp/src/main/webapp/WEB-INF/tags/p.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination.tag", "webapp/src/main/webapp/WEB-INF/tags/post-badge.tag", "webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag", "webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag", "webapp/src/main/webapp/WEB-INF/tags/select-control.tag", "webapp/src/main/webapp/WEB-INF/tags/select.tag", "webapp/src/main/webapp/WEB-INF/tags/site-header.tag", "webapp/src/main/webapp/WEB-INF/tags/span.tag", "webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag", "webapp/src/main/webapp/WEB-INF/tags/text-input.tag", "webapp/src/main/webapp/WEB-INF/tags/textarea.tag", "webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag"]
+sources: ["webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/address-fields.tag", "webapp/src/main/webapp/WEB-INF/tags/address.tag", "webapp/src/main/webapp/WEB-INF/tags/avatar.tag", "webapp/src/main/webapp/WEB-INF/tags/back-link.tag", "webapp/src/main/webapp/WEB-INF/tags/brand.tag", "webapp/src/main/webapp/WEB-INF/tags/button.tag", "webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag", "webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag", "webapp/src/main/webapp/WEB-INF/tags/h1.tag", "webapp/src/main/webapp/WEB-INF/tags/h3.tag", "webapp/src/main/webapp/WEB-INF/tags/head.tag", "webapp/src/main/webapp/WEB-INF/tags/icon.tag", "webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag", "webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag", "webapp/src/main/webapp/WEB-INF/tags/input-control.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag", "webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag", "webapp/src/main/webapp/WEB-INF/tags/p.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag", "webapp/src/main/webapp/WEB-INF/tags/pagination.tag", "webapp/src/main/webapp/WEB-INF/tags/post-badge.tag", "webapp/src/main/webapp/WEB-INF/tags/rating.tag", "webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag", "webapp/src/main/webapp/WEB-INF/tags/review-content.tag", "webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag", "webapp/src/main/webapp/WEB-INF/tags/select-control.tag", "webapp/src/main/webapp/WEB-INF/tags/select.tag", "webapp/src/main/webapp/WEB-INF/tags/site-header.tag", "webapp/src/main/webapp/WEB-INF/tags/span.tag", "webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag", "webapp/src/main/webapp/WEB-INF/tags/text-input.tag", "webapp/src/main/webapp/WEB-INF/tags/textarea.tag", "webapp/src/main/webapp/WEB-INF/tags/user-byline.tag", "webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag"]
 ---
 
 # UI components
 
 > [!summary] En una frase
-> Las páginas no repiten HTML: se arman con 31 componentes propios (tag files de JSP) que encapsulan el marcado, el escape de datos, las URL y los textos traducidos.
+> Las páginas no repiten HTML: se arman con 35 componentes propios (tag files de JSP) que encapsulan el marcado, el escape de datos, las URL y los textos traducidos.
 
 ## Herramientas
 
@@ -43,11 +43,12 @@ sources: ["webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "webapp/src/mai
 | `account-nav` | Menú de la cuenta en la cabecera | — | site-header |
 | `address-fields` | Campos de una dirección | — | cart/index, post/contact, profile/index |
 | `address` | Muestra una dirección, completa o recortada | `address` | cart/index, inquiry/detail, inquiry/received, post/contact, profile/index |
-| `avatar` | Foto o inicial | `imageId`, `userId`, `name`, `size`, `alt`, `preview` | post/detail, profile/index, profile/public |
-| `back-link` | Enlace de volver | `href`, `label`, `page`, `fragment` | inquiry/detail, post/detail |
+| `avatar` | Foto o inicial | `imageId`, `userId`, `name`, `size`, `alt`, `preview` | user-byline, profile/index, profile/public |
+| `back-link` | Enlace de volver | `href`, `label`, `page`, `postStatus`, `fragment` | inquiry/detail, post/detail |
 | `brand` | Marca | `size` | site-header, auth/forgot-password, auth/login, auth/register, auth/reset-password, auth/verify-required y 1 más |
 | `button` | Botón o enlace con variantes | `label`, `variant`, `size`, `type`, `href`, `url`, `id`, `icon`, `data`, `name`, `value` | account-nav, confirm-dialog, resend-verification, site-header, auth/forgot-password, auth/login y 18 más |
 | `confirm-dialog` | Diálogo de confirmación | `title`, `confirmLabel`, `confirmVariant` | inquiry/detail, post/detail, profile/index |
+| `filter-chips` | Chips de filtro con su cantidad; el chip activo lleva a la URL sin filtro | `baseUrl`, `paramName`, `values`, `active`, `counts`, `messagePrefix`, `label`, `fragment` | inquiry/received, inquiry/sent, profile/index |
 | `h1` | Título | `text`, `tone` | cart/index, error/400, error/403, error/404, error/409, inquiry/detail y 8 más |
 | `h3` | Subtítulo con nivel configurable | `text`, `level` | inbox-group-header, vinyl-card, cart/index |
 | `head` | Cabecera HTML común: estilos y scripts | `titleCode`, `pageScript` | auth/forgot-password, auth/login, auth/register, auth/reset-password, auth/verify-required, auth/verify y 14 más |
@@ -58,21 +59,24 @@ sources: ["webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "webapp/src/mai
 | `inquiry-nav` | Pestañas recibidas y enviadas | `active`, `receivedCount`, `sentCount` | inquiry/received, inquiry/sent |
 | `inquiry-status` | Estado de la consulta como texto | `status` | inquiry/detail, inquiry/received, inquiry/sent |
 | `p` | Párrafo | `text`, `variant` | inbox-group-header, vinyl-card, auth/verify-required, cart/index, error/400, error/403 y 4 más |
-| `pagination-link` | Un enlace de página | `baseUrl`, `extraParams`, `page`, `fragment`, `label`, `rel` | pagination |
-| `pagination` | Flechas que conservan parámetros y ancla | `currentPage`, `hasPrevious`, `hasNext`, `baseUrl`, `extraParams`, `fragment`, `ariaLabel` | inquiry/received, inquiry/sent, landing/index, profile/index, profile/public |
+| `pagination-link` | Un enlace de página | `baseUrl`, `extraParams`, `page`, `pageParam`, `fragment`, `label`, `rel` | pagination |
+| `pagination` | Flechas que conservan parámetros y ancla | `currentPage`, `hasPrevious`, `hasNext`, `baseUrl`, `pageParam`, `extraParams`, `fragment`, `ariaLabel` | inquiry/received, inquiry/sent, landing/index, profile/index, profile/public |
 | `post-badge` | Estado de una publicación | `deleted`, `status`, `showAvailable`, `variant` | inbox-group-header, vinyl-card, post/detail |
+| `rating` | Estrellas de solo lectura con relleno parcial para promedios | `value`, `maxRating`, `label` | review-content, profile/public |
 | `resend-verification` | Botón de reenvío: POST con CSRF | `variant` | site-header, auth/verify-required, auth/verify |
-| `segmented-control` | Grupo de radios | `name`, `legend`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required` | landing/index, publish/index |
+| `review-content` | Puntaje, comentario y, opcional, autor de una reseña | `review`, `maxRating`, `showAuthor` | inquiry/detail, profile/public |
+| `segmented-control` | Grupo de radios | `name`, `legend`, `hideLegend`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required` | landing/index, profile/public, publish/index |
 | `select-control` | Select sin ligar | `id`, `name`, `items`, `messagePrefix`, `selectedValue`, `emptyLabel`, `labelledBy`, `describedBy`, `cssClass`, `hasError`, `placeholderOnly` | select, landing/index |
 | `select` | Select ligado | `path`, `label`, `items`, `messagePrefix`, `emptyLabel`, `placeholderOnly` | address-fields, landing/index, publish/index |
 | `site-header` | Barra superior: marca, buscador, acciones, aviso de verificación | `query`, `formId` | cart/index, inquiry/detail, inquiry/received, inquiry/sent, landing/index, post/contact y 4 más |
 | `span` | Texto en línea | `text`, `variant` | vinyl-card, post/detail |
 | `star-rating-input` | Estrellas como radios accesibles | `path`, `legend`, `max`, `valueCode` | inquiry/detail |
 | `text-input` | Campo ligado a un form con etiqueta, pista y error | `path`, `label`, `type`, `maxLength`, `min`, `max`, `suggestionsId`, `sourceUrl`, `hint`, `autofocus`, `placeholder`, `hideLabel`, `describedBy`, `externalErrorsId` | address-fields, auth/forgot-password, auth/login, auth/register, auth/reset-password, landing/index y 2 más |
-| `textarea` | Área de texto ligada | `path`, `label`, `maxLength`, `id` | inquiry/detail, post/contact, publish/index |
+| `textarea` | Área de texto ligada | `path`, `label`, `maxLength`, `id`, `rows`, `hideLabel` | inquiry/detail, post/contact, publish/index |
+| `user-byline` | Foto y nombre de una Cuenta con enlace a su perfil público | `userId`, `username`, `imageId` | review-content, inquiry/detail, post/detail |
 | `vinyl-card` | La tarjeta de un vinilo; el componente más reutilizado | `item`, `variant`, `href`, `hrefParams`, `title`, `artistName`, `price`, `coverUrl`, `preview`, `showStatus` | landing/index, post/contact, profile/index, profile/public, publish/index |
 
-"Lo usan" se calculó buscando `<ui:nombre` en las vistas y en los demás tags de `8929aea`.
+"Lo usan" se calculó buscando `<ui:nombre` en las vistas y en los demás tags de `c3e2a4c`.
 
 ## Decisiones y por qué
 
@@ -105,7 +109,7 @@ Un fragmento JSP con atributos declarados que se usa como una etiqueta propia. E
 
 Menú de la cuenta en la cabecera.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/account-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/account-nav.tag>), líneas 1–30.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/account-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/account-nav.tag>), líneas 1–30.
 
 ```jsp
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
@@ -144,7 +148,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/account-nav.tag
 
 Campos de una dirección.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/address-fields.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address-fields.tag>), líneas 1–24.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/address-fields.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address-fields.tag>), líneas 1–24.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -179,7 +183,7 @@ Muestra una dirección, completa o recortada.
 
 Atributos: `address` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/address.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address.tag>), líneas 1–20.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/address.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/address.tag>), líneas 1–20.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -210,7 +214,7 @@ Foto o inicial.
 
 Atributos: `imageId`, `userId` (obligatorio), `name` (obligatorio), `size`, `alt`, `preview`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/avatar.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/avatar.tag>), líneas 1–32.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/avatar.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/avatar.tag>), líneas 1–32.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -251,15 +255,16 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/avatar.tag](</U
 
 Enlace de volver.
 
-Atributos: `href`, `label`, `page`, `fragment`.
+Atributos: `href`, `label`, `page`, `postStatus`, `fragment`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/back-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/back-link.tag>), líneas 1–22.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/back-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/back-link.tag>), líneas 1–24.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
 <%@ attribute name="href" required="false" %>
 <%@ attribute name="label" required="false" %>
 <%@ attribute name="page" required="false" type="java.lang.Integer" %>
+<%@ attribute name="postStatus" required="false" type="java.lang.Object" %>
 <%@ attribute name="fragment" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
@@ -267,6 +272,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/back-link.tag](
 <spring:message code="nav.back" var="defaultLabel" />
 <c:set var="backLabel" value="${empty label ? defaultLabel : label}" />
 <c:url value="${empty href ? '/' : href}" var="backHref">
+    <c:if test="${not empty postStatus}"><c:param name="postStatus" value="${postStatus}" /></c:if>
     <c:if test="${not empty page}"><c:param name="page" value="${page}" /></c:if>
 </c:url>
 
@@ -286,7 +292,7 @@ Marca.
 
 Atributos: `size`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/brand.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/brand.tag>), líneas 1–14.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/brand.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/brand.tag>), líneas 1–14.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -311,7 +317,7 @@ Botón o enlace con variantes.
 
 Atributos: `label` (obligatorio), `variant`, `size`, `type`, `href`, `url`, `id`, `icon`, `data`, `name`, `value`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/button.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>), líneas 1–33.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/button.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>), líneas 1–33.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -355,7 +361,7 @@ Diálogo de confirmación.
 
 Atributos: `title` (obligatorio), `confirmLabel` (obligatorio), `confirmVariant`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>), líneas 1–23.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>), líneas 1–23.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -383,13 +389,63 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.
 </dialog>
 ```
 
+### filter-chips
+
+Chips de filtro con su cantidad; el chip activo lleva a la URL sin filtro.
+
+Atributos: `baseUrl` (obligatorio), `paramName` (obligatorio), `values` (obligatorio), `active`, `counts` (obligatorio), `messagePrefix` (obligatorio), `label` (obligatorio), `fragment`.
+
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag>), líneas 1–39.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%-- Ruta del listado sin context path, ej. /inquiries. --%>
+<%@ attribute name="baseUrl" required="true" %>
+<%-- Query param del filtro. No puede llamarse param: en EL ese nombre es el de los parametros del request. --%>
+<%@ attribute name="paramName" required="true" %>
+<%@ attribute name="values" required="true" type="java.lang.Object[]" %>
+<%@ attribute name="active" required="false" type="java.lang.Object" %>
+<%-- Valor -> cantidad. Un valor que no esta en el mapa se muestra como 0. --%>
+<%@ attribute name="counts" required="true" type="java.util.Map" %>
+<%-- Usa <prefix>.<VALOR> para el texto de cada chip. --%>
+<%@ attribute name="messagePrefix" required="true" %>
+<%@ attribute name="label" required="true" %>
+<%@ attribute name="fragment" required="false" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<%-- Sin filtro se ve todo: no hay chip "Todas". El chip activo lleva a la URL sin filtro, asi
+     tocarlo de nuevo lo quita. Cambiar de filtro vuelve a la pagina 1: los links no llevan page. --%>
+<c:set var="anchor" value="${empty fragment ? '' : '#'.concat(fragment)}"/>
+<c:url value="${baseUrl}" var="clearUrl"/>
+<spring:message code="filterChips.clear" var="clearLabel"/>
+<nav class="filter-chips" aria-label="<c:out value="${label}"/>">
+    <c:forEach items="${values}" var="value">
+        <c:set var="valueName">${value}</c:set>
+        <c:set var="selected" value="${not empty active and active eq value}"/>
+        <c:url value="${baseUrl}" var="valueUrl">
+            <c:param name="${paramName}" value="${valueName}"/>
+        </c:url>
+        <a class="filter-chips__chip${selected ? ' filter-chips__chip--active' : ''}"
+           href="<c:out value="${selected ? clearUrl : valueUrl}${anchor}"/>"
+           <c:if test="${selected}">aria-current="true"</c:if>>
+            <spring:message code="${messagePrefix}.${valueName}"/>
+            <span class="filter-chips__count"><c:out value="${counts[value]}" default="0"/></span>
+            <c:if test="${selected}">
+                <span class="visually-hidden"><c:out value="${clearLabel}"/></span>
+            </c:if>
+        </a>
+    </c:forEach>
+</nav>
+```
+
 ### h1
 
 Título.
 
 Atributos: `text` (obligatorio), `tone`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/h1.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>), líneas 1–6.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/h1.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>), líneas 1–6.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -406,7 +462,7 @@ Subtítulo con nivel configurable.
 
 Atributos: `text` (obligatorio), `level`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/h3.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>), líneas 1–12.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/h3.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>), líneas 1–12.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -429,7 +485,7 @@ Cabecera HTML común: estilos y scripts.
 
 Atributos: `titleCode` (obligatorio), `pageScript`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>), líneas 1–31.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>), líneas 1–31.
 
 ```jsp
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
@@ -471,7 +527,7 @@ Iconos SVG de una lista cerrada.
 
 Atributos: `name` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/icon.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/icon.tag>), líneas 1–34.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/icon.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/icon.tag>), líneas 1–34.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -516,7 +572,7 @@ Cabecera de un grupo de la bandeja: miniatura, título y estado. Elige la URL de
 
 Atributos: `group` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag>), líneas 1–31.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag>), líneas 1–31.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -558,7 +614,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inbox-group-hea
 
 Atributos: `inquiry` (obligatorio), `viewerId` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag>), líneas 1–25.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag>), líneas 1–25.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -594,7 +650,7 @@ Input sin ligar, con soporte de sugerencias.
 
 Atributos: `id` (obligatorio), `name` (obligatorio), `type`, `value`, `maxLength`, `min`, `max`, `placeholder`, `ariaLabel`, `describedBy`, `suggestionsId`, `sourceUrl`, `submitOnSelect`, `accept`, `multiple`, `form`, `cssClass`, `hasError`, `autofocus`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/input-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/input-control.tag>), líneas 1–49.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/input-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/input-control.tag>), líneas 1–49.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -654,7 +710,7 @@ Pestañas recibidas y enviadas.
 
 Atributos: `active` (obligatorio), `receivedCount` (obligatorio), `sentCount` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag>), líneas 1–32.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-nav.tag>), líneas 1–32.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -697,7 +753,7 @@ Estado de la consulta como texto.
 
 Atributos: `status` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag>), líneas 1–18.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag>), líneas 1–18.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -726,7 +782,7 @@ Párrafo.
 
 Atributos: `text` (obligatorio), `variant`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/p.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/p.tag>), líneas 1–6.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/p.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/p.tag>), líneas 1–6.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -741,15 +797,16 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/p.tag](</Users/
 
 Un enlace de página.
 
-Atributos: `baseUrl` (obligatorio), `extraParams`, `page` (obligatorio), `fragment`, `label` (obligatorio), `rel`.
+Atributos: `baseUrl` (obligatorio), `extraParams`, `page` (obligatorio), `pageParam`, `fragment`, `label` (obligatorio), `rel`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag>), líneas 1–21.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag>), líneas 1–22.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
 <%@ attribute name="baseUrl" required="true" type="java.lang.String" %>
 <%@ attribute name="extraParams" required="false" type="java.util.Map" %>
 <%@ attribute name="page" required="true" type="java.lang.Integer" %>
+<%@ attribute name="pageParam" required="false" type="java.lang.String" %>
 <%@ attribute name="fragment" required="false" type="java.lang.String" %>
 <%-- Texto accesible del enlace: nombre accesible y tooltip. --%>
 <%@ attribute name="label" required="true" type="java.lang.String" %>
@@ -762,7 +819,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination-link
     <c:forEach items="${extraParams}" var="parameter">
         <c:if test="${not empty parameter.value}"><c:param name="${parameter.key}" value="${parameter.value}"/></c:if>
     </c:forEach>
-    <c:param name="page" value="${page}"/>
+    <c:param name="${empty pageParam ? 'page' : pageParam}" value="${page}"/>
 </c:url>
 <a class="pagination__link"
    href="<c:out value="${pageUrl}${empty fragment ? '' : '#'.concat(fragment)}"/>"<c:if test="${not empty rel}"> rel="<c:out value="${rel}"/>"</c:if>
@@ -773,9 +830,9 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination-link
 
 Flechas que conservan parámetros y ancla.
 
-Atributos: `currentPage` (obligatorio), `hasPrevious` (obligatorio), `hasNext` (obligatorio), `baseUrl` (obligatorio), `extraParams`, `fragment`, `ariaLabel` (obligatorio).
+Atributos: `currentPage` (obligatorio), `hasPrevious` (obligatorio), `hasNext` (obligatorio), `baseUrl` (obligatorio), `pageParam`, `extraParams`, `fragment`, `ariaLabel` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination.tag>), líneas 1–52.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/pagination.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination.tag>), líneas 1–53.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -783,6 +840,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination.tag]
 <%@ attribute name="hasPrevious" required="true" type="java.lang.Boolean" %>
 <%@ attribute name="hasNext" required="true" type="java.lang.Boolean" %>
 <%@ attribute name="baseUrl" required="true" type="java.lang.String" %>
+<%@ attribute name="pageParam" required="false" type="java.lang.String" %>
 <%@ attribute name="extraParams" required="false" type="java.util.Map" %>
 <%@ attribute name="fragment" required="false" type="java.lang.String" %>
 <%@ attribute name="ariaLabel" required="true" type="java.lang.String" %>
@@ -800,7 +858,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination.tag]
                 <c:choose>
                     <c:when test="${hasPrevious}">
                         <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                            page="${currentPage - 1}" label="${previousLabel}" rel="prev"><ui:icon name="chevron-left"/></ui:pagination-link>
+                                            page="${currentPage - 1}" pageParam="${pageParam}" label="${previousLabel}" rel="prev"><ui:icon name="chevron-left"/></ui:pagination-link>
                     </c:when>
                     <c:otherwise>
                         <span class="pagination__link pagination__link--disabled" aria-disabled="true">
@@ -818,7 +876,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/pagination.tag]
                 <c:choose>
                     <c:when test="${hasNext}">
                         <ui:pagination-link baseUrl="${baseUrl}" extraParams="${extraParams}" fragment="${fragment}"
-                                            page="${currentPage + 1}" label="${nextLabel}" rel="next"><ui:icon name="chevron-right"/></ui:pagination-link>
+                                            page="${currentPage + 1}" pageParam="${pageParam}" label="${nextLabel}" rel="next"><ui:icon name="chevron-right"/></ui:pagination-link>
                     </c:when>
                     <c:otherwise>
                         <span class="pagination__link pagination__link--disabled" aria-disabled="true">
@@ -838,7 +896,7 @@ Estado de una publicación.
 
 Atributos: `deleted`, `status`, `showAvailable`, `variant`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/post-badge.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/post-badge.tag>), líneas 1–21.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/post-badge.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/post-badge.tag>), líneas 1–21.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -864,13 +922,36 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/post-badge.tag]
 </c:if>
 ```
 
+### rating
+
+Estrellas de solo lectura con relleno parcial para promedios.
+
+Atributos: `value` (obligatorio), `maxRating` (obligatorio), `label` (obligatorio).
+
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/rating.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/rating.tag>), líneas 1–12.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="value" required="true" type="java.lang.Double" %>
+<%@ attribute name="maxRating" required="true" type="java.lang.Integer" %>
+<%@ attribute name="label" required="true" type="java.lang.String" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<span class="rating" role="img" aria-label="<c:out value="${label}"/>">
+    <c:forEach begin="1" end="${maxRating}" var="star">
+        <c:set var="fill" value="${value ge star ? 100 : (value le star - 1 ? 0 : (value - star + 1) * 100)}"/>
+        <%-- Porcentaje numerico derivado de la puntuacion; los estilos viven en components.css. --%>
+        <span class="rating__star" aria-hidden="true">&#9733;<span class="rating__fill" style="width: <c:out value="${fill}"/>%">&#9733;</span></span>
+    </c:forEach>
+</span>
+```
+
 ### resend-verification
 
 Botón de reenvío: POST con CSRF.
 
 Atributos: `variant`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag>), líneas 1–13.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag>), líneas 1–13.
 
 ```jsp
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
@@ -888,18 +969,45 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/resend-verifica
 </form>
 ```
 
+### review-content
+
+Puntaje, comentario y, opcional, autor de una reseña.
+
+Atributos: `review` (obligatorio), `maxRating` (obligatorio), `showAuthor`.
+
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/review-content.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/review-content.tag>), líneas 1–15.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="review" required="true" type="ar.edu.itba.paw.models.Review" %>
+<%@ attribute name="maxRating" required="true" type="java.lang.Integer" %>
+<%@ attribute name="showAuthor" required="false" type="java.lang.Boolean" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
+<div class="review-content">
+    <spring:message code="review.rating.value" var="ratingLabel"><spring:argument value="${review.rating}"/></spring:message>
+    <ui:rating value="${review.rating}" maxRating="${maxRating}" label="${ratingLabel}"/>
+    <c:if test="${not empty review.body}"><p class="profile-reviews__body"><c:out value="${review.body}"/></p></c:if>
+    <c:if test="${showAuthor}">
+        <ui:user-byline userId="${review.authorId}" username="${review.authorUsername}" imageId="${review.authorAvatarImageId}"/>
+    </c:if>
+</div>
+```
+
 ### segmented-control
 
 Grupo de radios.
 
-Atributos: `name` (obligatorio), `legend` (obligatorio), `items` (obligatorio), `messagePrefix` (obligatorio), `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required`.
+Atributos: `name` (obligatorio), `legend` (obligatorio), `hideLegend`, `items` (obligatorio), `messagePrefix` (obligatorio), `selectedValue`, `emptyLabel`, `hasError`, `errorId`, `required`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag>), líneas 1–37.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag>), líneas 1–38.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
 <%@ attribute name="name" required="true" %>
 <%@ attribute name="legend" required="true" %>
+<%@ attribute name="hideLegend" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="items" required="true" type="java.lang.Object[]" %>
 <%@ attribute name="messagePrefix" required="true" %>
 <%@ attribute name="selectedValue" required="false" %>
@@ -913,7 +1021,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/segmented-contr
 <fieldset class="filter-group input-field${hasError ? ' input-field--error' : ''}"
           <c:if test="${required}">aria-required="true"</c:if>
           <c:if test="${hasError}">aria-invalid="true" aria-describedby="<c:out value="${errorId}" />"</c:if>>
-    <legend class="filter-group__legend"><c:out value="${legend}" /></legend>
+    <legend class="${hideLegend ? 'visually-hidden' : 'filter-group__legend'}"><c:out value="${legend}" /></legend>
     <div class="segmented-control">
         <c:if test="${not empty emptyLabel}">
             <label class="segmented-control__option segmented-control__option--empty">
@@ -942,7 +1050,7 @@ Select sin ligar.
 
 Atributos: `id` (obligatorio), `name` (obligatorio), `items` (obligatorio), `messagePrefix` (obligatorio), `selectedValue`, `emptyLabel`, `labelledBy`, `describedBy`, `cssClass`, `hasError`, `placeholderOnly`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/select-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select-control.tag>), líneas 1–33.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/select-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select-control.tag>), líneas 1–33.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -986,7 +1094,7 @@ Select ligado.
 
 Atributos: `path` (obligatorio), `label` (obligatorio), `items` (obligatorio), `messagePrefix` (obligatorio), `emptyLabel` (obligatorio), `placeholderOnly`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/select.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>), líneas 1–35.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/select.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>), líneas 1–35.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -1032,7 +1140,7 @@ Barra superior: marca, buscador, acciones, aviso de verificación.
 
 Atributos: `query`, `formId`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/site-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/site-header.tag>), líneas 1–56.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/site-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/site-header.tag>), líneas 1–56.
 
 ```jsp
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
@@ -1099,7 +1207,7 @@ Texto en línea.
 
 Atributos: `text` (obligatorio), `variant`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/span.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/span.tag>), líneas 1–6.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/span.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/span.tag>), líneas 1–6.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -1116,7 +1224,7 @@ Estrellas como radios accesibles.
 
 Atributos: `path` (obligatorio), `legend` (obligatorio), `max` (obligatorio), `valueCode` (obligatorio).
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag>), líneas 1–37.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag>), líneas 1–37.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -1164,7 +1272,7 @@ Campo ligado a un form con etiqueta, pista y error.
 
 Atributos: `path` (obligatorio), `label` (obligatorio), `type`, `maxLength`, `min`, `max`, `suggestionsId`, `sourceUrl`, `hint`, `autofocus`, `placeholder`, `hideLabel`, `describedBy`, `externalErrorsId`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/text-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>), líneas 1–51.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/text-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>), líneas 1–51.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="scriptless" %>
@@ -1224,9 +1332,9 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/text-input.tag]
 
 Área de texto ligada.
 
-Atributos: `path` (obligatorio), `label` (obligatorio), `maxLength`, `id`.
+Atributos: `path` (obligatorio), `label` (obligatorio), `maxLength`, `id`, `rows`, `hideLabel`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>), líneas 1–33.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>), líneas 1–35.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -1236,6 +1344,8 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](<
 <%-- Id del textarea, para cuando dos formularios de la misma pagina ligan un campo con el mismo nombre.
      Sin id, se usa el nombre del campo. --%>
 <%@ attribute name="id" required="false" %>
+<%@ attribute name="rows" required="false" type="java.lang.Integer" %>
+<%@ attribute name="hideLabel" required="false" type="java.lang.Boolean" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
@@ -1246,11 +1356,11 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](<
     <c:set var="errorId" value="${controlId}-error" />
 
     <div class="input-field ${hasError ? 'input-field--error' : ''}">
-        <label class="input-field__label" for="<c:out value="${controlId}" />"><c:out value="${label}" /></label>
+        <label class="input-field__label${hideLabel ? ' visually-hidden' : ''}" for="<c:out value="${controlId}" />"><c:out value="${label}" /></label>
         <textarea class="input-field__control"
                   id="<c:out value="${controlId}" />"
                   name="<c:out value="${fieldName}" />"
-                  rows="4"
+                  rows="${empty rows ? 4 : rows}"
                   <c:if test="${maxLength ne null}">maxlength="${maxLength}"</c:if>
                   <c:if test="${hasError}">aria-invalid="true" aria-describedby="<c:out value="${errorId}" />"</c:if>><c:out value="${status.value}" /></textarea>
         <c:if test="${hasError}">
@@ -1264,13 +1374,37 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](<
 </spring:bind>
 ```
 
+### user-byline
+
+Foto y nombre de una Cuenta con enlace a su perfil público.
+
+Atributos: `userId` (obligatorio), `username` (obligatorio), `imageId`.
+
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/user-byline.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/user-byline.tag>), líneas 1–13.
+
+```jsp
+<%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
+<%@ attribute name="userId" required="true" type="java.lang.Long" %>
+<%@ attribute name="username" required="true" %>
+<%@ attribute name="imageId" required="false" type="java.lang.Long" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
+<c:url value="/users/${userId}" var="profileUrl" />
+<spring:message code="userByline.open" var="openLabel"><spring:argument value="${username}" /></spring:message>
+<a class="user-byline" href="<c:out value="${profileUrl}" />" aria-label="<c:out value="${openLabel}" />">
+    <ui:avatar userId="${userId}" imageId="${imageId}" name="${username}" size="sm" alt="" />
+    <span class="user-byline__name"><c:out value="${username}" /></span>
+</a>
+```
+
 ### vinyl-card
 
 La tarjeta de un vinilo; el componente más reutilizado.
 
 Atributos: `item`, `variant`, `href`, `hrefParams`, `title`, `artistName`, `price`, `coverUrl`, `preview`, `showStatus`.
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>), líneas 1–118.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>), líneas 1–118.
 
 ```jsp
 <%@ tag language="java" pageEncoding="UTF-8" body-content="empty" %>
@@ -1403,6 +1537,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag]
 - [webapp/src/main/webapp/WEB-INF/tags/brand.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/brand.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/button.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/button.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/h1.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h1.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/h3.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/h3.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/head.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/head.tag>)
@@ -1416,7 +1551,9 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag]
 - [webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination-link.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/pagination.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/pagination.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/post-badge.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/post-badge.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/rating.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/rating.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/resend-verification.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/review-content.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/review-content.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/segmented-control.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/select-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select-control.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/select.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/select.tag>)
@@ -1425,6 +1562,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag]
 - [webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/text-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/text-input.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/textarea.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/textarea.tag>)
+- [webapp/src/main/webapp/WEB-INF/tags/user-byline.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/user-byline.tag>)
 - [webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/vinyl-card.tag>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

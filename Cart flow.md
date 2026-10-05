@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/CartService.java", "services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ContactRules.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/CartAddRejectedException.java", "services-contracts/src/main/java/ar/edu/itba/paw/services/NothingToSendException.java", "persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/CartItemDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/resources/db/migration/V11__carrito.sql", "models/src/main/java/ar/edu/itba/paw/models/Cart.java", "models/src/main/java/ar/edu/itba/paw/models/CartItem.java", "models/src/main/java/ar/edu/itba/paw/models/CartSellerGroup.java", "models/src/main/java/ar/edu/itba/paw/models/CartCheckout.java", "models/src/main/java/ar/edu/itba/paw/models/CartCheckoutResult.java", "models/src/main/java/ar/edu/itba/paw/models/ContactState.java", "webapp/src/main/webapp/WEB-INF/views/cart/index.jsp", "webapp/src/main/webapp/WEB-INF/tags/account-nav.tag", "docs/plans/carrito-consultas.md"]
 ---
@@ -52,9 +52,9 @@ Todas exigen Cuenta verificada (`/cart` y `/cart/**` están en `VERIFIED_PATHS`)
 
 1. El botón está en la ficha, al lado de "Consultar", y solo aparece si [[PostContactOptions]] dice que el post se puede consultar y todavía no está en el carrito ([[Post detail flow]]). Es un formulario POST con `sec:csrfInput` y un campo oculto `from` con el listado de origen.
 2. `CartServiceImpl.add`, en una transacción:
-   - Lee el post (404 si no existe) y busca una Consulta abierta de esa Cuenta sobre ese post.
+   - `postService.lockById` bloquea el post (404 si no existe) y busca una Consulta abierta de esa Cuenta sobre ese post. Hasta `8929aea` solo lo leía; desde el PR #52 lo bloquea para tomar los bloqueos en el mismo orden que el contacto y el envío (post primero, Cuenta después) y para que el estado validado siga vigente al insertar.
    - `ContactRules.stateOf` decide: Consulta abierta → `OpenInquiryExistsException`; post propio o no disponible → `CartAddRejectedException` con su motivo.
-   - `userService.lockById` bloquea la fila de la Cuenta: dos agregados simultáneos se ordenan.
+   - `userService.lockById` bloquea después la fila de la Cuenta: dos agregados simultáneos se ordenan.
    - Si ya estaba en el carrito, rechazo `ALREADY_IN_CART`. Si ya hay 20 consultables, `CART_FULL`. "Repetido" gana sobre "lleno": el aviso es más preciso.
    - `cartItemDao.add`; si igual chocara contra la clave primaria, devuelve `false` y se trata como repetido.
 3. Éxito: aviso `cart.added` y redirección a `/` con la query de origen, pasada por `ListingQueries.sanitize`.
@@ -87,7 +87,15 @@ sequenceDiagram
     participant P as PostService
     participant I as InquiryService
     participant D as CartItemDao
+    participant U as UserService
     participant M as EmailService
+    B->>C: POST /cart/add/{postId}
+    C->>S: add(userId, postId)
+    S->>P: lockById (FOR UPDATE, primero el post)
+    S->>S: ContactRules.stateOf
+    S->>U: lockById (después la Cuenta)
+    S->>D: contains, tope de 20, add
+    C-->>B: 302 / con la query de origen
     B->>C: POST /cart/checkout
     C->>S: checkout(userId, addressId)
     S->>D: findByUserId (solo consultables)
@@ -104,7 +112,7 @@ sequenceDiagram
 
 ## Datos
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>), líneas 1–12.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>), líneas 1–12.
 
 ```sql
 -- El carrito de cada Cuenta: los Posts que eligio para consultar juntos. La clave compuesta
@@ -121,7 +129,7 @@ CREATE TABLE cart_items (
 CREATE INDEX cart_items_post_id_idx ON cart_items (post_id);
 ```
 
-La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio: el carrito muestra el actual, y la Consulta lo congela al enviarse.
+La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio: el carrito muestra el actual, y la Consulta sigue mostrando el del post hasta que el publicante acepta y lo fija ([[Inquiry and sale flow]]).
 
 ## Decisiones y por qué
 
@@ -134,6 +142,7 @@ La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio
 | Tope de 20 sobre lo visible, no absoluto | Tope sobre filas guardadas | Un post oculto no debería impedir agregar; a cambio, el carrito puede mostrar más de 20 si reaparecen | Comentario en [[CartService]] |
 | Bloquear la Cuenta al agregar | Confiar en la clave primaria | Para que el conteo del tope sea correcto con dos agregados simultáneos | Comentario en [[CartServiceImpl]] |
 | Bloquear los posts en orden de id | Bloquear en el orden del carrito | Dos transacciones que comparten posts no se traban entre sí | Comentario en [[PostDao]] |
+| Agregar bloquea el post antes que la Cuenta | Bloquear solo la Cuenta | Contacto y envío ya toman post y después Cuenta; invertir ese orden en otra transacción puede trabar a las dos. Además el post no puede venderse entre la validación y el insert | Comentario en [[CartServiceImpl]]; commit `e12c0e39` |
 | Volver a decidir con los posts bloqueados | Confiar en lo que mostró la pantalla | El carrito pudo quedar desactualizado mientras estaba abierto | Comentario en [[CartServiceImpl]] |
 | Envío parcial: se manda lo que se puede y se informa lo omitido | Todo o nada | Que un vinilo que se reservó no frene las demás consultas | Comentario en [[CartCheckoutResult]] |
 | La dirección se resuelve después de saber que hay algo para enviar | Crearla primero | Un envío vacío no deja una dirección nueva en la libreta | Comentario en [[CartServiceImpl]] |
@@ -148,6 +157,7 @@ La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio
 ## Concurrencia y casos borde
 
 - **Dos agregados a la vez**: el bloqueo de la Cuenta los ordena; el segundo cuenta después del primero.
+- **Agregar mientras el vendedor acepta otra consulta del mismo post**: los dos bloquean el post; si gana la aceptación, el agregado ve el post `RESERVED` y lo rechaza como `UNAVAILABLE` (lo cubre `testAddWhenPostIsSoldAtLockReturnsUnavailableRejection`).
 - **Un post del carrito se reserva mientras el carrito está abierto**: al enviar se omite y queda guardado; el resultado lo informa.
 - **Dos envíos del mismo carrito** (doble clic, dos pestañas): el segundo espera los bloqueos de los posts, ve las Consultas abiertas que creó el primero y termina en "nada para enviar".
 - **Dos compradores envían carritos con posts en común**: los dos bloquean en orden de id, así que uno espera al otro sin interbloqueo; los dos pueden consultar el mismo post.
@@ -156,7 +166,6 @@ La tabla guarda solo el par Cuenta–Post y cuándo se agregó. No guarda precio
 
 ## Límites conocidos
 
-- **Portadas rotas en el carrito (inferencia estática).** `cart/index.jsp` arma la imagen con `/covers/{imageId}`, pero en `8929aea` ningún controller atiende esa ruta: el PR #46 pasó las imágenes a `/post/{postId}/images/{imageId}`. Un vinilo con foto mostraría la imagen rota en el carrito. No se ejecutó la aplicación para confirmarlo.
 - El carrito puede mostrar más de 20 ítems si reaparecen posts que estaban ocultos.
 - No se puede escribir un mensaje al enviar desde el carrito.
 - Cada vista de página con sesión verificada hace un `COUNT` para la cabecera.
@@ -189,14 +198,16 @@ Uno, con los cinco y un enlace a cada Consulta.
 
 Agregar:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 51–83.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 51–85.
 
 ```java
     // Los mismos chequeos que el contacto, en el mismo orden: los decide ContactRules.
     @Override
     @Transactional
     public PostSummary add(final long userId, final long postId) {
-        final PostSummary post = postService.findById(postId);
+        // Contacto y checkout tambien toman publicacion antes que cuenta. El lock
+        // evita invertir ese orden al insertar la FK y mantiene vigente el estado validado.
+        final PostSummary post = postService.lockById(postId);
         final Optional<Long> openInquiryId = inquiryService.findOpenInquiryId(postId, userId);
         switch (ContactRules.stateOf(post.getStatus(), post.getUserId(), userId, openInquiryId.isPresent())) {
             case OPEN_INQUIRY -> throw new OpenInquiryExistsException(openInquiryId.orElseThrow());
@@ -229,7 +240,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Car
 
 Enviar:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 143–198.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 145–200.
 
 ```java
     @Override
@@ -292,7 +303,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Car
 
 Regla compartida:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>), líneas 9–44.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>), líneas 9–44.
 
 ```java
 /*
@@ -335,7 +346,7 @@ final class ContactRules {
 
 Consultas en lote y un aviso por publicante:
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 135–164.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 137–166.
 
 ```java
     // Los posts llegan bloqueados y validados por CartService; MANDATORY porque sin su
@@ -370,7 +381,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Inq
     }
 ```
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>), líneas 167–201.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>), líneas 174–208.
 
 ```java
     /*
@@ -412,7 +423,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 Bloqueo de varios posts en orden:
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 278–291.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 305–318.
 
 ```java
     // Dos sentencias fijas para cualquier cantidad de posts: el bloqueo en orden de id y
@@ -433,7 +444,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 Filtro del carrito en SQL:
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java>), líneas 36–48.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java>), líneas 36–48.
 
 ```java
     // El filtro llega del service: el estado del Post y los de las Consultas que lo ocultan.
@@ -451,7 +462,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
             + "p.price AS post_price " + FILTERED_FROM;
 ```
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java>), líneas 105–137.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java>), líneas 105–137.
 
 ```java
     @Override
@@ -491,7 +502,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 Controller:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java>), líneas 44–90.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java>), líneas 44–90.
 
 ```java
     @RequestMapping(value = "/cart", method = RequestMethod.GET)
@@ -545,7 +556,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 Rechazos como avisos:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java>), líneas 18–74.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java>), líneas 18–74.
 
 ```java
 /*
@@ -609,7 +620,7 @@ public class CartExceptionAdvice {
 
 Contador perezoso:
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java>), líneas 13–57.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java>), líneas 13–57.
 
 ```java
 /*
@@ -661,43 +672,43 @@ public class CartCountAdvice {
 
 Ruta de portada que usa la vista:
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/WEB-INF/views/cart/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/cart/index.jsp>), líneas 52–55.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/WEB-INF/views/cart/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/cart/index.jsp>), líneas 52–55.
 
 ```jsp
                                     <c:choose>
-                                        <c:when test="${item.coverImageId.present}"><c:url value="/covers/${item.coverImageId.get()}" var="coverUrl"/></c:when>
+                                        <c:when test="${item.coverImageId.present}"><c:url value="/post/${item.postId}/images/${item.coverImageId.get()}" var="coverUrl"/></c:when>
                                         <c:otherwise><c:url value="/images/covers/placeholder.svg" var="coverUrl"/></c:otherwise>
                                     </c:choose>
 ```
 
 ## Archivos para seguir el flujo
 
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java>)
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java>)
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java>)
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java>)
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java>)
-- [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java>)
-- [services-contracts/src/main/java/ar/edu/itba/paw/services/CartService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/CartService.java>)
-- [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>)
-- [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>)
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartController.java>) · [[CartController]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java>) · [[CartExceptionAdvice]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartCountAdvice.java>) · [[CartCountAdvice]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ListingQueries.java>) · [[ListingQueries]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/ShippingAddressForm.java>) · [[ShippingAddressForm]]
+- [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/ShippingAddressValidator.java>) · [[ShippingAddressValidator]]
+- [services-contracts/src/main/java/ar/edu/itba/paw/services/CartService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/CartService.java>) · [[CartService]]
+- [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>) · [[CartServiceImpl]]
+- [services/src/main/java/ar/edu/itba/paw/services/ContactRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/ContactRules.java>) · [[ContactRules]]
 - [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>) · [[InquiryServiceImpl]]
 - [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>) · [[PostServiceImpl]]
-- [services-contracts/src/main/java/ar/edu/itba/paw/services/CartAddRejectedException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/CartAddRejectedException.java>)
-- [services-contracts/src/main/java/ar/edu/itba/paw/services/NothingToSendException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/NothingToSendException.java>)
-- [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/CartItemDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/CartItemDao.java>)
-- [persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java>)
+- [services-contracts/src/main/java/ar/edu/itba/paw/services/CartAddRejectedException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/CartAddRejectedException.java>) · [[CartAddRejectedException]]
+- [services-contracts/src/main/java/ar/edu/itba/paw/services/NothingToSendException.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/NothingToSendException.java>) · [[NothingToSendException]]
+- [persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/CartItemDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence-contracts/src/main/java/ar/edu/itba/paw/persistence/CartItemDao.java>) · [[CartItemDao]]
+- [persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/CartItemJdbcDao.java>) · [[CartItemJdbcDao]]
 - [persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/InquiryJdbcDao.java>) · [[InquiryJdbcDao]]
 - [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>) · [[PostJdbcDao]]
 - [persistence/src/main/resources/db/migration/V11__carrito.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V11__carrito.sql>)
-- [models/src/main/java/ar/edu/itba/paw/models/Cart.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Cart.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/CartItem.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartItem.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/CartSellerGroup.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartSellerGroup.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/CartCheckout.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartCheckout.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/CartCheckoutResult.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartCheckoutResult.java>)
-- [models/src/main/java/ar/edu/itba/paw/models/ContactState.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ContactState.java>)
+- [models/src/main/java/ar/edu/itba/paw/models/Cart.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/Cart.java>) · [[Cart]]
+- [models/src/main/java/ar/edu/itba/paw/models/CartItem.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartItem.java>) · [[CartItem]]
+- [models/src/main/java/ar/edu/itba/paw/models/CartSellerGroup.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartSellerGroup.java>) · [[CartSellerGroup]]
+- [models/src/main/java/ar/edu/itba/paw/models/CartCheckout.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartCheckout.java>) · [[CartCheckout]]
+- [models/src/main/java/ar/edu/itba/paw/models/CartCheckoutResult.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/CartCheckoutResult.java>) · [[CartCheckoutResult]]
+- [models/src/main/java/ar/edu/itba/paw/models/ContactState.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/ContactState.java>) · [[ContactState]]
 - [webapp/src/main/webapp/WEB-INF/views/cart/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/cart/index.jsp>)
 - [webapp/src/main/webapp/WEB-INF/tags/account-nav.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/account-nav.tag>)
 - [docs/plans/carrito-consultas.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/plans/carrito-consultas.md>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

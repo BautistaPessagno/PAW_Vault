@@ -4,15 +4,15 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java"]
 ---
 
 # CartServiceImpl
 
-Carrito de consultas. Agregar valida con [[ContactRules]] y bloquea la Cuenta para el tope de 20. Enviar bloquea los posts en orden de id, vuelve a decidir qué sigue consultable, resuelve la dirección y crea las Consultas en lote; lo omitido queda en el carrito. También arma la ficha con lo que se le ofrece a quien mira. Ver [[Cart flow]].
+Carrito de consultas. Agregar bloquea primero el post y después la Cuenta (el mismo orden que el contacto y el envío), valida con [[ContactRules]] y respeta el tope de 20. Enviar bloquea los posts en orden de id, vuelve a decidir qué sigue consultable, resuelve la dirección y crea las Consultas en lote; lo omitido queda en el carrito. También arma la ficha con lo que se le ofrece a quien mira. Ver [[Cart flow]].
 
 ## Guía de lectura
 
@@ -30,7 +30,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 1–199.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java>), líneas 1–201.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -87,7 +87,9 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public PostSummary add(final long userId, final long postId) {
-        final PostSummary post = postService.findById(postId);
+        // Contacto y checkout tambien toman publicacion antes que cuenta. El lock
+        // evita invertir ese orden al insertar la FK y mantiene vigente el estado validado.
+        final PostSummary post = postService.lockById(postId);
         final Optional<Long> openInquiryId = inquiryService.findOpenInquiryId(postId, userId);
         switch (ContactRules.stateOf(post.getStatus(), post.getUserId(), userId, openInquiryId.isPresent())) {
             case OPEN_INQUIRY -> throw new OpenInquiryExistsException(openInquiryId.orElseThrow());

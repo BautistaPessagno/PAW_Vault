@@ -38,15 +38,37 @@ El transversal de "queries no triviales": buscar, filtrar, ordenar y paginar las
 5. El controller arma el modelo con `result.getCriteria()`: el orden y los filtros que la vista marca como activos son los que el service aplicó, no los que llegaron en la URL. `returnQuery` es la query string codificada, para que la ficha pueda volver al mismo listado.
 6. **Estado vacío.** Con texto o filtros y sin resultados: la página del disco, con un mensaje según el caso (solo texto, solo filtros, ambos) y las acciones "Quitar filtros" (conserva el texto) y "Nueva búsqueda". Sin texto ni filtros: "todavía no hay vinilos". Con errores de filtro: solo los errores.
 
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant C as LandingController
+    participant S as PostServiceImpl
+    participant D as PostDao
+    B->>C: GET /?q=...&genre=...&page=N
+    C->>C: binding (IgnoreInvalidEditor) y @Valid CatalogFilterForm
+    C->>S: search(form.toCriteria(), page) aunque haya errores
+    alt texto de más de 255
+        S-->>C: InvalidSearchQueryException (400)
+    end
+    S->>S: SearchText.compact, normalize(criteria)
+    S->>D: countSearch
+    S->>S: Pagination.offsetFor (404 fuera de rango)
+    opt total > 0
+        S->>D: search (LIMIT 15 OFFSET)
+    end
+    S-->>C: SearchResult con los criterios aplicados
+    C-->>B: landing/index (filtros activos = aplicados, returnQuery)
+```
+
 ## La consulta
 
 El `WHERE` se arma agregando una cláusula por filtro presente y un parámetro por cláusula. Siempre incluye `p.status = 'AVAILABLE'`.
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:138-195}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:140-197}}
 
 El orden nunca viene del usuario como texto: el enum [[PostSort]] elige entre diez `ORDER BY` fijos, todos desempatados por "más nuevo primero".
 
-{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:231-263}}
+{{code:persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java:258-290}}
 
 ## Decisiones y por qué
 
@@ -101,9 +123,9 @@ Para mostrar el total y saber si la página pedida existe. Si el total es 0 no s
 
 {{code:webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java:44-120}}
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:155-175}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:157-177}}
 
-{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:208-225}}
+{{code:services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java:219-236}}
 
 {{code:models/src/main/java/ar/edu/itba/paw/models/SearchText.java:7-36}}
 

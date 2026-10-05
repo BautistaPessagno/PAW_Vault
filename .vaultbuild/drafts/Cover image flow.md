@@ -30,6 +30,34 @@ El transversal de "manejo de imágenes": subida, validación, almacenamiento y e
 
 Reglas: PNG, JPEG o WEBP; el tipo que declara el navegador tiene que coincidir con los primeros bytes del archivo; entre 1 byte y 5 MiB.
 
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant F as MultipartFilter
+    participant H as MultipartExceptionHandlerFilter
+    participant C as Controller
+    participant S as ImageServiceImpl
+    participant D as ImageDao
+    B->>F: POST multipart (publicar, editar, comprobante o avatar)
+    alt request de más de 26 MiB
+        F-->>H: MaxUploadSizeExceededException
+        H-->>B: 302 ?coverTooLarge / ?receiptTooLarge / ?avatarTooLarge
+    end
+    F->>C: partes parseadas
+    C->>C: ImageFiles.isValid (tamaño, después ImageRules)
+    C->>S: create(contentType, bytes)
+    S->>S: normalizar y validar de nuevo
+    alt rechazada
+        S-->>C: InvalidImageException (log WARN)
+    else válida
+        S->>D: create
+    end
+    B->>C: GET /post/{postId}/images/{imageId}
+    C->>S: findPostImage
+    S->>D: SELECT con chequeo de pertenencia
+    C-->>B: 200 Cache-Control 365 días, o 404 sin cuerpo
+```
+
 ## Entrega
 
 | URL | Qué exige el SQL |

@@ -4,8 +4,8 @@ categories: ["History", "Navigation"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 tags: ["codemap", "navigation"]
 sources: ["docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "models/src/main/java/ar/edu/itba/paw/models/Post.java", "models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java", "webapp/src/main/webapp/js/autocomplete.js", "webapp/src/main/webapp/js/submit-once.js", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java", "persistence/src/main/resources/db/migration/V1__esquema_inicial.sql"]
@@ -14,7 +14,7 @@ sources: ["docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-sugg
 # Sprint 2 defense review
 
 > [!summary] En una frase
-> Qué se observó en la defensa del sprint 2 (23 de septiembre) y en qué estado está cada punto en `8929aea`: la mayoría está resuelta, y quedan pendientes el tipo de dato del dinero, el plazo para el comprobante y tres puntos de seguridad que conviene poder explicar.
+> Qué se observó en la defensa del sprint 2 (23 de septiembre) y en qué estado está cada punto en `c3e2a4c`: la mayoría está resuelta, y quedan pendientes el tipo de dato del dinero, el plazo para el comprobante y tres puntos de seguridad que conviene poder explicar.
 
 ## Fuentes
 
@@ -24,7 +24,7 @@ sources: ["docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-sugg
 | `docs/issues/observaciones-sprint-2/` en el repositorio | Las cuatro observaciones que el equipo formalizó y cómo decidió resolverlas | Cubre solo cuenta, búsqueda vacía, sugerencias y autorización |
 | [[TODO cambios]] | Apuntes personales tomados después de la defensa | Muy breves |
 
-El estado de cada punto sale de leer el código en `8929aea`. Nada se verificó en ejecución.
+El estado de cada punto sale de leer el código en `c3e2a4c`. Nada se verificó en ejecución.
 
 ## Cuenta y verificación
 
@@ -51,7 +51,7 @@ El estado de cada punto sale de leer el código en `8929aea`. Nada se verificó 
 | Usar `BigDecimal` para el dinero, en base, modelo y cliente | **Pendiente** | El precio es `int` en los modelos e `INTEGER` en `posts` e `inquiries`. No hay ningún uso de `BigDecimal` en el repositorio | [[Database schema]] |
 | Base, modelo y cliente deben manejar la misma precisión | **Coincide, sin decimales** | Las tres capas usan pesos enteros, de 1 a 99.999.999 ([[VinylInputRules]]) | [[Publish flow]] |
 
-El resumen de la reunión registra como decisión que "se usará BigDecimal para todo el manejo de dinero". En `8929aea` no está aplicado. Con precios enteros no hay pérdida de precisión, que era el riesgo que se señaló, pero si se vuelve a preguntar hay que poder decir cuál de las dos cosas se eligió y por qué.
+El resumen de la reunión registra como decisión que "se usará BigDecimal para todo el manejo de dinero". En `c3e2a4c` no está aplicado. Con precios enteros no hay pérdida de precisión, que era el riesgo que se señaló, pero si se vuelve a preguntar hay que poder decir cuál de las dos cosas se eligió y por qué.
 
 ## Búsqueda, autocompletado y validaciones
 
@@ -96,14 +96,14 @@ Sobre la mezcla de mecanismos: la observación pedía no mezclar, y el equipo re
 
 ### El precio es un entero
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java>), líneas 11–12.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java>), líneas 11–12.
 
 ```java
     public static final int MIN_PRICE = 1;
     public static final int MAX_PRICE = 99_999_999;
 ```
 
-Fuente exacta en `8929aea`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 70–74.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/resources/db/migration/V1__esquema_inicial.sql](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/resources/db/migration/V1__esquema_inicial.sql>), líneas 70–74.
 
 ```sql
 CREATE TABLE posts (
@@ -115,7 +115,7 @@ CREATE TABLE posts (
 
 ### El formulario de nueva contraseña se muestra sin validar el token
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>), líneas 144–149.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>), líneas 144–149.
 
 ```java
     @RequestMapping(value = "/reset-password", method = RequestMethod.GET)
@@ -128,7 +128,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 ### La recuperación responde igual exista o no la cuenta
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>), líneas 130–142.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>), líneas 130–142.
 
 ```java
     /*
@@ -148,7 +148,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 ### El registro informa el correo duplicado
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>), líneas 79–85.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/AuthenticationController.java>), líneas 79–85.
 
 ```java
         try {
@@ -162,7 +162,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 
 ### Espera antes de pedir sugerencias
 
-Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/autocomplete.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/autocomplete.js>), líneas 5–5.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/webapp/js/autocomplete.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/autocomplete.js>), líneas 5–5.
 
 ```javascript
     var SEARCH_DELAY_MS = 150;
@@ -179,4 +179,4 @@ Fuente exacta en `8929aea`: [webapp/src/main/webapp/js/autocomplete.js](</Users/
 - [webapp/src/main/webapp/js/submit-once.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/submit-once.js>)
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/SecurityConfig.java>) · [[SecurityConfig]]
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

@@ -4,25 +4,30 @@ categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/InquiryJdbcDaoTest.java"]
 ---
 
 # InquiryJdbcDaoTest
 
-Tests de `InquiryJdbcDao` en `persistence`: 41 casos declarados. Cubre: bandejas agrupadas y paginadas (incluidos posts eliminados), guardas de estado, comprobante, consultas abiertas, alta en lote y desenganche. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
+Tests de `InquiryJdbcDao` en `persistence`: 54 casos declarados. Cubre: bandejas agrupadas y paginadas (incluidos posts eliminados), filtro por estado (grupos mixtos, sin coincidencias, conteo de grupos) y conteo por estado, guardas de estado, `startSale` con precio fijado, precio actual mientras está pendiente, avatares de las partes, comprobante, consultas abiertas, alta en lote y desenganche. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
 ## Guía de lectura
 
-Datos y dependencias declaradas: `INQUIRIES_TABLE`, `inquiryDao`, `dataSource`, `jdbcTemplate`.
+Datos y dependencias declaradas: `INQUIRIES_TABLE`, `ALL_STATUSES`, `inquiryDao`, `dataSource`, `jdbcTemplate`.
 
 Operaciones para localizar en la fuente: `setUp`, `ids`.
 
-Casos declarados: 41.
+Casos declarados: 54.
 
+- `testStartSaleWhenSaleAlreadyStartedReturnsFalseAndPreservesPrice`
+- `testStartSaleWhenInquiryDoesNotExistReturnsFalse`
+- `testFindSummaryByIdWhenPendingPriceChangedReturnsCurrentPostPrice`
+- `testStartSaleWhenInquiryIsPendingReturnsFrozenPriceAndAwaitingPayment`
 - `testCreateWhenDataIsValidReturnsPendingInquiry`
+- `testFindSummaryByIdWhenSellerHasAvatarReturnsAccountAppearance`
 - `testCreateAllWhenBuyerAlreadyConsultedOneOfThePostsReturnsTheNewInquiries`
 - `testFindByIdWhenInquiryExistsReturnsFixture`
 - `testFindByIdWhenInquiryDoesNotExistReturnsEmpty`
@@ -36,6 +41,14 @@ Casos declarados: 41.
 - `testCountGroupsBySellerIdWhenSellerHasThreeGroupsReturnsThree`
 - `testCountGroupsBySellerIdWhenSellerHasOneGroupWithTwoInquiriesReturnsOne`
 - `testCountGroupsByBuyerIdWhenBuyerHasThreeGroupsReturnsThree`
+- `testFindBySellerIdWhenFilteringPendingReturnsOnlyPendingInquiries`
+- `testFindBySellerIdWhenGroupHasMixedStatusesReturnsOnlyMatchingInquiries`
+- `testFindBySellerIdWhenNoGroupMatchesReturnsEmpty`
+- `testCountGroupsBySellerIdWhenFilteringClosedReturnsOnlyGroupsWithClosedInquiries`
+- `testFindByBuyerIdWhenFilteringInProgressReturnsAwaitingAndSubmitted`
+- `testCountByStatusForSellerWhenSellerHasMixedStatusesReturnsCountPerStatus`
+- `testCountByStatusForSellerWhenPostWasDeletedReturnsItsInquiries`
+- `testCountByStatusForBuyerWhenBuyerHasNoInquiriesReturnsEmptyMap`
 - `testCountByBuyerIdWhenBuyerHasInquiriesReturnsTotal`
 - `testCountBySellerIdWhenSellerHasInquiriesReturnsTotalOfOwnedPosts`
 - `testCountBySellerIdWhenSellerHasNoInquiriesReturnsZero`
@@ -74,7 +87,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/InquiryJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/InquiryJdbcDaoTest.java>), líneas 1–635.
+Fuente exacta en `c3e2a4c`: [persistence/src/test/java/ar/edu/itba/paw/persistence/InquiryJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/InquiryJdbcDaoTest.java>), líneas 1–806.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -112,6 +125,7 @@ import java.util.stream.Collectors;
 public class InquiryJdbcDaoTest {
 
     private static final String INQUIRIES_TABLE = "inquiries";
+    private static final List<InquiryStatus> ALL_STATUSES = List.of(InquiryStatus.values());
 
     @Autowired
     private InquiryDao inquiryDao;
@@ -120,6 +134,63 @@ public class InquiryJdbcDaoTest {
     private DataSource dataSource;
 
     private JdbcTemplate jdbcTemplate;
+
+    @Test
+    public void testStartSaleWhenSaleAlreadyStartedReturnsFalseAndPreservesPrice() {
+        // 1. Arrange
+        final long inquiryId = 8;
+
+        // 2. Exercise
+        final boolean changed = inquiryDao.startSale(inquiryId, 99000);
+        final InquirySummary result = inquiryDao.findSummaryById(inquiryId).orElseThrow();
+
+        // 3. Assert
+        Assertions.assertFalse(changed);
+        Assertions.assertEquals(InquiryStatus.AWAITING_PAYMENT, result.getStatus());
+        Assertions.assertEquals(45000, result.getPrice());
+    }
+
+    @Test
+    public void testStartSaleWhenInquiryDoesNotExistReturnsFalse() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final boolean changed = inquiryDao.startSale(999999, 42000);
+
+        // 3. Assert
+        Assertions.assertFalse(changed);
+    }
+
+    @Test
+    public void testFindSummaryByIdWhenPendingPriceChangedReturnsCurrentPostPrice() {
+        // 1. Arrange
+        final long inquiryId = 3;
+
+        // 2. Exercise
+        final InquirySummary result = inquiryDao.findSummaryById(inquiryId).orElseThrow();
+
+        // 3. Assert
+        Assertions.assertEquals(30000, result.getPrice());
+        Assertions.assertEquals(30000, inquiryDao.findByBuyerId(result.getBuyerId(), ALL_STATUSES, 20, 0).stream()
+                .filter(summary -> summary.getId() == inquiryId).findFirst().orElseThrow().getPrice());
+        Assertions.assertEquals(30000, inquiryDao.findBySellerId(result.getSellerId(), ALL_STATUSES, 20, 0).stream()
+                .filter(summary -> summary.getId() == inquiryId).findFirst().orElseThrow().getPrice());
+    }
+
+    @Test
+    public void testStartSaleWhenInquiryIsPendingReturnsFrozenPriceAndAwaitingPayment() {
+        // 1. Arrange
+        final long inquiryId = 1;
+
+        // 2. Exercise
+        final boolean started = inquiryDao.startSale(inquiryId, 42000);
+        final InquirySummary result = inquiryDao.findSummaryById(inquiryId).orElseThrow();
+
+        // 3. Assert
+        Assertions.assertTrue(started);
+        Assertions.assertEquals(InquiryStatus.AWAITING_PAYMENT, result.getStatus());
+        Assertions.assertEquals(42000, result.getPrice());
+    }
 
     @BeforeEach
     public void setUp() {
@@ -144,7 +215,21 @@ public class InquiryJdbcDaoTest {
         Assertions.assertEquals(1, JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, INQUIRIES_TABLE,
                 "id = " + result.getId() + " AND post_id = " + postId + " AND buyer_id = " + buyerId
                         + " AND status = 'PENDING' AND price = 38000 AND created_at IS NOT NULL"));
-        Assertions.assertEquals(11, JdbcTestUtils.countRowsInTable(jdbcTemplate, INQUIRIES_TABLE));
+        Assertions.assertEquals(24, JdbcTestUtils.countRowsInTable(jdbcTemplate, INQUIRIES_TABLE));
+    }
+
+    @Test
+    public void testFindSummaryByIdWhenSellerHasAvatarReturnsAccountAppearance() {
+        // 1. Arrange
+        final long inquiryId = 1;
+
+        // 2. Exercise
+        final InquirySummary result = inquiryDao.findSummaryById(inquiryId).orElseThrow();
+
+        // 3. Assert
+        Assertions.assertEquals(2L, result.getSellerAvatarImageId());
+        Assertions.assertNull(result.getBuyerAvatarImageId());
+        Assertions.assertEquals(2L, result.withAddress(result.getAddress()).getSellerAvatarImageId());
     }
 
     @Test
@@ -168,7 +253,7 @@ public class InquiryJdbcDaoTest {
                 "id = " + result.get(3L).getId() + " AND post_id = 3 AND buyer_id = " + buyerId
                         + " AND status = 'PENDING' AND address_id = " + addressId + " AND price = 30000"
                         + " AND created_at IS NOT NULL"));
-        Assertions.assertEquals(12, JdbcTestUtils.countRowsInTable(jdbcTemplate, INQUIRIES_TABLE));
+        Assertions.assertEquals(25, JdbcTestUtils.countRowsInTable(jdbcTemplate, INQUIRIES_TABLE));
     }
 
     @Test
@@ -219,7 +304,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 2;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, 5, 0);
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, ALL_STATUSES, 5, 0);
 
         // 3. Assert
         final InquirySummary withAddress = result.stream().filter(i -> i.getId() == 1).findFirst().get();
@@ -234,7 +319,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 1;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, 2, 0);
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, ALL_STATUSES, 2, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(7L, 4L), ids(result));
@@ -248,7 +333,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 1;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, 2, 2);
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, ALL_STATUSES, 2, 2);
 
         // 3. Assert
         Assertions.assertEquals(List.of(3L), ids(result));
@@ -260,7 +345,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 2;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, 1, 0);
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, ALL_STATUSES, 1, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(2L, 1L), ids(result));
@@ -278,7 +363,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 1;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, 2, 4);
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, ALL_STATUSES, 2, 4);
 
         // 3. Assert
         Assertions.assertTrue(result.isEmpty());
@@ -290,7 +375,7 @@ public class InquiryJdbcDaoTest {
         final long buyerId = 2;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findByBuyerId(buyerId, 2, 0);
+        final List<InquirySummary> result = inquiryDao.findByBuyerId(buyerId, ALL_STATUSES, 2, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(6L, 4L), ids(result));
@@ -303,7 +388,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 1;
 
         // 2. Exercise
-        final int result = inquiryDao.countGroupsBySellerId(sellerId);
+        final int result = inquiryDao.countGroupsBySellerId(sellerId, ALL_STATUSES);
 
         // 3. Assert
         Assertions.assertEquals(3, result);
@@ -315,7 +400,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 2;
 
         // 2. Exercise
-        final int result = inquiryDao.countGroupsBySellerId(sellerId);
+        final int result = inquiryDao.countGroupsBySellerId(sellerId, ALL_STATUSES);
 
         // 3. Assert
         Assertions.assertEquals(1, result);
@@ -327,10 +412,109 @@ public class InquiryJdbcDaoTest {
         final long buyerId = 2;
 
         // 2. Exercise
-        final int result = inquiryDao.countGroupsByBuyerId(buyerId);
+        final int result = inquiryDao.countGroupsByBuyerId(buyerId, ALL_STATUSES);
 
         // 3. Assert
         Assertions.assertEquals(3, result);
+    }
+
+    @Test
+    public void testFindBySellerIdWhenFilteringPendingReturnsOnlyPendingInquiries() {
+        // 1. Arrange
+        final long sellerId = 1;
+
+        // 2. Exercise
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, List.of(InquiryStatus.PENDING), 5, 0);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(4L, 3L), result.stream().map(InquirySummary::getId).toList());
+    }
+
+    @Test
+    public void testFindBySellerIdWhenGroupHasMixedStatusesReturnsOnlyMatchingInquiries() {
+        // 1. Arrange
+        final long sellerId = 3;
+
+        // 2. Exercise
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, List.of(InquiryStatus.ACCEPTED), 5, 0);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(5L), result.stream().map(InquirySummary::getId).toList());
+    }
+
+    @Test
+    public void testFindBySellerIdWhenNoGroupMatchesReturnsEmpty() {
+        // 1. Arrange
+        final long sellerId = 3;
+
+        // 2. Exercise
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, List.of(InquiryStatus.PENDING), 5, 0);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testCountGroupsBySellerIdWhenFilteringClosedReturnsOnlyGroupsWithClosedInquiries() {
+        // 1. Arrange
+        final long sellerId = 1;
+
+        // 2. Exercise
+        final int result = inquiryDao.countGroupsBySellerId(sellerId,
+                List.of(InquiryStatus.REJECTED, InquiryStatus.CANCELLED));
+
+        // 3. Assert
+        Assertions.assertEquals(1, result);
+    }
+
+    @Test
+    public void testFindByBuyerIdWhenFilteringInProgressReturnsAwaitingAndSubmitted() {
+        // 1. Arrange
+        final long buyerId = 5;
+
+        // 2. Exercise
+        final List<InquirySummary> result = inquiryDao.findByBuyerId(buyerId,
+                List.of(InquiryStatus.AWAITING_PAYMENT, InquiryStatus.PAYMENT_SUBMITTED), 5, 0);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(9L, 8L), result.stream().map(InquirySummary::getId).toList());
+    }
+
+    @Test
+    public void testCountByStatusForSellerWhenSellerHasMixedStatusesReturnsCountPerStatus() {
+        // 1. Arrange
+        final long sellerId = 4;
+
+        // 2. Exercise
+        final Map<InquiryStatus, Integer> result = inquiryDao.countByStatusForSeller(sellerId);
+
+        // 3. Assert
+        Assertions.assertEquals(Map.of(InquiryStatus.PENDING, 1, InquiryStatus.AWAITING_PAYMENT, 1,
+                InquiryStatus.PAYMENT_SUBMITTED, 1), result);
+    }
+
+    @Test
+    public void testCountByStatusForSellerWhenPostWasDeletedReturnsItsInquiries() {
+        // 1. Arrange
+        final long sellerId = 1;
+
+        // 2. Exercise
+        final Map<InquiryStatus, Integer> result = inquiryDao.countByStatusForSeller(sellerId);
+
+        // 3. Assert
+        Assertions.assertEquals(Map.of(InquiryStatus.PENDING, 2, InquiryStatus.REJECTED, 1), result);
+    }
+
+    @Test
+    public void testCountByStatusForBuyerWhenBuyerHasNoInquiriesReturnsEmptyMap() {
+        // 1. Arrange
+        final long buyerId = 4;
+
+        // 2. Exercise
+        final Map<InquiryStatus, Integer> result = inquiryDao.countByStatusForBuyer(buyerId);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
     }
 
     @Test
@@ -567,7 +751,7 @@ public class InquiryJdbcDaoTest {
         final long sellerId = 2;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, 5, 0);
+        final List<InquirySummary> result = inquiryDao.findBySellerId(sellerId, ALL_STATUSES, 5, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(2L, 1L), ids(result));
@@ -678,7 +862,7 @@ public class InquiryJdbcDaoTest {
         final long buyerId = 3;
 
         // 2. Exercise
-        final List<InquirySummary> result = inquiryDao.findByBuyerId(buyerId, 2, 0);
+        final List<InquirySummary> result = inquiryDao.findByBuyerId(buyerId, ALL_STATUSES, 2, 0);
 
         // 3. Assert
         Assertions.assertEquals(List.of(7L, 2L), ids(result));

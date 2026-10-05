@@ -1,6 +1,6 @@
 @title: History and specifications
 @categories: History
-@files: CONTEXT.md, README.md, TODO.md, docs/setup.md, docs/adr/0001-establish-quiero-vinilos-domain.md, docs/adr/0002-own-the-album-catalog-locally.md, docs/adr/0003-conversation-inside-the-inquiry.md, docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md, docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md, docs/specs/feature_venta-con-comprobante_20260924.md, docs/plans/carrito-consultas.md
+@files: CONTEXT.md, README.md, TODO.md, docs/setup.md, docs/adr/0001-establish-quiero-vinilos-domain.md, docs/adr/0002-own-the-album-catalog-locally.md, docs/adr/0003-conversation-inside-the-inquiry.md, docs/adr/0004-freeze-sale-price-at-acceptance.md, docs/issues/observaciones-sprint-2/01-cuenta-verificada-busqueda-suggestions-autorizacion.md, docs/issues/conversacion-consulta/01-conversacion-de-una-consulta.md, docs/specs/feature_venta-con-comprobante_20260924.md, docs/plans/carrito-consultas.md
 
 > [!summary] En una frase
 > El repositorio guarda, junto al código, el glosario del dominio, tres decisiones de arquitectura, las especificaciones y planes de cada funcionalidad y los issues que las originaron; son la fuente del **por qué** de muchas decisiones que el código solo muestra como resultado.
@@ -42,6 +42,7 @@ El glosario distingue **Cambio de contraseña** (con sesión, probando la actual
 | 0001 | El producto es quieroVinilos, un marketplace de vinilos usados entre particulares; el lenguaje sale de `CONTEXT.md` y las restricciones técnicas, de la cursada | Nombres de modelos, tablas y textos |
 | 0002 | El catálogo de álbumes es propio, sin depender de un servicio externo | [[Artist]] y [[Album]] se crean al publicar, con `findOrCreate` ([[Publish flow]]) |
 | 0003 | Comprador y publicante hablan dentro de la Consulta | Una conversación por consulta, sin tiempo real, sin `Reply-To` en los correos ([[Conversation flow]], [[Mail delivery]]) |
+| 0004 | El precio de la venta se fija al aceptar la Consulta, no al crearla | Mientras está `PENDING` la bandeja muestra el precio actual del post; `startSale` lo copia al aceptar ([[Inquiry and sale flow]]) |
 
 ## Especificaciones y planes
 
@@ -88,9 +89,10 @@ El issue `observaciones-sprint-2/01` recoge cuatro de las observaciones de la de
 | 23 de septiembre | Búsqueda y filtros del catálogo (PR #35) |
 | 24 al 30 de septiembre | Venta con comprobante, direcciones, datos de cobro (PR #40, #44, #42); Flyway (PR #38) |
 | 2 de octubre | Cuenta verificada y observaciones del sprint 2 (PR #43); conversación (PR #45) |
-| 4 de octubre | Galería, avatares, perfiles públicos y reseñas (PR #46); carrito (PR #47); lógica fuera de los controllers (PR #48) |
+| 4 de octubre | Galería, avatares, perfiles públicos y reseñas (PR #46); carrito (PR #47); lógica fuera de los controllers (PR #48). Es el estado del mapa anterior del vault (`8929aea`) |
+| 5 de octubre | Correcciones: tapas del carrito, regreso al perfil, autorización en el service, orden de bloqueos y comprobante inmutable (PR #49 a #53); volver a la venta y precio fijado al aceptar (PR #55, #56, ADR 0004), conversación y reseñas por rol (PR #54, #57, #58); quitar fotos con una X, filtros por estado en bandejas y publicaciones, logs y 400 de datos inválidos (PR #59 a #62) |
 
-El detalle por commit está en [[Recent changes 2026-10-04]].
+El detalle por commit está en [[Recent changes 2026-10-05]] (desde `8929aea`) y [[Recent changes 2026-10-04]] (desde `f12af08`).
 
 ## Notas históricas del vault
 
@@ -105,3 +107,7 @@ Las notas con `status: historical` conservan clases que ya no existen: [[HelloWo
 ### ADR 0003
 
 {{file:docs/adr/0003-conversation-inside-the-inquiry.md}}
+
+### ADR 0004
+
+{{file:docs/adr/0004-freeze-sale-price-at-acceptance.md}}

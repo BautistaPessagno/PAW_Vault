@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/CatalogFilterForm.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/CatalogFilterValidator.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/Pagination.java", "models/src/main/java/ar/edu/itba/paw/models/PostSearchCriteria.java", "models/src/main/java/ar/edu/itba/paw/models/PostSort.java", "models/src/main/java/ar/edu/itba/paw/models/SearchText.java", "models/src/main/java/ar/edu/itba/paw/models/SearchResult.java", "models/src/main/java/ar/edu/itba/paw/models/PostPage.java", "models/src/main/java/ar/edu/itba/paw/models/VinylInputRules.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "webapp/src/main/webapp/WEB-INF/views/landing/index.jsp", "webapp/src/main/webapp/js/catalog.js"]
 ---
@@ -48,11 +48,33 @@ El transversal de "queries no triviales": buscar, filtrar, ordenar y paginar las
 5. El controller arma el modelo con `result.getCriteria()`: el orden y los filtros que la vista marca como activos son los que el service aplicó, no los que llegaron en la URL. `returnQuery` es la query string codificada, para que la ficha pueda volver al mismo listado.
 6. **Estado vacío.** Con texto o filtros y sin resultados: la página del disco, con un mensaje según el caso (solo texto, solo filtros, ambos) y las acciones "Quitar filtros" (conserva el texto) y "Nueva búsqueda". Sin texto ni filtros: "todavía no hay vinilos". Con errores de filtro: solo los errores.
 
+```mermaid
+sequenceDiagram
+    participant B as Navegador
+    participant C as LandingController
+    participant S as PostServiceImpl
+    participant D as PostDao
+    B->>C: GET /?q=...&genre=...&page=N
+    C->>C: binding (IgnoreInvalidEditor) y @Valid CatalogFilterForm
+    C->>S: search(form.toCriteria(), page) aunque haya errores
+    alt texto de más de 255
+        S-->>C: InvalidSearchQueryException (400)
+    end
+    S->>S: SearchText.compact, normalize(criteria)
+    S->>D: countSearch
+    S->>S: Pagination.offsetFor (404 fuera de rango)
+    opt total > 0
+        S->>D: search (LIMIT 15 OFFSET)
+    end
+    S-->>C: SearchResult con los criterios aplicados
+    C-->>B: landing/index (filtros activos = aplicados, returnQuery)
+```
+
 ## La consulta
 
 El `WHERE` se arma agregando una cláusula por filtro presente y un parámetro por cláusula. Siempre incluye `p.status = 'AVAILABLE'`.
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 138–195.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 140–197.
 
 ```java
     @Override
@@ -117,7 +139,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 El orden nunca viene del usuario como texto: el enum [[PostSort]] elige entre diez `ORDER BY` fijos, todos desempatados por "más nuevo primero".
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 231–263.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 258–290.
 
 ```java
     // Cada criterio mapea a un ORDER BY fijo: al SQL nunca entra texto del usuario.
@@ -206,7 +228,7 @@ Para mostrar el total y saber si la página pedida existe. Si el total es 0 no s
 
 ## Evidencia de código
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java>), líneas 44–120.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/LandingController.java>), líneas 44–120.
 
 ```java
     // Los valores cerrados o legacy que no se entienden se ignoran. Los Integer no usan
@@ -288,7 +310,7 @@ Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/control
 }
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 155–175.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 157–177.
 
 ```java
     // Una busqueda vacia no filtra nada: se muestra lo mismo que la landing sin buscar,
@@ -314,7 +336,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
     }
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 208–225.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 219–236.
 
 ```java
     // Los filtros llegan de la URL, asi que pueden venir con cualquier valor. Uno fuera de
@@ -337,7 +359,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
     }
 ```
 
-Fuente exacta en `8929aea`: [models/src/main/java/ar/edu/itba/paw/models/SearchText.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchText.java>), líneas 7–36.
+Fuente exacta en `c3e2a4c`: [models/src/main/java/ar/edu/itba/paw/models/SearchText.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/models/src/main/java/ar/edu/itba/paw/models/SearchText.java>), líneas 7–36.
 
 ```java
 // Normalizacion compartida para busqueda: minusculas, sin diacriticos y con cada
@@ -372,7 +394,7 @@ public final class SearchText {
 }
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pagination.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/Pagination.java>), líneas 3–35.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/Pagination.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/Pagination.java>), líneas 3–35.
 
 ```java
 // Aritmetica de paginado compartida por los services que listan de a paginas. Una sola
@@ -427,4 +449,4 @@ final class Pagination {
 - [webapp/src/main/webapp/WEB-INF/views/landing/index.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/landing/index.jsp>)
 - [webapp/src/main/webapp/js/catalog.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/catalog.js>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

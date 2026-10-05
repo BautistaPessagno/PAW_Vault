@@ -4,8 +4,8 @@ categories: ["Web", "Services"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/CartExceptionAdvice.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/security/VerificationAccessDeniedHandler.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/validation/PublishFormValidator.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java", "webapp/src/main/webapp/WEB-INF/web.xml"]
 ---
@@ -69,13 +69,15 @@ Los validadores de clase agregan el error **al campo** que corresponde (`addProp
 | [[LineBreakNormalizingEditor]] | Mensaje de contacto y cuerpo de mensajes y reseñas | Unifica `\r\n` en `\n`, para que el largo que cuenta el servidor coincida con el del navegador |
 | Editor que ignora inválidos | Filtros del catálogo | Un valor de enum o número mal formado en la URL se descarta en vez de dar 400 |
 
+Los filtros por estado de las bandejas (`status`) y de "Mis publicaciones" (`postStatus`) no pasan por un editor propio: se ligan directo al enum con `@RequestParam`, así que un valor desconocido termina en `MethodArgumentTypeMismatchException` y en 400 (inferencia sobre la conversión de Spring 5.3). En la ficha, `postStatus` es contexto de regreso y [[PostController]] lo ignora si no es válido. Ver [[Status filters flow]].
+
 ## De la excepción a la respuesta
 
 | Excepción | Quién la traduce | Respuesta |
 |---|---|---|
 | `PostNotFoundException`, `InquiryNotFoundException`, `UserNotFoundException`, `PageNotFoundException`, `AddressNotFoundException`, `ReceiptNotFoundException` | [[ErrorResponseAdvice]] | 404 con `error/404` |
 | `ForbiddenOperationException` | [[ErrorResponseAdvice]] | 403 con `error/403` |
-| `InvalidImageException`, `InvalidReviewException`, parámetro con tipo inválido | [[ErrorResponseAdvice]] | 400 con `error/400` |
+| `InvalidImageException`, `InvalidReviewException`, `InvalidPostDataException`, `InvalidPaymentInfoException`, parámetro con tipo inválido | [[ErrorResponseAdvice]] | 400 con `error/400` |
 | `InvalidSearchQueryException` | [[LandingController]] | 400 |
 | `InvalidInquiryStateException` | [[InquiryController]] | 409 con `error/409` |
 | `PostUnavailableException` | [[PostContactController]], [[PublishController]] | 409 |
@@ -110,7 +112,6 @@ Tres criterios ordenan la tabla:
 
 ## Límites conocidos
 
-- `InvalidPostDataException` e `InvalidPaymentInfoException` no tienen handler: solo se alcanzan salteando el formulario, y en ese caso la respuesta sería un 500.
 - No hay página propia para el 500.
 - El comentario de [[ReceiptValidator]] menciona un tope de 6 MB en el resolver; el valor real es 26 MiB ([[Known gaps and document drift]]).
 
@@ -135,7 +136,7 @@ El resolver lanza la excepción al leer el multipart; un filtro la atrapa y redi
 
 ### Handlers globales
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java>), líneas 1–50.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ErrorResponseAdvice.java>), líneas 1–52.
 
 ```java
 package ar.edu.itba.paw.webapp.controller;
@@ -144,6 +145,8 @@ import ar.edu.itba.paw.services.AddressNotFoundException;
 import ar.edu.itba.paw.services.ForbiddenOperationException;
 import ar.edu.itba.paw.services.InquiryNotFoundException;
 import ar.edu.itba.paw.services.InvalidImageException;
+import ar.edu.itba.paw.services.InvalidPaymentInfoException;
+import ar.edu.itba.paw.services.InvalidPostDataException;
 import ar.edu.itba.paw.services.InvalidReviewException;
 import ar.edu.itba.paw.services.PageNotFoundException;
 import ar.edu.itba.paw.services.PostNotFoundException;
@@ -178,11 +181,11 @@ public class ErrorResponseAdvice {
         return new ModelAndView("error/403");
     }
 
-    // Los formularios aplican las mismas ImageRules y ReviewRules: solo llega aca un POST que se
-    // salteo la validacion. Un parametro de la URL que no es del tipo esperado (una pagina que no
-    // es un numero, un origin desconocido) tambien es un pedido mal armado.
-    @ExceptionHandler({InvalidImageException.class, InvalidReviewException.class,
-            MethodArgumentTypeMismatchException.class})
+    // Los formularios aplican las mismas ImageRules, ReviewRules, VinylInputRules y PaymentInfoRules:
+    // solo llega aca un POST que se salteo la validacion. Un parametro de la URL que no es del tipo
+    // esperado (una pagina que no es un numero, un origin desconocido) tambien es un pedido mal armado.
+    @ExceptionHandler({InvalidImageException.class, InvalidReviewException.class, InvalidPostDataException.class,
+            InvalidPaymentInfoException.class, MethodArgumentTypeMismatchException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ModelAndView badRequest() {
         return new ModelAndView("error/400");
@@ -192,7 +195,7 @@ public class ErrorResponseAdvice {
 
 ### Validador de clase
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java>), líneas 1–20.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/validation/MatchingPasswordsValidator.java>), líneas 1–20.
 
 ```java
 package ar.edu.itba.paw.webapp.validation;
@@ -219,7 +222,7 @@ public class MatchingPasswordsValidator implements ConstraintValidator<MatchingP
 
 ### Filtro para archivos demasiado grandes
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>), líneas 1–50.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/security/MultipartExceptionHandlerFilter.java>), líneas 1–50.
 
 ```java
 package ar.edu.itba.paw.webapp.security;
@@ -286,4 +289,4 @@ public final class MultipartExceptionHandlerFilter extends OncePerRequestFilter 
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/form/RegisterForm.java>) · [[RegisterForm]]
 - [webapp/src/main/webapp/WEB-INF/web.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/web.xml>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

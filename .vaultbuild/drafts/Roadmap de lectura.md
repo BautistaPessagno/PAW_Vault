@@ -3,9 +3,9 @@
 @tags: codemap, navigation
 
 > [!summary] En una frase
-> Un orden para leer los 460 archivos versionados del proyecto (232 clases Java, 47.888 líneas en total) sin perderse: primero el contexto, después un flujo simple de punta a punta, y luego cada funcionalidad en el orden en que se apoyan unas en otras.
+> Un orden para leer los 472 archivos versionados del proyecto (238 clases Java, 49.452 líneas en total) sin perderse: primero el contexto, después un flujo simple de punta a punta, y luego cada funcionalidad en el orden en que se apoyan unas en otras.
 
-Cada archivo aparece **una sola vez**, con una casilla para marcar. La lista se generó a partir de `git ls-tree` en `8929aea` y el generador falla si un archivo queda sin asignar o aparece dos veces, así que la cobertura es completa.
+Cada archivo aparece **una sola vez**, con una casilla para marcar. La lista se generó a partir de `git ls-tree` en `c3e2a4c` y el generador falla si un archivo queda sin asignar o aparece dos veces, así que la cobertura es completa.
 
 ## Cómo usarlo
 
@@ -46,25 +46,25 @@ Los enlaces `[[Clase]]` abren la nota de esa clase en el vault, con su resumen, 
 
 | Etapa | Tema | Archivos | Líneas |
 |---|---|---|---|
-| 0 | Orientación | 9 | 808 |
+| 0 | Orientación | 10 | 819 |
 | 1 | Build, configuración y arranque | 30 | 1.356 |
-| 2 | Base de datos | 19 | 1.285 |
-| 3 | Dominio: los modelos | 53 | 1.853 |
-| 4 | Primer recorrido completo: catálogo y búsqueda | 28 | 4.377 |
+| 2 | Base de datos | 19 | 1.340 |
+| 3 | Dominio: los modelos | 57 | 1.951 |
+| 4 | Primer recorrido completo: catálogo y búsqueda | 28 | 4.645 |
 | 5 | Cuenta y seguridad | 39 | 3.712 |
 | 6 | Correo | 16 | 1.109 |
-| 7 | Publicar, editar e imágenes | 40 | 2.921 |
-| 8 | Ficha, contacto, direcciones y datos de cobro | 31 | 1.647 |
-| 9 | Consulta, venta y conversación | 31 | 4.477 |
-| 10 | Reseñas y perfiles | 24 | 1.971 |
-| 11 | Carrito | 12 | 1.442 |
-| 12 | Errores | 6 | 182 |
-| 13 | Interfaz compartida | 20 | 3.382 |
-| 14 | Textos | 4 | 1.515 |
+| 7 | Publicar, editar e imágenes | 40 | 2.933 |
+| 8 | Ficha, contacto, direcciones y datos de cobro | 31 | 1.667 |
+| 9 | Consulta, venta y conversación | 35 | 5.069 |
+| 10 | Reseñas y perfiles | 27 | 2.294 |
+| 11 | Carrito | 12 | 1.459 |
+| 12 | Errores | 6 | 184 |
+| 13 | Interfaz compartida | 20 | 3.467 |
+| 14 | Textos | 4 | 1.596 |
 | 15 | Herramientas del repositorio | 70 | 7.556 |
 | 16 | Historia: especificaciones, planes e issues | 28 | 8.295 |
 
-Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y líneas en blanco. Sirven para estimar el esfuerzo relativo de cada etapa, no como medida de complejidad.
+Las líneas son el total de cada archivo en `c3e2a4c`, incluidos comentarios y líneas en blanco. Sirven para estimar el esfuerzo relativo de cada etapa, no como medida de complejidad.
 
 ## Qué conviene saltear en una primera lectura
 
@@ -75,7 +75,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 0 — Orientación
 
-*9 archivos · 808 líneas*
+*10 archivos · 819 líneas*
 
 **Objetivo.** Saber qué es el producto, qué palabras usa y qué reglas sigue el equipo antes de abrir código.
 
@@ -91,6 +91,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 - [ ] [docs/adr/0001-establish-quiero-vinilos-domain.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0001-establish-quiero-vinilos-domain.md>) — Por qué el producto es quieroVinilos.
 - [ ] [docs/adr/0002-own-the-album-catalog-locally.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0002-own-the-album-catalog-locally.md>) — Por qué el catálogo de álbumes es propio.
 - [ ] [docs/adr/0003-conversation-inside-the-inquiry.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0003-conversation-inside-the-inquiry.md>) — Por qué la conversación vive dentro de la consulta.
+- [ ] [docs/adr/0004-freeze-sale-price-at-acceptance.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/docs/adr/0004-freeze-sale-price-at-acceptance.md>)
 - [ ] [TODO.md](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/TODO.md>) — Pendientes al 9 de septiembre. Casi todo está resuelto: leelo como historia.
 
 **Al terminar deberías poder contestar:**
@@ -155,7 +156,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 2 — Base de datos
 
-*19 archivos · 1.285 líneas*
+*19 archivos · 1.340 líneas*
 
 **Objetivo.** Leer el esquema en el orden en que se construyó y conocer los datos con los que corren los tests.
 
@@ -197,7 +198,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 3 — Dominio: los modelos
 
-*53 archivos · 1.853 líneas*
+*57 archivos · 1.951 líneas*
 
 **Objetivo.** Conocer los objetos que viajan entre capas. Son inmutables: mirá qué campos tienen y qué reglas llevan adentro.
 
@@ -238,6 +239,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 - [ ] [[Image]] `models` — Una imagen guardada: id, tipo de contenido y bytes.
 - [ ] [[ImageUpload]] `models` — Un archivo subido reducido a tipo de contenido y bytes.
 - [ ] [[ImageRules]] `models` — Qué imagen se acepta: PNG, JPEG o WEBP cuya firma de bytes coincide con el tipo declarado, hasta 5 MiB, hasta 5 fotos por publicación, y 26 MiB por request.
+- [ ] [[FilterCounts]] `models` — Los números de los chips de filtro de un listado: un mapa valor → cantidad y el total.
 
 ### Direcciones
 
@@ -249,7 +251,8 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 - [ ] [[Inquiry]] `models` — La Consulta tal como está guardada: id, post (nulo si la publicación fue eliminada), comprador y [[InquiryStatus]].
 - [ ] [[InquiryStatus]] `models` — Estados de la Consulta: `PENDING`, `AWAITING_PAYMENT`, `PAYMENT_SUBMITTED`, `ACCEPTED` (venta confirmada), `REJECTED` y `CANCELLED`.
-- [ ] [[InquirySummary]] `models` — La Consulta como la muestran la bandeja y el detalle: partes, álbum, precio congelado, último mensaje, estados de la consulta y del post, dirección y si hay comprobante.
+- [ ] [[InquiryStatusFilter]] `models` — Los cuatro filtros de las bandejas, agrupando estados como los lee una persona: `PENDING`, `IN_PROGRESS` (espera de pago y pago informado), `CONFIRMED` (`ACCEPTED`) y `CLOSED` (rechazada o cancelada).
+- [ ] [[InquirySummary]] `models` — La Consulta como la muestran la bandeja y el detalle: partes con su foto, álbum, precio (el actual del post mientras está pendiente y el fijado al aceptar después.
 - [ ] [[InquiryDetail]] `models` — La Consulta vista por una de sus partes, con su conversación y la reseña propia.
 - [ ] [[InquiryGroup]] `models` — Una publicación y las consultas que la tocaron: la unidad por la que agrupan y paginan las dos bandejas.
 - [ ] [[InquiryPage]] `models` — Una página de la bandeja: grupos, número de página y total de páginas.
@@ -264,10 +267,12 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Reseñas y perfil público
 
-- [ ] [[Review]] `models` — Calificación de una parte a la otra en una venta confirmada: consulta, autor, destinatario, nombre del autor, puntaje, comentario, si está activa y fecha.
+- [ ] [[Review]] `models` — Calificación de una parte a la otra en una venta confirmada: consulta, autor, destinatario, nombre y foto del autor, puntaje, comentario, si está activa y fecha.
 - [ ] [[ReviewRules]] `models` — Puntaje de 1 a 5 y comentario opcional de hasta 500 caracteres, con la misma normalización que un Mensaje.
 - [ ] [[ReviewStats]] `models` — Cantidad y promedio de las reseñas activas de una Cuenta.
-- [ ] [[PublicProfile]] `models` — El perfil público de una Cuenta: identidad, publicaciones a la venta paginadas, estadísticas y reseñas recientes.
+- [ ] [[ReviewPage]] `models` — Una página de reseñas del perfil público para un rol ([[ReviewSubjectRole]]): las reseñas, las estadísticas de ese rol, el número de página y si hay anterior o siguiente.
+- [ ] [[ReviewSubjectRole]] `models` — Rol que tenía la persona calificada en la venta: `SELLER` o `BUYER`.
+- [ ] [[PublicProfile]] `models` — El perfil público de una Cuenta: identidad, publicaciones a la venta paginadas y una [[ReviewPage]] con las reseñas del rol elegido.
 
 ### Carrito
 
@@ -285,7 +290,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 4 — Primer recorrido completo: catálogo y búsqueda
 
-*28 archivos · 4.377 líneas*
+*28 archivos · 4.645 líneas*
 
 **Objetivo.** Seguir un request de solo lectura por todas las capas. Es el flujo más simple para fijar el patrón controller, service, DAO, JSP.
 
@@ -306,7 +311,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Service
 
-- [ ] [[PostService]] `services-contracts` — Contrato de publicaciones: ficha, búsqueda paginada, sugerencias, listados por publicante, alta, edición y borrado, más las operaciones internas de la venta (`lockById`, `lockByIds`, `reserve`, `release`, `markSold`) que exigen una transacción abierta.
+- [ ] [[PostService]] `services-contracts` — Contrato de publicaciones: ficha, búsqueda paginada, sugerencias, listados por publicante (el privado con filtro opcional por [[PostStatus]] y sus conteos), alta, edición y borrado (estas dos reciben quién actúa), más las operaciones internas de la venta (`lockById`, `lockByIds`, `reserve`, `release`, `markSold`) que exigen una transacción abierta.
 - [ ] [[PostServiceImpl]] `services` — Publicaciones.
 - [ ] [[Pagination]] `services` — Aritmética de páginas compartida: páginas para un total y offset de una página.
 - [ ] [[PageNotFoundException]] `services-contracts` — Número de página menor que 1 o mayor que el total.
@@ -315,7 +320,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Persistencia
 
-- [ ] [[PostDao]] `persistence-contracts` — Contrato de publicaciones: búsqueda y conteo con filtros, sugerencias, listados por publicante, lectura con bloqueo de una o varias filas, alta, edición, cambio de estado con guarda y borrado.
+- [ ] [[PostDao]] `persistence-contracts` — Contrato de publicaciones: búsqueda y conteo con filtros, sugerencias, listados por publicante (el privado filtrado por un conjunto de estados, con conteo por estado para los chips), lectura con bloqueo de una o varias filas, alta, edición, cambio de estado con guarda y borrado.
 - [ ] [[PostJdbcDao]] `persistence` — Publicaciones con Spring JDBC.
 
 ### Vista
@@ -331,8 +336,8 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 ### Tests
 
 - [ ] [[PaginationTest]] `test` — Páginas para totales vacíos, exactos y con resto.
-- [ ] [[PostServiceImplTest]] `test` — Normalización de la búsqueda, filtros inválidos, paginación, publicar, editar con galería, eliminar y bloqueos.
-- [ ] [[PostJdbcDaoTest]] `test` — Búsqueda con filtros, órdenes, comodines literales, conteo, sugerencias, bloqueo, cambio de estado con guarda, edición y borrado.
+- [ ] [[PostServiceImplTest]] `test` — Normalización de la búsqueda, filtros inválidos, paginación, publicar, editar con galería, eliminar, autorización por publicante o ADMIN en el service, "Mis publicaciones" filtrada por estado y bloqueos.
+- [ ] [[PostJdbcDaoTest]] `test` — Búsqueda con filtros, órdenes, comodines literales, conteo, sugerencias, listado del publicante filtrado por estado y conteo por estado, bloqueo, cambio de estado con guarda, edición y borrado.
 
 **Al terminar deberías poder contestar:**
 
@@ -460,7 +465,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 7 — Publicar, editar e imágenes
 
-*40 archivos · 2.921 líneas*
+*40 archivos · 2.933 líneas*
 
 **Objetivo.** El primer flujo de escritura: formulario con archivos, catálogo que se crea al publicar y fotos guardadas en la base.
 
@@ -530,7 +535,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 8 — Ficha, contacto, direcciones y datos de cobro
 
-*31 archivos · 1.647 líneas*
+*31 archivos · 1.667 líneas*
 
 **Objetivo.** Cómo un comprador abre una consulta y qué datos propios necesita cada parte.
 
@@ -591,15 +596,15 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 9 — Consulta, venta y conversación
 
-*31 archivos · 4.477 líneas*
+*35 archivos · 5.069 líneas*
 
 **Objetivo.** El corazón del negocio: una máquina de estados con bloqueos, comprobante, mensajes y un correo por cada cambio.
 
-**Primero, en el vault:** [[Inquiry and sale flow]] · [[Conversation flow]] · [[Transactions and concurrency]]
+**Primero, en el vault:** [[Inquiry and sale flow]] · [[Conversation flow]] · [[Status filters flow]] · [[Transactions and concurrency]]
 
 ### Web
 
-- [ ] [[InquiryController]] `webapp` — Bandejas, página de la consulta y un endpoint por transición de la venta, además de mensajes, reseñas y descarga del comprobante con headers de seguridad.
+- [ ] [[InquiryController]] `webapp` — Bandejas con filtro por estado (`status`), página de la consulta y un endpoint por transición de la venta, además de mensajes, reseñas y descarga del comprobante con headers de seguridad.
 - [ ] [[InquiryAccessHandler]] `webapp` — Bean `inquiryAccess` de `@PreAuthorize`: comprador, publicante o cualquiera de las dos partes de una consulta.
 - [ ] [[MessageForm]] `webapp` — Un Mensaje nuevo: texto obligatorio hasta 500 caracteres.
 - [ ] [[ReceiptForm]] `webapp` — Formulario del comprobante: un archivo validado con [[ValidReceipt]].
@@ -608,7 +613,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Service
 
-- [ ] [[InquiryService]] `services-contracts` — Contrato de consultas y ventas: contactar, envío en lote del carrito, bandejas agrupadas, transiciones de la venta, comprobante, conversación, reseñas y consultas de pertenencia para [[InquiryAccessHandler]].
+- [ ] [[InquiryService]] `services-contracts` — Contrato de consultas y ventas: contactar, envío en lote del carrito, bandejas agrupadas con filtro opcional por [[InquiryStatusFilter]] y sus conteos, transiciones de la venta, comprobante, conversación, reseñas, consultas de pertenencia para [[InquiryAccessHandler]] y `findSaleToResume`, la venta a la que vuelve el vendedor después de cargar sus datos de cobro.
 - [ ] [[InquiryServiceImpl]] `services` — Consultas, ventas, conversación y reseñas.
 - [ ] [[InquiryNotFoundException]] `services-contracts` — La Consulta no existe.
 - [ ] [[InvalidInquiryStateException]] `services-contracts` — La transición no encontró la Consulta o el post en el estado esperado.
@@ -619,7 +624,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Persistencia
 
-- [ ] [[InquiryDao]] `persistence-contracts` — Contrato de consultas: crear una o varias en lote, bandejas paginadas por publicación, resumen y partes, transiciones de estado con guarda, comprobante, consultas abiertas de un comprador, rechazo de las demás pendientes y desenganche al eliminar un post.
+- [ ] [[InquiryDao]] `persistence-contracts` — Contrato de consultas: crear una o varias en lote, bandejas paginadas por publicación y filtradas por un conjunto de estados, conteo por estado para los chips, resumen y partes, transiciones de estado con guarda, `startSale` (pasa a espera de pago y fija el precio en un solo `UPDATE`), comprobante, consultas abiertas de un comprador, rechazo de las demás pendientes y desenganche al eliminar un post.
 - [ ] [[InquiryJdbcDao]] `persistence` — Consultas con Spring JDBC.
 - [ ] [[MessageDao]] `persistence-contracts` — Contrato de mensajes de una conversación: crear y listar por consulta en orden de llegada.
 - [ ] [[MessageJdbcDao]] `persistence` — Mensajes con Spring JDBC.
@@ -633,15 +638,19 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 - [ ] [webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inquiry-status.tag>) — Estado de la consulta como texto.
 - [ ] [webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-group-header.tag>) — Cabecera de un grupo de la bandeja: miniatura, título y estado. Elige la URL de la tapa según exista o no el post.
 - [ ] [webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/inbox-last-message.tag>) — Último mensaje de la conversación.
+- [ ] [webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/filter-chips.tag>) — Chips de filtro con su cantidad; el chip activo lleva a la URL sin filtro.
 - [ ] [webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/confirm-dialog.tag>) — Diálogo de confirmación.
 - [ ] [webapp/src/main/webapp/js/confirm-action.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/confirm-action.js>) — Abre el diálogo antes de enviar un formulario destructivo.
 - [ ] [webapp/src/main/webapp/js/submit-once.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/submit-once.js>) — Evita el doble envío.
+- [ ] [webapp/src/main/webapp/js/sale-detail.js](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/js/sale-detail.js>) — Página de la venta: alto de la conversación, scroll al último mensaje, Enter para enviar y cancelar la edición de la reseña.
 
 ### Tests
 
-- [ ] [[InquiryServiceImplTest]] `test` — Contactabilidad, alta, bandejas, cada transición de la venta con sus estados inválidos, direcciones parciales, mensajes, reseñas, alta en lote y avisos después del commit.
-- [ ] [[InquiryJdbcDaoTest]] `test` — Bandejas agrupadas y paginadas (incluidos posts eliminados), guardas de estado, comprobante, consultas abiertas, alta en lote y desenganche.
+- [ ] [[InquiryServiceImplTest]] `test` — Contactabilidad, alta, bandejas (también filtradas), cada transición de la venta con sus estados inválidos (incluida una aceptación cuya transición falla), direcciones parciales, mensajes, reseñas, alta en lote, venta a la que volver y avisos después del commit.
+- [ ] [[InquiryStatusFilterTest]] `test` — Que [[InquiryStatusFilter]] sume bien por filtro, que cada estado caiga en exactamente un filtro y que sin consultas los conteos queden vacíos.
+- [ ] [[InquiryJdbcDaoTest]] `test` — Bandejas agrupadas y paginadas (incluidos posts eliminados), filtro por estado (grupos mixtos, sin coincidencias, conteo de grupos) y conteo por estado, guardas de estado, `startSale` con precio fijado, precio actual mientras está pendiente, avatares de las partes, comprobante, consultas abiertas, alta en lote y desenganche.
 - [ ] [[MessageJdbcDaoTest]] `test` — Alta de mensajes y orden por llegada.
+- [ ] [[ReceiptTest]] `test` — Que [[Receipt]] no comparta su arreglo de bytes: cambiar el original o el devuelto no altera el comprobante.
 
 **Al terminar deberías poder contestar:**
 
@@ -653,7 +662,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 10 — Reseñas y perfiles
 
-*24 archivos · 1.971 líneas*
+*27 archivos · 2.294 líneas*
 
 **Objetivo.** Lo que pasa después de una venta y las dos caras del perfil: la privada y la pública.
 
@@ -663,15 +672,18 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 - [ ] [[ReviewService]] `services-contracts` — Contrato de reseñas.
 - [ ] [[ReviewServiceImpl]] `services` — Guarda (actualizando la fila existente o creando) y quita (borrado lógico) reseñas con propagación `MANDATORY`.
-- [ ] [[ReviewDao]] `persistence-contracts` — Contrato de reseñas: buscar la de un autor en una venta, listar las activas de una Cuenta, estadísticas, crear, actualizar (reactivando) y desactivar.
+- [ ] [[ReviewDao]] `persistence-contracts` — Contrato de reseñas: buscar la de un autor en una venta, listar las activas de una Cuenta por rol y con `LIMIT`/`OFFSET`, estadísticas por rol, crear, actualizar (reactivando) y desactivar.
 - [ ] [[ReviewJdbcDao]] `persistence` — Reseñas con Spring JDBC.
 - [ ] [[ReviewForm]] `webapp` — Reseña: puntaje obligatorio de 1 a 5 y comentario opcional hasta 500.
 - [ ] [[InvalidReviewException]] `services-contracts` — La reseña no cumple [[ReviewRules]].
 - [ ] [webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/star-rating-input.tag>) — Estrellas como radios accesibles.
+- [ ] [webapp/src/main/webapp/WEB-INF/tags/rating.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/rating.tag>) — Estrellas de solo lectura con relleno parcial para promedios.
+- [ ] [webapp/src/main/webapp/WEB-INF/tags/review-content.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/review-content.tag>) — Puntaje, comentario y, opcional, autor de una reseña.
+- [ ] [webapp/src/main/webapp/WEB-INF/tags/user-byline.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/user-byline.tag>) — Foto y nombre de una Cuenta con enlace a su perfil público.
 
 ### Perfil privado
 
-- [ ] [[ProfileController]] `webapp` — Perfil privado: nombre, foto, contraseña, datos de cobro y libreta de direcciones, con las publicaciones propias paginadas.
+- [ ] [[ProfileController]] `webapp` — Perfil privado: nombre, foto, contraseña, datos de cobro y libreta de direcciones, con las publicaciones propias paginadas y filtrables por estado (`postStatus`).
 - [ ] [[ProfileForm]] `webapp` — Edición del nombre visible: obligatorio y hasta 100 caracteres.
 - [ ] [[ChangePasswordForm]] `webapp` — Cambio de contraseña desde el perfil: clave actual obligatoria, nueva con [[ValidPassword]] y confirmación con [[MatchingPasswords]].
 - [ ] [[AvatarForm]] `webapp` — Formulario de la foto de perfil: un archivo o la marca `remove`.
@@ -684,16 +696,16 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Perfil público
 
-- [ ] [[PublicProfileController]] `webapp` — `GET /users/{id}`: perfil público con publicaciones a la venta y reseñas.
-- [ ] [[PublicProfileService]] `services-contracts` — Contrato del perfil público: una operación que compone Cuenta, publicaciones y reseñas.
-- [ ] [[PublicProfileServiceImpl]] `services` — Compone el perfil público con la Cuenta verificada, sus publicaciones disponibles y sus reseñas.
+- [ ] [[PublicProfileController]] `webapp` — `GET /users/{id}`: perfil público con publicaciones a la venta y reseñas paginadas por rol (`reviewRole`, `reviewPage`).
+- [ ] [[PublicProfileService]] `services-contracts` — Contrato del perfil público: una operación que compone Cuenta, publicaciones y una página de reseñas del rol pedido.
+- [ ] [[PublicProfileServiceImpl]] `services` — Compone el perfil público con la Cuenta verificada, sus publicaciones disponibles y una página de sus reseñas para el rol pedido.
 - [ ] [webapp/src/main/webapp/WEB-INF/views/profile/public.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/profile/public.jsp>) — Perfil público: reputación, publicaciones, reseñas.
 
 ### Tests
 
-- [ ] [[ReviewServiceImplTest]] `test` — Guardar, reemplazar, quitar y reglas de la reseña.
-- [ ] [[ReviewJdbcDaoTest]] `test` — Alta, actualización que reactiva, desactivación, estadísticas y listado de activas.
-- [ ] [[PublicProfileServiceImplTest]] `test` — Composición del perfil público.
+- [ ] [[ReviewServiceImplTest]] `test` — Guardar, reemplazar, quitar, reglas de la reseña y páginas por rol (primera, segunda, vacía e inválida).
+- [ ] [[ReviewJdbcDaoTest]] `test` — Alta, actualización que reactiva, desactivación, listado y estadísticas por rol, paginación con `OFFSET` y foto del autor.
+- [ ] [[PublicProfileServiceImplTest]] `test` — Composición del perfil público con la página de reseñas del rol pedido.
 
 **Al terminar deberías poder contestar:**
 
@@ -703,7 +715,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 11 — Carrito
 
-*12 archivos · 1.442 líneas*
+*12 archivos · 1.459 líneas*
 
 **Objetivo.** La funcionalidad más nueva: junta todo lo anterior (contacto, direcciones, bloqueos, correo) en una operación en lote.
 
@@ -727,7 +739,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Tests
 
-- [ ] [[CartServiceImplTest]] `test` — Agregar con cada motivo de rechazo, tope, pantalla de envío, envío parcial, nada para enviar y dirección nueva.
+- [ ] [[CartServiceImplTest]] `test` — Agregar con cada motivo de rechazo (incluido un post que se vende antes del bloqueo), tope, pantalla de envío, envío parcial, nada para enviar y dirección nueva.
 - [ ] [[CartItemJdbcDaoTest]] `test` — Agregar, repetidos, quitar, quitar varios y el filtro de consultables por estado del post y consultas abiertas.
 
 **Al terminar deberías poder contestar:**
@@ -738,7 +750,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 12 — Errores
 
-*6 archivos · 182 líneas*
+*6 archivos · 184 líneas*
 
 **Objetivo.** Cómo una excepción de negocio se convierte en una respuesta HTTP.
 
@@ -746,7 +758,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ### Handlers y páginas
 
-- [ ] [[ErrorResponseAdvice]] `webapp` — Único lugar donde las excepciones de negocio se vuelven respuestas: no encontrado → 404, ajeno → 403, dato que saltea la validación o parámetro mal tipado → 400.
+- [ ] [[ErrorResponseAdvice]] `webapp` — Único lugar donde las excepciones de negocio se vuelven respuestas: no encontrado → 404, ajeno → 403, dato que saltea la validación (imagen, reseña, datos del post o de cobro) o parámetro mal tipado → 400.
 - [ ] [[ErrorController]] `webapp` — Vistas de 403 y 404 a las que hacen forward Spring Security y el contenedor.
 - [ ] [webapp/src/main/webapp/WEB-INF/views/error/400.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/400.jsp>) — Pedido inválido.
 - [ ] [webapp/src/main/webapp/WEB-INF/views/error/403.jsp](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/views/error/403.jsp>) — Sin permiso.
@@ -761,7 +773,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 13 — Interfaz compartida
 
-*20 archivos · 3.382 líneas*
+*20 archivos · 3.467 líneas*
 
 **Objetivo.** Los componentes JSP, estilos e imágenes que usan todas las páginas.
 
@@ -807,7 +819,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 ## Etapa 14 — Textos
 
-*4 archivos · 1.515 líneas*
+*4 archivos · 1.596 líneas*
 
 **Objetivo.** Los bundles de mensajes. No hace falta leerlos enteros: recorré los prefijos y compará un mismo bloque en los tres idiomas.
 
@@ -923,7 +935,7 @@ Las líneas son el total de cada archivo en `8929aea`, incluidos comentarios y l
 
 **Objetivo.** Para entender por qué algo es como es. Leé la especificación de una funcionalidad después de haber leído su código.
 
-**Primero, en el vault:** [[History and specifications]] · [[Recent changes 2026-10-04]] · [[Known gaps and document drift]]
+**Primero, en el vault:** [[History and specifications]] · [[Recent changes 2026-10-05]] · [[Recent changes 2026-10-04]] · [[Known gaps and document drift]]
 
 ### Especificaciones
 

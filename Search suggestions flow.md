@@ -4,8 +4,8 @@ categories: ["Flows", "Web", "Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/dto/SearchSuggestionDto.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/dto/ArtistSuggestionDto.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/ArtistServiceImpl.java", "models/src/main/java/ar/edu/itba/paw/models/SearchSuggestion.java", "models/src/main/java/ar/edu/itba/paw/models/SearchSuggestionType.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java", "webapp/src/main/webapp/js/autocomplete.js", "webapp/src/main/webapp/WEB-INF/tags/input-control.tag", "pom.xml"]
 ---
@@ -58,6 +58,26 @@ Siempre `200 application/json`. Sin `q`, con `q` vacío o de más de 255 caracte
 6. El cliente lee `response.json()` y crea cada `<li>` con `createElement`, `textContent` y `setAttribute`. Un título con `<` o `&` se ve tal cual.
 7. En el buscador, elegir una sugerencia envía el formulario (`submitOnSelect`).
 
+```mermaid
+sequenceDiagram
+    participant J as autocomplete.js
+    participant C as SearchSuggestionController
+    participant S as PostServiceImpl
+    participant D as PostDao
+    J->>J: espera SEARCH_DELAY_MS, numera el pedido
+    J->>C: GET /search/suggestions?q=...
+    C->>S: findSearchSuggestions(q)
+    alt q vacío, sin texto útil o de más de 255
+        S-->>C: lista vacía
+    else
+        S->>S: SearchText.compact
+        S->>D: findSearchSuggestions (UNION, ranking, LIMIT 5)
+    end
+    C->>C: toDto con typeLabel según el Locale
+    C-->>J: 200 application/json
+    J->>J: descarta respuestas viejas, arma los li con textContent
+```
+
 ## Decisiones y por qué
 
 | Decisión | Alternativa | Motivo | Fuente |
@@ -93,7 +113,7 @@ Con un `CASE` en SQL: exacta, prefijo, prefijo de palabra, contiene.
 
 ## Evidencia de código
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java>), líneas 20–49.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/SearchSuggestionController.java>), líneas 20–49.
 
 ```java
 @Controller
@@ -128,7 +148,7 @@ public class SearchSuggestionController {
 }
 ```
 
-Fuente exacta en `8929aea`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java>), líneas 16–34.
+Fuente exacta en `c3e2a4c`: [webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/controller/ArtistSuggestionController.java>), líneas 16–34.
 
 ```java
 @Controller
@@ -152,7 +172,7 @@ public class ArtistSuggestionController {
 }
 ```
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 58–82.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 60–84.
 
 ```java
     // Reproduce en SQL el ranking que antes se calculaba en memoria sobre la tabla
@@ -182,7 +202,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
                     + "LIMIT ?";
 ```
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 197–203.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 199–205.
 
 ```java
     @Override
@@ -194,7 +214,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
     }
 ```
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 177–188.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 179–190.
 
 ```java
     @Override
@@ -227,4 +247,4 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
 - [webapp/src/main/webapp/WEB-INF/tags/input-control.tag](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/webapp/WEB-INF/tags/input-control.tag>)
 - [pom.xml](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/pom.xml>)
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

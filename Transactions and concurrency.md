@@ -4,8 +4,8 @@ categories: ["Services", "Persistence"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java", "services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/CartServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/UserServiceImpl.java", "services/src/main/java/ar/edu/itba/paw/services/AddressServiceImpl.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java", "persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java", "webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java"]
 ---
@@ -46,10 +46,12 @@ Consecuencia que conviene conocer: una llamada a un método del **mismo** objeto
 
 | Qué se bloquea | Quién | Para qué |
 |---|---|---|
-| La fila del **post** | `InquiryServiceImpl.submit` y las transiciones de la venta, vía `PostService.lockById` | Que dos consultas, o una consulta y una aceptación, sobre el mismo ejemplar se ordenen entre sí |
+| La fila del **post** | `InquiryServiceImpl.submit`, las transiciones de la venta y `CartServiceImpl.add`, vía `PostService.lockById`; editar y eliminar, vía `PostDao.findByIdForUpdate` | Que dos consultas, una consulta y una aceptación, o un agregado al carrito y una venta sobre el mismo ejemplar se ordenen entre sí |
 | Varios posts, **en orden de id** | `CartServiceImpl` al enviar el carrito, vía `PostService.lockByIds` | Lo mismo para muchos; el orden fijo evita interbloqueos entre dos carritos con posts en común |
 | La fila de la **cuenta** | `AddressServiceImpl` (tope de tres direcciones), `CartServiceImpl.add` (tope de veinte), `InquiryServiceImpl` al aceptar (datos de cobro) | Serializar por cuenta un "contar y después insertar" |
 | La fila de la **consulta** | `InquiryServiceImpl.lockConfirmedSale`, vía `InquiryDao.findByIdForUpdate` | Que dos guardados o quitados de reseña de la misma parte se ordenen entre sí ([[Reviews flow]]) |
+
+**Orden entre tablas.** Cuando una transacción toma el post y la Cuenta, siempre toma primero el post: contacto, aceptación, envío del carrito y, desde el PR #52 (`e12c0e39`), también agregar al carrito. Hasta `8929aea` `CartServiceImpl.add` bloqueaba solo la Cuenta y después insertaba la clave foránea al post, el orden inverso; dos transacciones con órdenes opuestos pueden esperarse mutuamente.
 
 Los métodos que bloquean llevan `Propagation.MANDATORY`: fuera de una transacción el bloqueo se soltaría apenas vuelve el método y no protegería nada. Que falle es mejor que simular protección.
 
@@ -80,6 +82,7 @@ Si no hay transacción activa (por ejemplo, en un test con mocks), la acción co
 | `MANDATORY` en los métodos que bloquean o transicionan | Sin transacción externa el bloqueo no protege | Comentarios en [[PostServiceImpl]], [[UserServiceImpl]], [[ReviewServiceImpl]] |
 | Bloquear la fila del post, no una fila por consulta | Es el recurso por el que compiten todas las consultas del mismo ejemplar | Comentario en [[PostServiceImpl]] |
 | Bloqueo en orden de id en el carrito | Evitar interbloqueos | Comentario en [[PostJdbcDao]] |
+| Siempre post antes que Cuenta | Un orden único entre tablas evita interbloqueos entre contacto, carrito y venta | Comentario en [[CartServiceImpl]]; commit `e12c0e39` |
 | Savepoint en `findOrCreate` | PostgreSQL inutiliza la transacción tras una violación de unicidad | Comentario en [[ArtistJdbcDao]] |
 | Correo después del commit | No avisar algo que se revirtió | Estructura de [[TransactionCallbacks]]; inferencia |
 | Nivel de aislamiento por defecto (`READ COMMITTED` en PostgreSQL) | No se configura otro; los bloqueos explícitos cubren los casos críticos | Ausencia de configuración; inferencia |
@@ -115,7 +118,7 @@ Porque en PostgreSQL un error dentro de la transacción la deja inutilizable; el
 
 ### Bloqueos y transiciones del post
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 79–110.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 81–112.
 
 ```java
     // Bloquea la fila del post dentro de la transaccion del llamador: las consultas del mismo
@@ -154,7 +157,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
 
 ### Bloqueo de varios posts en orden
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 270–291.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/PostJdbcDao.java>), líneas 297–318.
 
 ```java
     @Override
@@ -183,7 +186,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 ### Savepoint en `findOrCreate`
 
-Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>), líneas 72–95.
+Fuente exacta en `c3e2a4c`: [persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>), líneas 72–95.
 
 ```java
     @Override
@@ -214,7 +217,7 @@ Fuente exacta en `8929aea`: [persistence/src/main/java/ar/edu/itba/paw/persisten
 
 ### Traducción del choque al publicar
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 260–268.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/PostServiceImpl.java>), líneas 273–281.
 
 ```java
         } catch (final DuplicatePostKeyException e) {
@@ -230,7 +233,7 @@ Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/Pos
 
 ### Después del commit
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java>), líneas 1–24.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/TransactionCallbacks.java>), líneas 1–24.
 
 ```java
 package ar.edu.itba.paw.services;
@@ -271,4 +274,4 @@ final class TransactionCallbacks {
 - [persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/main/java/ar/edu/itba/paw/persistence/ArtistJdbcDao.java>) · [[ArtistJdbcDao]]
 - [webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/webapp/src/main/java/ar/edu/itba/paw/webapp/config/WebConfig.java>) · [[WebConfig]]
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

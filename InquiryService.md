@@ -4,39 +4,41 @@ categories: ["Services"]
 type: "code"
 module: "services-contracts"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java"]
 ---
 
 # InquiryService
 
-Contrato de consultas y ventas: contactar, envío en lote del carrito, bandejas agrupadas, transiciones de la venta, comprobante, conversación, reseñas y consultas de pertenencia para [[InquiryAccessHandler]].
+Contrato de consultas y ventas: contactar, envío en lote del carrito, bandejas agrupadas con filtro opcional por [[InquiryStatusFilter]] y sus conteos, transiciones de la venta, comprobante, conversación, reseñas, consultas de pertenencia para [[InquiryAccessHandler]] y `findSaleToResume`, la venta a la que vuelve el vendedor después de cargar sus datos de cobro.
 
 ## Guía de lectura
 
-Operaciones para localizar en la fuente: `findContactablePost`, `submit`, `submitWithNewAddress`, `submitAll`, `findPostIdsWithOpenInquiry`, `findOpenInquiryId`, `findSentGroupedByPost`, `findReceivedGroupedByPost`, `countSentBy`, `countReceivedBy`, `accept`, `reject`, `uploadReceipt`, `requestNewReceipt`, `confirm`, `cancel`, `findDetail`, `saveReview`, `removeReview`, `sendMessage`, `findReceipt`, `findParties`.
+Operaciones para localizar en la fuente: `findContactablePost`, `submit`, `submitWithNewAddress`, `submitAll`, `findPostIdsWithOpenInquiry`, `findOpenInquiryId`, `findSentGroupedByPost`, `findReceivedGroupedByPost`, `countSentBy`, `countReceivedBy`, `countSentByFilter`, `countReceivedByFilter`, `accept`, `reject`, `uploadReceipt`, `requestNewReceipt`, `confirm`, `cancel`, `findDetail`, `saveReview`, `removeReview`, `sendMessage`, `findReceipt`, `findParties`, `findSaleToResume`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Inquiry]], [[InquiryDetail]], [[InquiryPage]], [[InquiryParties]], [[Message]], [[PostInterestNotification]], [[PostSummary]], [[Province]], [[Receipt]], [[Review]].
+Referencias estáticas a tipos del proyecto: [[FilterCounts]], [[Inquiry]], [[InquiryDetail]], [[InquiryPage]], [[InquiryParties]], [[InquiryStatusFilter]], [[Message]], [[PostInterestNotification]], [[PostSummary]], [[Province]], [[Receipt]], [[Review]].
 
-Referenciado por: [[CartServiceImpl]], [[CartServiceImplTest]], [[InquiryAccessHandler]], [[InquiryController]], [[InquiryServiceImpl]], [[PostContactController]], [[SecurityConfig]].
+Referenciado por: [[CartServiceImpl]], [[CartServiceImplTest]], [[InquiryAccessHandler]], [[InquiryController]], [[InquiryServiceImpl]], [[PostContactController]], [[ProfileController]], [[SecurityConfig]].
 
 Las conexiones se calculan sobre el código sin comentarios ni literales. No incluyen resolución dinámica de Spring, JSP ni un grafo de ejecución.
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java>), líneas 1–96.
+Fuente exacta en `c3e2a4c`: [services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services-contracts/src/main/java/ar/edu/itba/paw/services/InquiryService.java>), líneas 1–108.
 
 ```java
 package ar.edu.itba.paw.services;
 
+import ar.edu.itba.paw.models.FilterCounts;
 import ar.edu.itba.paw.models.Inquiry;
 import ar.edu.itba.paw.models.InquiryDetail;
 import ar.edu.itba.paw.models.InquiryPage;
 import ar.edu.itba.paw.models.InquiryParties;
+import ar.edu.itba.paw.models.InquiryStatusFilter;
 import ar.edu.itba.paw.models.Message;
 import ar.edu.itba.paw.models.PostSummary;
 import ar.edu.itba.paw.models.Province;
@@ -78,15 +80,21 @@ public interface InquiryService {
 
     // Las dos bandejas agrupan por publicacion y se paginan por grupo: varias consultas
     // sobre el mismo ejemplar son una sola entrada y nunca quedan partidas entre paginas.
-    InquiryPage findSentGroupedByPost(long buyerId, int pageNumber);
+    // filter null trae todas; con filtro, cada grupo muestra solo las consultas que coinciden.
+    InquiryPage findSentGroupedByPost(long buyerId, InquiryStatusFilter filter, int pageNumber);
 
     // Salvo en una venta en curso o concretada, el vendedor ve solo la ciudad y la provincia del envio.
-    InquiryPage findReceivedGroupedByPost(long sellerId, int pageNumber);
+    InquiryPage findReceivedGroupedByPost(long sellerId, InquiryStatusFilter filter, int pageNumber);
 
     // Cada vista de la bandeja muestra el total de la otra en la sub-nav.
     int countSentBy(long buyerId);
 
     int countReceivedBy(long sellerId);
+
+    // Los numeros de los chips de filtro de cada bandeja.
+    FilterCounts<InquiryStatusFilter> countSentByFilter(long buyerId);
+
+    FilterCounts<InquiryStatusFilter> countReceivedByFilter(long sellerId);
 
     Inquiry accept(long inquiryId, long sellerId);
 
@@ -126,5 +134,9 @@ public interface InquiryService {
 
     // Para InquiryAccessHandler: devuelve las partes, no decide. Vacio si la consulta no existe.
     Optional<InquiryParties> findParties(long inquiryId);
+
+    // Venta a la que vuelve el vendedor despues de cargar sus datos de cobro. Vacio si la consulta
+    // no existe o no es suya: es contexto de navegacion, no autoriza a aceptar.
+    Optional<Long> findSaleToResume(long inquiryId, long sellerId);
 }
 ```

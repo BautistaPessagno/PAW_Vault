@@ -4,25 +4,25 @@ categories: ["Services"]
 type: "code"
 module: "services"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java"]
 ---
 
 # InquiryServiceImpl
 
-Consultas, ventas, conversación y reseñas. Contactar bloquea el post y congela el precio; cada transición bloquea el post, vuelve a chequear al actor y actualiza con guarda de estado; los avisos salen después del commit en el idioma del destinatario. `submitAll` crea en lote las consultas del carrito. Ver [[Inquiry and sale flow]], [[Contact flow]], [[Conversation flow]] y [[Reviews flow]].
+Consultas, ventas, conversación y reseñas. Contactar bloquea el post; aceptar reserva el post y fija el precio de la venta con `startSale`; cada transición bloquea el post, vuelve a chequear al actor y actualiza con guarda de estado; los avisos salen después del commit en el idioma del destinatario. `submitAll` crea en lote las consultas del carrito. Las bandejas traducen el filtro a estados (sin filtro, todos) y los chips salen de `InquiryStatusFilter.countsFrom`. Ver [[Inquiry and sale flow]], [[Contact flow]], [[Conversation flow]], [[Reviews flow]] y [[Status filters flow]].
 
 ## Guía de lectura
 
 Datos y dependencias declaradas: `LOGGER`, `INBOX_PAGE_SIZE`, `inquiryDao`, `messageDao`, `postService`, `userService`, `addressService`, `reviewService`, `emailService`.
 
-Operaciones para localizar en la fuente: `findContactablePost`, `submit`, `submitWithNewAddress`, `lockContactablePost`, `create`, `submitAll`, `interestedPost`, `findPostIdsWithOpenInquiry`, `findOpenInquiryId`, `findSentGroupedByPost`, `findReceivedGroupedByPost`, `withAddressForSeller`, `groupByPost`, `PostGroupKey`, `countSentBy`, `countReceivedBy`, `accept`, `reject`, `uploadReceipt`, `requestNewReceipt`, `confirm`, `cancel`, `findDetail`, `saveReview`, `removeReview`, `lockConfirmedSale`, `sendMessage`, `findReceipt`, `findParties`, `requireBuyer`, `requireSeller`, `requireParty`, `getSummary`, `lockPost`, `move`, `notifyBuyer`, `notifySeller`, `schedule`, `validateContactable`.
+Operaciones para localizar en la fuente: `findContactablePost`, `submit`, `submitWithNewAddress`, `lockContactablePost`, `create`, `submitAll`, `interestedPost`, `findPostIdsWithOpenInquiry`, `findOpenInquiryId`, `findSentGroupedByPost`, `findReceivedGroupedByPost`, `statusesOf`, `withAddressForSeller`, `groupByPost`, `PostGroupKey`, `countSentBy`, `countReceivedBy`, `countSentByFilter`, `countReceivedByFilter`, `accept`, `reject`, `uploadReceipt`, `requestNewReceipt`, `confirm`, `cancel`, `findDetail`, `saveReview`, `removeReview`, `lockConfirmedSale`, `sendMessage`, `findReceipt`, `findParties`, `findSaleToResume`, `requireBuyer`, `requireSeller`, `requireParty`, `getSummary`, `lockPost`, `move`, `notifyBuyer`, `notifySeller`, `schedule`, `validateContactable`.
 
 ## Conexiones
 
-Referencias estáticas a tipos del proyecto: [[Address]], [[AddressNotFoundException]], [[AddressService]], [[ContactRules]], [[EmailService]], [[ForbiddenOperationException]], [[Inquiry]], [[InquiryDao]], [[InquiryDetail]], [[InquiryEvent]], [[InquiryGroup]], [[InquiryNotFoundException]], [[InquiryPage]], [[InquiryParties]], [[InquiryService]], [[InquiryStatus]], [[InquirySummary]], [[InquiryUpdateNotification]], [[InvalidInquiryStateException]], [[InvalidMessageException]], [[InvalidReceiptException]], [[Message]], [[MessageDao]], [[MessageNotification]], [[MessageRules]], [[MissingPaymentInfoException]], [[OpenInquiryExistsException]], [[Pagination]], [[PostInterestNotification]], [[PostService]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[Province]], [[Receipt]], [[ReceiptNotFoundException]], [[ReceiptRules]], [[Review]], [[ReviewService]], [[SupportedLocales]], [[TransactionCallbacks]], [[User]], [[UserNotFoundException]], [[UserService]].
+Referencias estáticas a tipos del proyecto: [[Address]], [[AddressNotFoundException]], [[AddressService]], [[ContactRules]], [[EmailService]], [[FilterCounts]], [[ForbiddenOperationException]], [[Inquiry]], [[InquiryDao]], [[InquiryDetail]], [[InquiryEvent]], [[InquiryGroup]], [[InquiryNotFoundException]], [[InquiryPage]], [[InquiryParties]], [[InquiryService]], [[InquiryStatus]], [[InquiryStatusFilter]], [[InquirySummary]], [[InquiryUpdateNotification]], [[InvalidInquiryStateException]], [[InvalidMessageException]], [[InvalidReceiptException]], [[Message]], [[MessageDao]], [[MessageNotification]], [[MessageRules]], [[MissingPaymentInfoException]], [[OpenInquiryExistsException]], [[Pagination]], [[PostInterestNotification]], [[PostService]], [[PostStatus]], [[PostSummary]], [[PostUnavailableException]], [[Province]], [[Receipt]], [[ReceiptNotFoundException]], [[ReceiptRules]], [[Review]], [[ReviewService]], [[SupportedLocales]], [[TransactionCallbacks]], [[User]], [[UserNotFoundException]], [[UserService]].
 
 Referenciado por: [[InquiryServiceImplTest]].
 
@@ -30,18 +30,20 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 1–527.
+Fuente exacta en `c3e2a4c`: [services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/services/src/main/java/ar/edu/itba/paw/services/InquiryServiceImpl.java>), líneas 1–562.
 
 ```java
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Address;
+import ar.edu.itba.paw.models.FilterCounts;
 import ar.edu.itba.paw.models.Inquiry;
 import ar.edu.itba.paw.models.InquiryDetail;
 import ar.edu.itba.paw.models.InquiryGroup;
 import ar.edu.itba.paw.models.InquiryPage;
 import ar.edu.itba.paw.models.InquiryParties;
 import ar.edu.itba.paw.models.InquiryStatus;
+import ar.edu.itba.paw.models.InquiryStatusFilter;
 import ar.edu.itba.paw.models.InquirySummary;
 import ar.edu.itba.paw.models.Message;
 import ar.edu.itba.paw.models.MessageRules;
@@ -218,22 +220,34 @@ public class InquiryServiceImpl implements InquiryService {
 
     @Override
     @Transactional(readOnly = true)
-    public InquiryPage findSentGroupedByPost(final long buyerId, final int pageNumber) {
-        final int totalPages = Pagination.pagesFor(inquiryDao.countGroupsByBuyerId(buyerId), INBOX_PAGE_SIZE);
+    public InquiryPage findSentGroupedByPost(final long buyerId, final InquiryStatusFilter filter,
+                                             final int pageNumber) {
+        final List<InquiryStatus> statuses = statusesOf(filter);
+        final int totalPages = Pagination.pagesFor(inquiryDao.countGroupsByBuyerId(buyerId, statuses),
+                INBOX_PAGE_SIZE);
         final int offset = Pagination.offsetFor(pageNumber, INBOX_PAGE_SIZE, totalPages);
-        return new InquiryPage(groupByPost(inquiryDao.findByBuyerId(buyerId, INBOX_PAGE_SIZE, offset)),
+        return new InquiryPage(groupByPost(inquiryDao.findByBuyerId(buyerId, statuses, INBOX_PAGE_SIZE, offset)),
                 pageNumber, totalPages);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InquiryPage findReceivedGroupedByPost(final long sellerId, final int pageNumber) {
-        final int totalPages = Pagination.pagesFor(inquiryDao.countGroupsBySellerId(sellerId), INBOX_PAGE_SIZE);
+    public InquiryPage findReceivedGroupedByPost(final long sellerId, final InquiryStatusFilter filter,
+                                                 final int pageNumber) {
+        final List<InquiryStatus> statuses = statusesOf(filter);
+        final int totalPages = Pagination.pagesFor(inquiryDao.countGroupsBySellerId(sellerId, statuses),
+                INBOX_PAGE_SIZE);
         final int offset = Pagination.offsetFor(pageNumber, INBOX_PAGE_SIZE, totalPages);
-        final List<InquirySummary> inquiries = inquiryDao.findBySellerId(sellerId, INBOX_PAGE_SIZE, offset).stream()
+        final List<InquirySummary> inquiries = inquiryDao.findBySellerId(sellerId, statuses, INBOX_PAGE_SIZE, offset)
+                .stream()
                 .map(InquiryServiceImpl::withAddressForSeller)
                 .toList();
         return new InquiryPage(groupByPost(inquiries), pageNumber, totalPages);
+    }
+
+    // Sin filtro, la bandeja muestra las consultas en cualquier estado.
+    private static List<InquiryStatus> statusesOf(final InquiryStatusFilter filter) {
+        return filter == null ? List.of(InquiryStatus.values()) : filter.getStatuses();
     }
 
     // Publicar un vinilo no puede servir para juntar domicilios: el vendedor ve la direccion
@@ -287,6 +301,18 @@ public class InquiryServiceImpl implements InquiryService {
         return inquiryDao.countBySellerId(sellerId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public FilterCounts<InquiryStatusFilter> countSentByFilter(final long buyerId) {
+        return InquiryStatusFilter.countsFrom(inquiryDao.countByStatusForBuyer(buyerId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FilterCounts<InquiryStatusFilter> countReceivedByFilter(final long sellerId) {
+        return InquiryStatusFilter.countsFrom(inquiryDao.countByStatusForSeller(sellerId));
+    }
+
     /*
      * Toda transicion bloquea el post antes de escribir: las consultas de un mismo ejemplar
      * compiten por esa unica fila. Cada escritura lleva su guarda de estado; si no encuentra
@@ -313,7 +339,9 @@ public class InquiryServiceImpl implements InquiryService {
         if (!postService.reserve(post.getId())) {
             throw new InvalidInquiryStateException();
         }
-        move(inquiryId, InquiryStatus.PENDING, InquiryStatus.AWAITING_PAYMENT);
+        if (!inquiryDao.startSale(inquiryId, post.getPrice())) {
+            throw new InvalidInquiryStateException();
+        }
         notifyBuyer(inquiry, post, InquiryEvent.ACCEPTED);
         LOGGER.info("Accepted inquiry inquiryId={} postId={} sellerId={}", inquiryId, post.getId(), sellerId);
         return new Inquiry(inquiryId, inquiry.getPostId(), inquiry.getBuyerId(), InquiryStatus.AWAITING_PAYMENT);
@@ -496,6 +524,13 @@ public class InquiryServiceImpl implements InquiryService {
     @Transactional(readOnly = true)
     public Optional<InquiryParties> findParties(final long inquiryId) {
         return inquiryDao.findPartiesById(inquiryId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Long> findSaleToResume(final long inquiryId, final long sellerId) {
+        return inquiryDao.findPartiesById(inquiryId).filter(parties -> parties.isSeller(sellerId))
+                .map(parties -> inquiryId);
     }
 
     private static void requireBuyer(final InquirySummary inquiry, final long userId) {

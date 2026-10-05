@@ -73,7 +73,7 @@ for p in tracked:
         top = '%s · Java%s' % (parts[0], ' de test' if '/src/test/' in p else '')
     groups.setdefault(top, []).append(p)
 out = ['''> [!summary] En una frase
-> Registro de los %d archivos versionados en `8929aea`: dónde está cada uno, qué nota del vault lo explica y en qué etapa del [[Roadmap de lectura]] se lee.
+> Registro de los %d archivos versionados en `c3e2a4c`: dónde está cada uno, qué nota del vault lo explica y en qué etapa del [[Roadmap de lectura]] se lee.
 
 Se genera a partir de `git ls-tree`; el generador falla si un archivo no tiene nota asignada. Las %d clases Java tienen una nota propia con su código completo. Los demás archivos se explican en una nota temática, que en muchos casos también embebe su contenido.
 

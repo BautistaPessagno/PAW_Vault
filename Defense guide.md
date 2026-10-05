@@ -4,8 +4,8 @@ categories: ["Navigation", "Testing"]
 type: "guide"
 module: "cross-cutting"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 tags: ["codemap", "navigation"]
 ---
@@ -126,6 +126,7 @@ Generado a partir de la sección "Preguntas de defensa" de cada nota.
 - ¿Cómo evitan vender dos veces el mismo ejemplar?
 - ¿Por qué `FOR UPDATE` si ya tienen el `UPDATE` condicional?
 - ¿Dónde se guarda el comprobante y quién lo ve?
+- ¿Qué precio paga el comprador si el vendedor cambia el precio después de la consulta?
 - ¿Qué estado HTTP devuelve una transición inválida?
 - ¿Qué pasa si el mail no sale?
 
@@ -149,6 +150,7 @@ Generado a partir de la sección "Preguntas de defensa" de cada nota.
 - ¿Qué pasa si quito la reseña y vuelvo a calificar?
 - ¿Por qué `ReviewService` tiene `MANDATORY`?
 - ¿Cómo se calcula el promedio?
+- ¿Cómo saben si una reseña es como vendedor o como comprador si la tabla no lo guarda?
 
 **[[Cart flow#Preguntas de defensa|Cart flow]]**
 
@@ -164,6 +166,7 @@ Generado a partir de la sección "Preguntas de defensa" de cada nota.
 
 - ¿Por qué no se edita la dirección directamente?
 - ¿Qué pasa si acepto una consulta sin tener CBU?
+- ¿Se puede usar `returnInquiryId` para saltar a una venta ajena?
 - ¿Cómo validan un CBU?
 - ¿Qué impide tener cuatro direcciones si mando dos altas a la vez?
 
@@ -234,6 +237,7 @@ Generado a partir de la sección "Preguntas de defensa" de cada nota.
 
 - ¿Qué datos de una Cuenta son públicos?
 - ¿Qué pasa si pido el perfil de una Cuenta sin verificar?
+- ¿Cómo se pasa de las reseñas como vendedor a las de comprador sin JavaScript?
 - ¿Por qué existe `PublicProfileService`?
 
 
@@ -300,6 +304,14 @@ Generado a partir de la sección "Preguntas de defensa" de cada nota.
 - ¿Cómo paginan la bandeja si agrupa por publicación?
 - ¿Dónde se valida el número de página?
 
+**[[Status filters flow#Preguntas de defensa|Status filters flow]]**
+
+- ¿Dónde se filtra, en Java o en la base?
+- ¿Por qué "En curso" junta dos estados?
+- ¿Cómo llegan los números de los chips a la JSP?
+- ¿Qué pasa si escribo `?status=CUALQUIERA`?
+- ¿Cómo se conserva el filtro al pasar de página o al volver de una publicación?
+
 
 ### Interfaz
 
@@ -361,6 +373,6 @@ Generado a partir de la sección "Preguntas de defensa" de cada nota.
 - ¿Los tests garantizan que funciona en producción?
 
 
-Total: 168 preguntas en 36 notas.
+Total: 177 preguntas en 37 notas.
 
-Fuente inspeccionada: `8929aea`, 2026-10-04. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]
+Fuente inspeccionada: `c3e2a4c`, 2026-10-05. Es evidencia estática; no implica ejecución de la aplicación. [[Source inventory]] · [[Roadmap de lectura]]

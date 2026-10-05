@@ -4,23 +4,23 @@ categories: ["Persistence", "Testing"]
 type: "test"
 module: "persistence"
 project: "quieroVinilos"
-snapshot: "2026-10-04"
-commit: "8929aeaa59b250e6c7119212f96437e153e815ac"
+snapshot: "2026-10-05"
+commit: "c3e2a4cd23337bd35175d14ef551ba12a758a59d"
 status: "documented"
 sources: ["persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java"]
 ---
 
 # PostJdbcDaoTest
 
-Tests de `PostJdbcDao` en `persistence`: 65 casos declarados. Cubre: búsqueda con filtros, órdenes, comodines literales, conteo, sugerencias, bloqueo, cambio de estado con guarda, edición y borrado. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
+Tests de `PostJdbcDao` en `persistence`: 69 casos declarados. Cubre: búsqueda con filtros, órdenes, comodines literales, conteo, sugerencias, listado del publicante filtrado por estado y conteo por estado, bloqueo, cambio de estado con guarda, edición y borrado. No se ejecutaron en esta actualización del Vault; ver [[Testing and evidence]].
 
 ## Guía de lectura
 
-Datos y dependencias declaradas: `USERS_TABLE`, `ARTISTS_TABLE`, `ALBUMS_TABLE`, `POSTS_TABLE`, `CART_ITEMS_TABLE`, `POST_ID`, `USER_ID`, `PUBLISHER_EMAIL`, `PUBLISHER_LOCALE`, `ALBUM_ID`, `ALBUM_TITLE`, `ARTIST_NAME`, `RELEASE_YEAR`, `GENRE`, `COVER_IMAGE_ID`, `PRICE`, `DETAILED_POST_ID`, `DETAILED_USER_ID`, `DETAILED_PRICE`, `DETAILED_DESCRIPTION`, `DETAILED_CONDITION`, `DETAILED_PRESSING_YEAR`, `DETAILED_ZONE`, `LIMIT`, `OTHER_POST_ID`, `SOLD_POST_ID`, `OTHER_ALBUM_ID`, `AVAILABLE_PAGE_SIZE`, `postDao`, `dataSource`, `jdbcTemplate`.
+Datos y dependencias declaradas: `ALL_STATUSES`, `USERS_TABLE`, `ARTISTS_TABLE`, `ALBUMS_TABLE`, `POSTS_TABLE`, `CART_ITEMS_TABLE`, `POST_ID`, `USER_ID`, `PUBLISHER_EMAIL`, `PUBLISHER_LOCALE`, `ALBUM_ID`, `ALBUM_TITLE`, `ARTIST_NAME`, `RELEASE_YEAR`, `GENRE`, `COVER_IMAGE_ID`, `PRICE`, `DETAILED_POST_ID`, `DETAILED_USER_ID`, `DETAILED_PRICE`, `DETAILED_DESCRIPTION`, `DETAILED_CONDITION`, `DETAILED_PRESSING_YEAR`, `DETAILED_ZONE`, `LIMIT`, `OTHER_POST_ID`, `SOLD_POST_ID`, `OTHER_ALBUM_ID`, `AVAILABLE_PAGE_SIZE`, `postDao`, `dataSource`, `jdbcTemplate`.
 
 Operaciones para localizar en la fuente: `setUp`, `assertSuggestion`, `criteria`, `ids`.
 
-Casos declarados: 65.
+Casos declarados: 69.
 
 - `testFindFeaturedWhenPostsExistReturnsNewestByPublishDateWithMappedDetails`
 - `testFindFeaturedWhenLimitIsSmallerThanPostsReturnsOnlyFirstOnes`
@@ -41,14 +41,14 @@ Casos declarados: 65.
 - `testCreateWhenPublisherAlreadyPostedSameAlbumReturnsDuplicatePostKeyExceptionWithoutChanges`
 - `testCreateWhenAnotherPublisherPostsSameAlbumReturnsIndependentPostWithDetails`
 - `testCreateWhenOptionalTextDetailsAreNullReturnsPostWithRequiredCondition`
-- `testCreateWhenPriceIsNotPositiveThrowsDataIntegrityViolationWithoutPersistingPost`
-- `testCreateWhenConditionIsNullThrowsDataIntegrityViolationWithoutPersistingPost`
-- `testCreateWhenConditionIsUnknownThrowsDataIntegrityViolationWithoutPersistingPost`
+- `testCreateWhenPriceIsNotPositiveReturnsDataIntegrityViolationWithoutPersistingPost`
+- `testCreateWhenConditionIsNullReturnsDataIntegrityViolationWithoutPersistingPost`
+- `testCreateWhenConditionIsUnknownReturnsDataIntegrityViolationWithoutPersistingPost`
 - `testUpdateWhenPostExistsReturnsTrueAndPersistsEditableFields`
-- `testUpdateWithoutImageWhenAlbumHasCoverPreservesPostImageId`
+- `testUpdateWhenAlbumHasCoverReturnsTrueWithoutCopyingCoverToPost`
 - `testUpdateWithNullImageWhenOwnPhotoIsRemovedReturnsNoOwnImage`
 - `testUpdateWhenPostDoesNotExistReturnsFalse`
-- `testUpdateWhenConditionIsNullThrowsDataIntegrityViolationWithoutChangingPost`
+- `testUpdateWhenConditionIsNullReturnsDataIntegrityViolationWithoutChangingPost`
 - `testUpdateStatusWhenPostIsInExpectedStateReturnsTrue`
 - `testUpdateStatusWhenPostIsInAnotherStateReturnsFalse`
 - `testSearchWhenPostIsReservedReturnsWithoutIt`
@@ -80,6 +80,10 @@ Casos declarados: 65.
 - `testFindByPublisherIdWhenUserHasNoPostsReturnsEmptyList`
 - `testCountByPublisherIdWhenUserHasPostsReturnsTotal`
 - `testCountByPublisherIdWhenUserHasNoPostsReturnsZero`
+- `testFindByPublisherIdWhenFilteringSoldReturnsOnlySoldPosts`
+- `testCountByPublisherIdWhenFilteringAvailableReturnsAvailableCount`
+- `testCountByStatusForPublisherWhenPublisherHasMixedStatusesReturnsCountPerStatus`
+- `testCountByStatusForPublisherWhenPublisherHasNoPostsReturnsEmptyMap`
 - `testFindSearchSuggestionsWhenLimitIsBelowMatchCountReturnsBestRanked`
 - `testFindOwnImageIdWhenPostHasOwnImageReturnsImageId`
 - `testFindOwnImageIdWhenPostOnlyHasAlbumCoverReturnsEmpty`
@@ -98,7 +102,7 @@ Las conexiones se calculan sobre el código sin comentarios ni literales. No inc
 
 ## Fuente completa
 
-Fuente exacta en `8929aea`: [persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java>), líneas 1–1001.
+Fuente exacta en `c3e2a4c`: [persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java](</Users/bautistapessagno/Desktop/proyectos_itba/PAW/paw2026b/persistence/src/test/java/ar/edu/itba/paw/persistence/PostJdbcDaoTest.java>), líneas 1–1048.
 
 ```java
 package ar.edu.itba.paw.persistence;
@@ -128,6 +132,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -136,6 +141,7 @@ import java.util.stream.Collectors;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfiguration.class)
 public class PostJdbcDaoTest {
+    private static final List<PostStatus> ALL_STATUSES = List.of(PostStatus.values());
 
     private static final String USERS_TABLE = "users";
     private static final String ARTISTS_TABLE = "artists";
@@ -472,7 +478,7 @@ public class PostJdbcDaoTest {
     }
 
     @Test
-    public void testCreateWhenPriceIsNotPositiveThrowsDataIntegrityViolationWithoutPersistingPost() {
+    public void testCreateWhenPriceIsNotPositiveReturnsDataIntegrityViolationWithoutPersistingPost() {
         // 1. Arrange
         final long userId = 3;
         final int invalidPrice = 0;
@@ -487,7 +493,7 @@ public class PostJdbcDaoTest {
     }
 
     @Test
-    public void testCreateWhenConditionIsNullThrowsDataIntegrityViolationWithoutPersistingPost() {
+    public void testCreateWhenConditionIsNullReturnsDataIntegrityViolationWithoutPersistingPost() {
         // 1. Arrange
         final long userId = 3;
 
@@ -501,7 +507,7 @@ public class PostJdbcDaoTest {
     }
 
     @Test
-    public void testCreateWhenConditionIsUnknownThrowsDataIntegrityViolationWithoutPersistingPost() {
+    public void testCreateWhenConditionIsUnknownReturnsDataIntegrityViolationWithoutPersistingPost() {
         // 1. Arrange
         final long userId = 3;
 
@@ -542,7 +548,7 @@ public class PostJdbcDaoTest {
     }
 
     @Test
-    public void testUpdateWithoutImageWhenAlbumHasCoverPreservesPostImageId() {
+    public void testUpdateWhenAlbumHasCoverReturnsTrueWithoutCopyingCoverToPost() {
         // 1. Arrange
         final int updatedPrice = 52000;
 
@@ -585,7 +591,7 @@ public class PostJdbcDaoTest {
     }
 
     @Test
-    public void testUpdateWhenConditionIsNullThrowsDataIntegrityViolationWithoutChangingPost() {
+    public void testUpdateWhenConditionIsNullReturnsDataIntegrityViolationWithoutChangingPost() {
         // 1. Arrange
 
         // 2. Exercise
@@ -901,7 +907,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.findByPublisherId(USER_ID, 2, 1);
+        final List<PostSummary> result = postDao.findByPublisherId(USER_ID, ALL_STATUSES, 2, 1);
 
         // 3. Assert
         Assertions.assertEquals(List.of(POST_ID, 5L), ids(result));
@@ -968,7 +974,7 @@ public class PostJdbcDaoTest {
         final long userWithoutPosts = 999;
 
         // 2. Exercise
-        final List<PostSummary> result = postDao.findByPublisherId(userWithoutPosts, 13, 0);
+        final List<PostSummary> result = postDao.findByPublisherId(userWithoutPosts, ALL_STATUSES, 13, 0);
 
         // 3. Assert
         Assertions.assertTrue(result.isEmpty());
@@ -979,7 +985,7 @@ public class PostJdbcDaoTest {
         // 1. Arrange
 
         // 2. Exercise
-        final int result = postDao.countByPublisherId(USER_ID);
+        final int result = postDao.countByPublisherId(USER_ID, ALL_STATUSES);
 
         // 3. Assert
         Assertions.assertEquals(3, result);
@@ -991,10 +997,55 @@ public class PostJdbcDaoTest {
         final long userWithoutPosts = 999;
 
         // 2. Exercise
-        final int result = postDao.countByPublisherId(userWithoutPosts);
+        final int result = postDao.countByPublisherId(userWithoutPosts, ALL_STATUSES);
 
         // 3. Assert
         Assertions.assertEquals(0, result);
+    }
+
+    @Test
+    public void testFindByPublisherIdWhenFilteringSoldReturnsOnlySoldPosts() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final List<PostSummary> result = postDao.findByPublisherId(USER_ID, List.of(PostStatus.SOLD), 10, 0);
+
+        // 3. Assert
+        Assertions.assertEquals(List.of(5L), ids(result));
+    }
+
+    @Test
+    public void testCountByPublisherIdWhenFilteringAvailableReturnsAvailableCount() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final int result = postDao.countByPublisherId(USER_ID, List.of(PostStatus.AVAILABLE));
+
+        // 3. Assert
+        Assertions.assertEquals(2, result);
+    }
+
+    @Test
+    public void testCountByStatusForPublisherWhenPublisherHasMixedStatusesReturnsCountPerStatus() {
+        // 1. Arrange
+
+        // 2. Exercise
+        final Map<PostStatus, Integer> result = postDao.countByStatusForPublisher(USER_ID);
+
+        // 3. Assert
+        Assertions.assertEquals(Map.of(PostStatus.AVAILABLE, 2, PostStatus.SOLD, 1), result);
+    }
+
+    @Test
+    public void testCountByStatusForPublisherWhenPublisherHasNoPostsReturnsEmptyMap() {
+        // 1. Arrange
+        final long userWithoutPosts = 999;
+
+        // 2. Exercise
+        final Map<PostStatus, Integer> result = postDao.countByStatusForPublisher(userWithoutPosts);
+
+        // 3. Assert
+        Assertions.assertTrue(result.isEmpty());
     }
 
     @Test
